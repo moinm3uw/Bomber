@@ -2,19 +2,24 @@
 
 #include "MyUtilsLibraries/UtilsLibrary.h"
 //---
+#include "UnrealClient.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
 //---
+#include "Engine/Engine.h"
+//---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif // WITH_EDITOR
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(UtilsLibrary)
 
 // Checks, is the current world placed in the editor
 bool UUtilsLibrary::IsEditor()
 {
 #if WITH_EDITOR
-return UEditorUtilsLibrary::IsEditor();
+	return FEditorUtilsLibrary::IsEditor();
 #endif
 	return false;
 }
@@ -23,7 +28,7 @@ return UEditorUtilsLibrary::IsEditor();
 bool UUtilsLibrary::IsEditorNotPieWorld()
 {
 #if WITH_EDITOR
-	return UEditorUtilsLibrary::IsEditorNotPieWorld();
+	return FEditorUtilsLibrary::IsEditorNotPieWorld();
 #endif
 	return false;
 }
@@ -32,7 +37,7 @@ bool UUtilsLibrary::IsEditorNotPieWorld()
 bool UUtilsLibrary::IsPIE()
 {
 #if WITH_EDITOR
-	return UEditorUtilsLibrary::IsPIE();
+	return FEditorUtilsLibrary::IsPIE();
 #endif
 	return false;
 }
@@ -41,7 +46,7 @@ bool UUtilsLibrary::IsPIE()
 bool UUtilsLibrary::IsEditorMultiplayer()
 {
 #if WITH_EDITOR
-	return UEditorUtilsLibrary::IsEditorMultiplayer();
+	return FEditorUtilsLibrary::IsEditorMultiplayer();
 #endif
 	return false;
 }
@@ -50,7 +55,7 @@ bool UUtilsLibrary::IsEditorMultiplayer()
 int32 UUtilsLibrary::GetEditorPlayerIndex()
 {
 #if WITH_EDITOR
-	return UEditorUtilsLibrary::IsEditorMultiplayer();
+	return FEditorUtilsLibrary::IsEditorMultiplayer();
 #endif
 	return INDEX_NONE;
 }
@@ -83,10 +88,10 @@ FIntPoint UUtilsLibrary::GetViewportResolution()
 	const FViewport* Viewport = IsViewportInitialized() ? GEngine->GameViewport->Viewport : nullptr;
 
 #if WITH_EDITOR
-	if (UEditorUtilsLibrary::IsEditor()
+	if (FEditorUtilsLibrary::IsEditor()
 		&& !Viewport)
 	{
-		Viewport = UEditorUtilsLibrary::GetEditorViewport();
+		Viewport = FEditorUtilsLibrary::GetEditorViewport();
 	}
 #endif
 

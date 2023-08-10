@@ -2,28 +2,32 @@
 
 #include "Controllers/MyPlayerController.h"
 //---
+#include "Bomber.h"
+#include "DataAssets/MyInputAction.h"
+#include "DataAssets/MyInputMappingContext.h"
+#include "DataAssets/PlayerInputDataAsset.h"
+#include "GameFramework/MyCheatManager.h"
+#include "GameFramework/MyGameStateBase.h"
+#include "GameFramework/MyPlayerState.h"
+#include "UI/InGameMenuWidget.h"
+#include "UI/MyHUD.h"
+#include "UI/SettingsWidget.h"
+#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+///---
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
 #include "Components/GameFrameworkComponentManager.h"
+#include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
 #include "Framework/Application/NavigationConfig.h"
-//---
-#include "GameFramework/MyCheatManager.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "GameFramework/MyPlayerState.h"
-#include "DataAssets/MyInputAction.h"
-#include "DataAssets/MyInputMappingContext.h"
-#include "DataAssets/PlayerInputDataAsset.h"
-#include "UI/InGameMenuWidget.h"
-#include "UI/MainMenuWidget.h"
-#include "UI/MyHUD.h"
-#include "UI/SettingsWidget.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "Framework/Application/SlateApplication.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerController)
 
 // Sets default values for this controller's properties
 AMyPlayerController::AMyPlayerController()
@@ -93,7 +97,7 @@ void AMyPlayerController::SetMouseVisibility(bool bShouldShow)
 void AMyPlayerController::SetMouseFocusOnUI(bool bFocusOnUI)
 {
 #if WITH_EDITOR // [IsEditorMultiplayer]
-	if (UEditorUtilsLibrary::IsEditorMultiplayer())
+	if (FEditorUtilsLibrary::IsEditorMultiplayer())
 	{
 		const ULocalPlayer* LocalPlayer = GetLocalPlayer();
 		UGameViewportClient* GameViewport = LocalPlayer ? LocalPlayer->ViewportClient : nullptr;
@@ -139,6 +143,75 @@ UEnhancedPlayerInput* AMyPlayerController::GetEnhancedPlayerInput() const
 	return Cast<UEnhancedPlayerInput>(PlayerInput);
 }
 
+// Set up input bindings in given contexts
+void AMyPlayerController::BindInputActionsInContexts(const TArray<const UMyInputMappingContext*>& InputContexts, bool bClearPreviousBindings/* = false*/)
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent();
+	if (!ensureMsgf(EnhancedInputComponent, TEXT("ASSERT: 'EnhancedInputComponent' is not valid")))
+	{
+		return;
+	}
+
+	if (bClearPreviousBindings
+	    && EnhancedInputComponent->HasBindings())
+	{
+		// Remove all previous bindings to do not have duplicates
+		EnhancedInputComponent->ClearActionEventBindings();
+	}
+
+	TArray<UMyInputAction*> InputActions;
+	for (const UMyInputMappingContext* InputContextIt : InputContexts)
+	{
+		InputContextIt->GetInputActions(InputActions);
+	}
+
+	// --- Bind input actions
+	for (const UMyInputAction* ActionIt : InputActions)
+	{
+		const FName FunctionName = ActionIt ? ActionIt->GetFunctionToBind().FunctionName : NAME_None;
+		if (FunctionName.IsNone())
+		{
+			continue;
+		}
+
+		UObject* FoundContextObj = nullptr;
+		if (UFunction* FunctionPtr = ActionIt->GetStaticContext().GetFunction())
+		{
+			FunctionPtr->ProcessEvent(FunctionPtr, /*Out*/&FoundContextObj);
+		}
+
+		if (!FoundContextObj)
+		{
+			continue;
+		}
+
+		const ETriggerEvent TriggerEvent = ActionIt->GetTriggerEvent();
+		EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
+	}
+}
+
+// Adds input contexts to the list to be auto turned of or on according current game state
+void AMyPlayerController::AddInputContexts(const TArray<const UMyInputMappingContext*>& InputContexts)
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	for (const UMyInputMappingContext* InputContextIt : InputContexts)
+	{
+		if (InputContextIt)
+		{
+			AllInputContextsInternal.AddUnique(InputContextIt);
+		}
+	}
+}
+
 // Called when an instance of this class is placed (in editor) or spawned
 void AMyPlayerController::OnConstruction(const FTransform& Transform)
 {
@@ -174,6 +247,12 @@ void AMyPlayerController::BeginPlay()
 	if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 	{
 		MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+		// Handle current game state if initialized with delay
+		if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+		{
+			OnGameStateChanged(ECurrentGameState::Menu);
+		}
 	}
 
 	// Handle UI inputs
@@ -214,7 +293,7 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 
 	BroadcastOnSetPlayerState();
 
-	BindInputActions();
+	SetupPlayerInputs();
 }
 
 // Is overriden to notify the client when this controller possesses new player character
@@ -225,7 +304,7 @@ void AMyPlayerController::OnRep_Pawn()
 	// Notify client about pawn change
 	GetOnNewPawnNotifier().Broadcast(GetPawn());
 
-	BindInputActions();
+	SetupPlayerInputs();
 }
 
 // Is overriden to notify the client when is set new player state
@@ -237,57 +316,20 @@ void AMyPlayerController::OnRep_PlayerState()
 }
 
 // Allows the PlayerController to set up custom input bindings
-void AMyPlayerController::BindInputActions()
+void AMyPlayerController::SetupPlayerInputs()
 {
-	if (!IsLocalController())
-	{
-		return;
-	}
-
-	UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent();
-	if (!ensureMsgf(EnhancedInputComponent, TEXT("ASSERT: 'EnhancedInputComponent' is not valid")))
-	{
-		return;
-	}
-
-	if (EnhancedInputComponent->HasBindings())
-	{
-		// Remove all previous bindings to do not have duplicates
-		EnhancedInputComponent->ClearActionEventBindings();
-	}
-
 	TArray<const UMyInputMappingContext*> InputContexts;
 	UPlayerInputDataAsset::Get().GetAllInputContexts(InputContexts);
 
-	TArray<UMyInputAction*> InputActions;
-	for (const UMyInputMappingContext* InputContextIt : InputContexts)
-	{
-		InputContextIt->GetInputActions(InputActions);
-	}
+	// Add input contexts to the list to be auto turned of or on according current game state
+	AddInputContexts(InputContexts);
 
-	// --- Bind input actions
-	for (const UMyInputAction* ActionIt : InputActions)
-	{
-		const FName FunctionName = ActionIt ? ActionIt->GetFunctionToBind().FunctionName : NAME_None;
-		if (FunctionName.IsNone())
-		{
-			continue;
-		}
+	// Bind input actions in all managed contexts
+	constexpr bool bClearPreviousBindings = true;
+	BindInputActionsInContexts(AllInputContextsInternal, bClearPreviousBindings);
 
-		UObject* FoundContextObj = nullptr;
-		if (UFunction* FunctionPtr = ActionIt->GetStaticContext().GetFunction())
-		{
-			FunctionPtr->ProcessEvent(FunctionPtr, /*Out*/&FoundContextObj);
-		}
-
-		if (!FoundContextObj)
-		{
-			continue;
-		}
-
-		const ETriggerEvent TriggerEvent = ActionIt->GetTriggerEvent();
-		EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
-	}
+	// Notify other systems that player controller is ready to bind their own input actions
+	OnSetupPlayerInputs.Broadcast();
 }
 
 // Prevents built-in slate input on UMG
@@ -338,18 +380,8 @@ void AMyPlayerController::OnGameStateChanged(ECurrentGameState CurrentGameState)
 			break;
 	}
 
-	// Enable or disable input contexts by specified game states
-	TArray<const UMyInputMappingContext*> InputContexts;
-	UPlayerInputDataAsset::Get().GetAllInputContexts(InputContexts);
-	for (const UMyInputMappingContext* InputContextIt : InputContexts)
-	{
-		if (InputContextIt)
-		{
-			const int32 GameStatesBitmask = InputContextIt->GetChosenGameStatesBitmask();
-			const bool bEnableContext = GameStatesBitmask & TO_FLAG(CurrentGameState);
-			SetInputContextEnabled(bEnableContext, InputContextIt);
-		}
-	}
+	constexpr bool bInvertRest = true;
+	SetInputContextsEnabled(true, CurrentGameState, bInvertRest);
 }
 
 // Listens to handle input on opening and closing the InGame Menu widget
@@ -360,7 +392,10 @@ void AMyPlayerController::OnToggledInGameMenu(bool bIsVisible)
 		return;
 	}
 
-	SetGameplayInputContextEnabled(!bIsVisible);
+	// Invert gameplay input contexts
+	SetInputContextsEnabled(!bIsVisible, ECurrentGameState::InGame);
+
+	// Turn on or off specific In-Game menu input context (it does not contain any game state)
 	SetInputContextEnabled(bIsVisible, UPlayerInputDataAsset::Get().GetInGameMenuInputContext());
 
 	SetMouseVisibility(bIsVisible);
@@ -369,35 +404,14 @@ void AMyPlayerController::OnToggledInGameMenu(bool bIsVisible)
 // Listens to handle input on opening and closing the Settings widget
 void AMyPlayerController::OnToggledSettings(bool bIsVisible)
 {
-	// Toggle Settings Input Context
+	// Turn on or off specific Settings input context (it does not contain any game state)
 	SetInputContextEnabled(bIsVisible, UPlayerInputDataAsset::Get().GetSettingsInputContext());
 
 	// Toggle previous Input Context
 	const ECurrentGameState CurrentGameState = AMyGameStateBase::GetCurrentGameState();
-	const UMyInputMappingContext* PreviousInputContext = nullptr;
-	if (CurrentGameState == ECGS::Menu)
+	if (CurrentGameState == ECGS::Menu || CurrentGameState == ECGS::InGame)
 	{
-		PreviousInputContext = UPlayerInputDataAsset::Get().GetMainMenuInputContext();
-	}
-	else if (CurrentGameState == ECGS::InGame)
-	{
-		PreviousInputContext = UPlayerInputDataAsset::Get().GetInGameMenuInputContext();
-	}
-
-	if (PreviousInputContext)
-	{
-		SetInputContextEnabled(!bIsVisible, PreviousInputContext);
-	}
-}
-
-// Enables or disables input contexts of gameplay input actions
-void AMyPlayerController::SetGameplayInputContextEnabled(bool bEnable)
-{
-	TArray<const UMyInputMappingContext*> OutGameplayInputContexts;
-	UPlayerInputDataAsset::Get().GetAllGameplayInputContexts(OutGameplayInputContexts);
-	for (const UMyInputMappingContext* InputContextIt : OutGameplayInputContexts)
-	{
-		SetInputContextEnabled(bEnable, InputContextIt);
+		SetInputContextsEnabled(!bIsVisible, CurrentGameState);
 	}
 }
 
@@ -439,6 +453,30 @@ void AMyPlayerController::SetInputContextEnabled(bool bEnable, const UMyInputMap
 	}
 }
 
+// Takes all cached inputs contexts and turns them on or off according given game state
+void AMyPlayerController::SetInputContextsEnabled(bool bEnable, ECurrentGameState CurrentGameState, bool bInvertRest/* = false*/)
+{
+	for (const UMyInputMappingContext* InputContextIt : AllInputContextsInternal)
+	{
+		if (!InputContextIt)
+		{
+			continue;
+		}
+
+		const int32 GameStatesBitmask = InputContextIt->GetChosenGameStatesBitmask();
+		const bool bIsMatching = GameStatesBitmask & TO_FLAG(CurrentGameState);
+
+		if (bIsMatching)
+		{
+			SetInputContextEnabled(bEnable, InputContextIt);
+		}
+		else if (bInvertRest)
+		{
+			SetInputContextEnabled(!bEnable, InputContextIt);
+		}
+	}
+}
+
 // Is called when all game widgets are initialized
 void AMyPlayerController::OnWidgetsInitialized()
 {
@@ -447,21 +485,6 @@ void AMyPlayerController::OnWidgetsInitialized()
 	    && HUD->OnWidgetsInitialized.IsAlreadyBound(this, &ThisClass::OnWidgetsInitialized))
 	{
 		HUD->OnWidgetsInitialized.RemoveDynamic(this, &ThisClass::OnWidgetsInitialized);
-	}
-
-	UMainMenuWidget* MainMenuWidget = UMyBlueprintFunctionLibrary::GetMainMenuWidget();
-	if (ensureMsgf(MainMenuWidget, TEXT("ASSERT: 'MainMenuWidget' is not valid")))
-	{
-		// Update the Menu State
-		if (MainMenuWidget->IsReadyMainMenu())
-		{
-			SetMenuState();
-		}
-		else
-		{
-			// Listens to set menu state when menu is ready
-			MainMenuWidget->OnMainMenuReady.AddUniqueDynamic(this, &ThisClass::SetMenuState);
-		}
 	}
 
 	// Listens to handle input on opening and closing the InGame Menu widget

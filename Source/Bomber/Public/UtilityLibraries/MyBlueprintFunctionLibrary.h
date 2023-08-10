@@ -4,9 +4,10 @@
 
 #include "Kismet/BlueprintFunctionLibrary.h"
 //---
-#include "Bomber.h"
-//---
 #include "MyBlueprintFunctionLibrary.generated.h"
+
+enum class ELevelType : uint8;
+enum class EActorType : uint8;
 
 /**
  * 	The static functions library
@@ -83,10 +84,6 @@ public:
 	/** Returns the HUD actor. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static class AMyHUD* GetMyHUD();
-
-	/** Returns the Main Menu widget. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static class UMainMenuWidget* GetMainMenuWidget();
 
 	/** Returns the In-Game widget. */
 	UFUNCTION(BlueprintPure, Category = "C++")

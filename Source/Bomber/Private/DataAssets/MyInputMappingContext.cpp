@@ -2,15 +2,16 @@
 
 #include "DataAssets/MyInputMappingContext.h"
 //---
-#include "EnhancedInputModule.h"
-#include "UObject/ObjectSaveContext.h"
-//---
 #include "DataAssets/MyInputAction.h"
 #include "DataAssets/PlayerInputDataAsset.h"
 //---
+#include "EnhancedInputLibrary.h"
+//---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MyInputMappingContext)
 
 // Returns all input actions set in mappings
 void UMyInputMappingContext::GetInputActions(TArray<UMyInputAction*>& OutInputActions) const
@@ -43,7 +44,7 @@ void UMyInputMappingContext::GetAllMappings(TArray<FEnhancedActionKeyMapping>& O
 {
 	for (const FEnhancedActionKeyMapping& MappingIt : Mappings)
 	{
-		if (MappingIt.bIsPlayerMappable)
+		if (MappingIt.IsPlayerMappable())
 		{
 			OutMappableData.Emplace(MappingIt);
 		}
@@ -105,7 +106,7 @@ bool UMyInputMappingContext::CanSaveMappingsInConfig()
 {
 #if WITH_EDITOR // [IsEditorNotPieWorld]
 	// We don't want to save remaps in Editor, it gets serialised right into asset
-	return !UEditorUtilsLibrary::IsEditor();
+	return !FEditorUtilsLibrary::IsEditor();
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 	// Always return true in cook since there remaps should be saved into config file and taken there.

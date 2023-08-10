@@ -19,11 +19,14 @@
 #include "UI/InGameWidget.h"
 #include "UI/MyHUD.h"
 //---
+#include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MyBlueprintFunctionLibrary)
 
 /* ---------------------------------------------------
  *		Static library functions
@@ -41,7 +44,7 @@ UWorld* UMyBlueprintFunctionLibrary::GetStaticWorld()
 bool UMyBlueprintFunctionLibrary::HasWorldBegunPlay()
 {
 #if WITH_EDITOR	// [UEditorUtils::IsEditor]
-	if (UEditorUtilsLibrary::IsPIE())
+	if (FEditorUtilsLibrary::IsPIE())
 	{
 		return true;
 	}
@@ -147,13 +150,6 @@ AMyHUD* UMyBlueprintFunctionLibrary::GetMyHUD()
 {
 	const AMyPlayerController* MyPlayerController = GetLocalPlayerController();
 	return MyPlayerController ? MyPlayerController->GetHUD<AMyHUD>() : nullptr;
-}
-
-// Returns the Main Menu widget
-UMainMenuWidget* UMyBlueprintFunctionLibrary::GetMainMenuWidget()
-{
-	const AMyHUD* MyHUD = GetMyHUD();
-	return MyHUD ? MyHUD->GetMainMenuWidget() : nullptr;
 }
 
 // Returns the In-Game widget

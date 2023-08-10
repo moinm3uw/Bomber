@@ -4,10 +4,10 @@
 
 #include "Camera/CameraComponent.h"
 //---
-#include "Bomber.h"
-#include "Structures/Cell.h"
-//---
 #include "MyCameraComponent.generated.h"
+
+enum class ECurrentGameState : uint8;
+enum EAspectRatioAxisConstraint : int;
 
 /**
  * Contains parameters to tweak how calculate the distance from camera to the level during the game
@@ -89,7 +89,7 @@ public:
 
 	/** Calculates how faw away the camera should be placed from specified cells. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	float GetCameraDistanceToCells(const TSet<FCell>& Cells) const;
+	float GetCameraDistanceToCells(const TSet<struct FCell>& Cells) const;
 
 	/** Returns the center camera location between all players and bots. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -100,6 +100,10 @@ public:
 	 * Camera always stays there if IsCameraLockedOnCenter() returns true. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FVector GetCameraLockedLocation() const;
+
+	/** Starts viewing through this camera. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void PossessCamera(bool bBlendCamera = true);
 
 protected:
 	/* ---------------------------------------------------
@@ -133,14 +137,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	/** Listen game states to manage the tick. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
 
 	/** Listen to recalculate camera location when screen aspect ratio was changed. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnAspectRatioChanged(float NewAspectRatio);
-
-	/** Starts viewing through this camera. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void PossessCamera();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnAspectRatioChanged(float NewAspectRatio, EAspectRatioAxisConstraint NewAxisConstraint);
 };

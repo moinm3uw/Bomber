@@ -4,13 +4,16 @@
 //---
 #include "DataAssets/DataAssetsContainer.h"
 //---
+#include "GameFramework/Actor.h"
 #include "Engine/Texture2DArray.h"
 #include "Materials/MaterialInstance.h"
 #include "Materials/MaterialInstanceDynamic.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerDataAsset)
 
 // Returns the dynamic material instance of a player with specified skin.
 UMaterialInstanceDynamic* UPlayerRow::GetMaterialInstanceDynamic(int32 SkinIndex) const
@@ -30,7 +33,7 @@ void UPlayerRow::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	// Continue only if [IsEditorNotPieWorld]
-	if (!UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (!FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		return;
 	}
@@ -120,5 +123,19 @@ UMaterialInterface* UPlayerDataAsset::GetNameplateMaterial(int32 Index) const
 		return NameplateMaterialsInternal[Index];
 	}
 
+	return nullptr;
+}
+
+// Return first found row by specified player tag
+const UPlayerRow* UPlayerDataAsset::GetRowByPlayerTag(const FPlayerTag& PlayerTag) const
+{
+	for (const TObjectPtr<ULevelActorRow> RowIt : RowsInternal)
+	{
+		const UPlayerRow* PlayerRow = Cast<UPlayerRow>(RowIt);
+		if (PlayerRow && PlayerRow->PlayerTag == PlayerTag)
+		{
+			return PlayerRow;
+		}
+	}
 	return nullptr;
 }

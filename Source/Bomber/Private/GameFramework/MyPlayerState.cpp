@@ -5,9 +5,11 @@
 #include "GeneratedMap.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "LevelActors/PlayerCharacter.h"
 //---
 #include "Net/UnrealNetwork.h"
+#include "Kismet/KismetSystemLibrary.h"
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerState)
 
 /* ---------------------------------------------------
  *		Protected
@@ -73,6 +75,12 @@ void AMyPlayerState::BeginPlay()
 		if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 		{
 			MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+			// Handle current game state if initialized with delay
+			if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+			{
+				OnGameStateChanged(ECurrentGameState::Menu);
+			}
 		}
 	}
 }

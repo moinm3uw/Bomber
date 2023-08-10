@@ -2,9 +2,9 @@
 
 #include "Components/MapComponent.h"
 //---
+#include "Bomber.h"
 #include "GeneratedMap.h"
-#include "PoolManager.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "PoolManagerSubsystem.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/LevelActorDataAsset.h"
@@ -15,12 +15,19 @@
 //---
 #include "Components/BoxComponent.h"
 #include "Components/GameFrameworkComponentManager.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
 #include "Net/UnrealNetwork.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
 #include "MyUnrealEdEngine.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponent)
 
 // Sets default values for this component's properties
 UMapComponent::UMapComponent()
@@ -63,14 +70,14 @@ bool UMapComponent::OnConstructionOwnerActor()
 	}
 
 	// Check the object state in the Pool Manager
-	UPoolManager& PoolManager = UPoolManager::Get();
+	UPoolManagerSubsystem& PoolManager = UPoolManagerSubsystem::Get();
 	const EPoolObjectState PoolObjectState = PoolManager.GetPoolObjectState(Owner);
 	if (PoolObjectState == EPoolObjectState::None)
 	{
 		// The owner actor is not in the pool
 		// Most likely it is a dragged actor, since all generated actors are always taken from the pool
 		// Add this object to the pool and continue construction
-		PoolManager.AddToPool(Owner, EPoolObjectState::Active);
+		PoolManager.RegisterObjectInPool(Owner, EPoolObjectState::Active);
 	}
 	else if (PoolObjectState == EPoolObjectState::Inactive)
 	{
@@ -103,7 +110,7 @@ bool UMapComponent::OnConstructionOwnerActor()
 	SetCollisionResponses(CollisionResponse);
 
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		// Update AI renders after adding obj to map
 		UMyUnrealEdEngine::GOnAIUpdatedDelegate.Broadcast();
@@ -170,6 +177,12 @@ void UMapComponent::SetMaterial(UMaterialInterface* Material)
 	}
 }
 
+// Returns the map component of the specified owner
+UMapComponent* UMapComponent::GetMapComponent(const AActor* Owner)
+{
+	return Owner ? Owner->FindComponentByClass<UMapComponent>() : nullptr;
+}
+
 // Get the owner's data asset
 EActorType UMapComponent::GetActorType() const
 {
@@ -221,7 +234,7 @@ void UMapComponent::OnDeactivated(UObject* DestroyCauser/* = nullptr*/)
 	}
 
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditor())
+	if (FEditorUtilsLibrary::IsEditor())
 	{
 		// Remove all text renders of the Owner
 		UCellsUtilsLibrary::ClearDisplayedCells(GetOwner());
@@ -297,7 +310,7 @@ void UMapComponent::OnRegister()
 	MeshComponentInternal->SetReceivesDecals(false);
 
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		// Should not call OnConstruction on drag events
 		Owner->bRunConstructionScriptOnDrag = false;
@@ -319,10 +332,12 @@ void UMapComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 		BoxCollisionComponentInternal->DestroyComponent();
 
 #if WITH_EDITOR	// [IsEditorNotPieWorld]
-		if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+		if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 		{
 			// The owner was removed from the editor level
-			if (AGeneratedMap* GeneratedMap = UGeneratedMapSubsystem::Get().GetGeneratedMap()) // Can be invalid if remove the Generated Map
+			const UGeneratedMapSubsystem* GeneratedMapSubsystem = UGeneratedMapSubsystem::GetGeneratedMapSubsystem();
+			AGeneratedMap* GeneratedMap = GeneratedMapSubsystem ? GeneratedMapSubsystem->GetGeneratedMap() : nullptr;
+			if (GeneratedMap) // Can be invalid if remove the Generated Map or opening another map
 			{
 				GeneratedMap->DestroyLevelActor(this);
 			}
@@ -388,7 +403,7 @@ bool UMapComponent::Modify(bool bAlwaysMarkDirty/* = true*/)
 {
 	AActor* Owner = GetOwner();
 	if (Owner
-	    && !UEditorUtilsLibrary::IsEditor() // is editor macro but not is GEditor, so [-game]
+	    && !FEditorUtilsLibrary::IsEditor() // is editor macro but not is GEditor, so [-game]
 	    && IsEditorOnly())                  // was generated in the editor
 	{
 		Owner->Destroy();

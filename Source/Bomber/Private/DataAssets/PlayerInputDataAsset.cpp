@@ -2,15 +2,18 @@
 
 #include "DataAssets/PlayerInputDataAsset.h"
 //---
-#include "EnhancedActionKeyMapping.h"
-//---
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "EnhancedActionKeyMapping.h"
+#include "Engine/World.h"
+//---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerInputDataAsset)
 
 // Returns the player input data asset
 const UPlayerInputDataAsset& UPlayerInputDataAsset::Get()
@@ -24,11 +27,6 @@ const UPlayerInputDataAsset& UPlayerInputDataAsset::Get()
 void UPlayerInputDataAsset::GetAllInputContexts(TArray<const UMyInputMappingContext*>& OutInputContexts) const
 {
 	GetAllGameplayInputContexts(OutInputContexts);
-
-	if (const UMyInputMappingContext* MainMenuInputContext = GetMainMenuInputContext())
-	{
-		OutInputContexts.Emplace(MainMenuInputContext);
-	}
 
 	if (const UMyInputMappingContext* InGameMenuInputContext = GetInGameMenuInputContext())
 	{
@@ -76,7 +74,7 @@ bool UPlayerInputDataAsset::IsMappedKey(const FKey& Key) const
 void UPlayerInputDataAsset::TryCreateGameplayInputContexts() const
 {
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		// Do not create input contexts since the game is not started yet
 		return;

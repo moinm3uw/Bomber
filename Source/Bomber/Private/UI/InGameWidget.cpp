@@ -2,9 +2,12 @@
 
 #include "UI/InGameWidget.h"
 //---
+#include "Bomber.h"
 #include "Controllers/MyPlayerController.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(InGameWidget)
 
 // Called after the underlying slate widget is constructed. May be called multiple times due to adding and removing from the hierarchy.
 void UInGameWidget::NativeConstruct()
@@ -73,10 +76,13 @@ void UInGameWidget::OnGameStateChanged_Implementation(ECurrentGameState CurrentG
 // Is called to start listening game state changes
 void UInGameWidget::BindOnGameStateChanged(AMyGameStateBase* MyGameState)
 {
-	if (!ensureMsgf(MyGameState, TEXT("ASSERT: 'MyGameState' is not valid")))
-	{
-		return;
-	}
+	checkf(MyGameState, TEXT("ERROR: 'MyGameState' is null!"));
 
 	MyGameState->OnGameStateChanged.AddUniqueDynamic(this, &ThisClass::OnGameStateChanged);
+
+	// Handle current game state if initialized with delay
+	if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+	{
+		OnGameStateChanged(ECurrentGameState::Menu);
+	}
 }

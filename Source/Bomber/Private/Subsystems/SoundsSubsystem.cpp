@@ -2,13 +2,18 @@
 
 #include "Subsystems/SoundsSubsystem.h"
 //---
+#include "Bomber.h"
 #include "GeneratedMap.h"
+#include "DataAssets/SoundsDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
-#include "DataAssets/SoundsDataAsset.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Components/AudioComponent.h"
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(SoundsSubsystem)
 
 // Returns the Sounds Manager checked
 USoundsSubsystem& USoundsSubsystem::Get()
@@ -64,9 +69,16 @@ void USoundsSubsystem::PlayCurrentBackgroundMusic()
 	const ECurrentGameState GameState = AMyGameStateBase::GetCurrentGameState();
 	const ELevelType LevelType = UMyBlueprintFunctionLibrary::GetLevelType();
 	USoundBase* BackgroundMusic = USoundsDataAsset::Get().GetBackgroundMusic(GameState, LevelType);
+
 	if (!BackgroundMusic)
 	{
-		// Background music is not found for current state or level
+		if (BackgroundMusicComponentInternal
+		    && BackgroundMusicComponentInternal->IsPlaying())
+		{
+			// Background music is not found for current state or level, disable current
+			BackgroundMusicComponentInternal->Stop();
+		}
+
 		return;
 	}
 
@@ -192,6 +204,13 @@ void USoundsSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 	{
 		MyGameState->OnGameStateChanged.AddUniqueDynamic(this, &ThisClass::OnGameStateChanged);
+
+		// Handle current game state if initialized with delay
+		if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+		{
+			OnGameStateChanged(ECurrentGameState::Menu);
+		}
+
 		AGeneratedMap::Get().OnSetNewLevelType.AddUniqueDynamic(this, &ThisClass::OnGameLevelChanged);
 	}
 

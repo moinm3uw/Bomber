@@ -8,24 +8,28 @@
 #include "Components/MySkeletalMeshComponent.h"
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyPlayerController.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "GameFramework/MyPlayerState.h"
 #include "DataAssets/ItemDataAsset.h"
 #include "DataAssets/PlayerDataAsset.h"
+#include "GameFramework/MyGameStateBase.h"
+#include "GameFramework/MyPlayerState.h"
 #include "LevelActors/BombActor.h"
 #include "LevelActors/ItemActor.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerCharacter)
 
 // Default amount on picked up items
 const FPowerUp FPowerUp::DefaultData = FPowerUp();
@@ -96,7 +100,7 @@ void APlayerCharacter::ConstructPlayerCharacter()
 void APlayerCharacter::ServerSpawnBomb_Implementation()
 {
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		// Should not spawn bomb in PIE
 		return;
@@ -137,6 +141,12 @@ void APlayerCharacter::ServerSpawnBomb_Implementation()
 	{
 		MapComponent->OnDeactivatedMapComponent.AddDynamic(this, &ThisClass::OnBombDestroyed);
 	}
+}
+
+// Returns the Skeletal Mesh of bombers
+UMySkeletalMeshComponent* APlayerCharacter::GetMySkeletalMeshComponent() const
+{
+	return Cast<UMySkeletalMeshComponent>(GetMesh());
 }
 
 // Actualize the player name for this character
@@ -186,6 +196,12 @@ void APlayerCharacter::BeginPlay()
 		if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 		{
 			MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+			// Handle current game state if initialized with delay
+			if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+			{
+				OnGameStateChanged(ECurrentGameState::Menu);
+			}
 		}
 
 		// Listen to handle possessing logic
@@ -228,7 +244,7 @@ void APlayerCharacter::OnConstructionPlayerCharacter()
 
 	// Spawn or destroy controller of specific ai with enabled visualization
 #if WITH_EDITOR
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld() // [IsEditorNotPieWorld] only
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld() // [IsEditorNotPieWorld] only
 	    && CharacterIDInternal > 0)                // Is a bot
 	{
 		MyAIControllerInternal = Cast<AMyAIController>(GetController());
@@ -488,7 +504,7 @@ void APlayerCharacter::UpdateCollisionObjectType()
 void APlayerCharacter::TryPossessController()
 {
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		// Should not spawn posses in PIE
 		return;

@@ -2,12 +2,14 @@
 
 #include "DataAssets/LevelActorDataAsset.h"
 //---
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "GameFramework/Actor.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #include "MyUnrealEdEngine.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(LevelActorDataAsset)
 
 #if WITH_EDITOR // [IsEditorNotPieWorld]
 // Called to handle row changes
@@ -21,7 +23,7 @@ void UBomberDataAsset::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		UMyUnrealEdEngine::GOnAnyDataAssetChanged.Broadcast();
 	}
@@ -38,7 +40,7 @@ void ULevelActorDataAsset::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	}
 
 	// Continue only if [IsEditorNotPieWorld]
-	if (!UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (!FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		return;
 	}
@@ -89,7 +91,7 @@ const ULevelActorRow* ULevelActorDataAsset::GetRowByLevelType(ELevelType LevelTy
 		if (RowIt
 		    && RowIt->Mesh //is not empty
 		    && (RowIt->LevelType == LevelType
-		    	|| RowIt->LevelType == ELevelType::Max))
+		        || RowIt->LevelType == ELevelType::Max))
 		{
 			return RowIt;
 		}

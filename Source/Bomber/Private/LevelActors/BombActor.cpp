@@ -4,23 +4,27 @@
 //---
 #include "Bomber.h"
 #include "GeneratedMap.h"
-#include "Subsystems/SoundsSubsystem.h"
 #include "Components/MapComponent.h"
-#include "GameFramework/MyGameStateBase.h"
 #include "DataAssets/BombDataAsset.h"
 #include "DataAssets/DataAssetsContainer.h"
+#include "GameFramework/MyGameStateBase.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "Structures/Cell.h"
+#include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
 #include "MyUnrealEdEngine.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(BombActor)
 
 // Sets default values
 ABombActor::ABombActor()
@@ -125,7 +129,7 @@ void ABombActor::OnConstructionBombActor()
 	}
 
 #if WITH_EDITOR //[IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld()) // [IsEditorNotPieWorld]
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld()) // [IsEditorNotPieWorld]
 	{
 		InitBomb();
 
@@ -156,6 +160,12 @@ void ABombActor::BeginPlay()
 	{
 		// This dragged bomb should start listening in-game state to set lifespan
 		MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+		// Handle current game state if initialized with delay
+		if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+		{
+			OnGameStateChanged(ECurrentGameState::Menu);
+		}
 	}
 }
 
@@ -172,7 +182,7 @@ void ABombActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 void ABombActor::SetLifeSpan(float InLifespan/* = DEFAULT_LIFESPAN*/)
 {
 	if (InLifespan == DEFAULT_LIFESPAN
-		&& AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	    && AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
 	{
 		InLifespan = UBombDataAsset::Get().GetLifeSpan();
 	}

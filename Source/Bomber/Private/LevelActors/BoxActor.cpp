@@ -5,11 +5,13 @@
 #include "Bomber.h"
 #include "GeneratedMap.h"
 #include "Components/MapComponent.h"
-#include "GameFramework/MyGameStateBase.h"
 #include "DataAssets/BoxDataAsset.h"
+#include "GameFramework/MyGameStateBase.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Math/UnrealMathUtility.h"
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(BoxActor)
 
 // Sets default values.
 ABoxActor::ABoxActor()
@@ -74,6 +76,12 @@ void ABoxActor::BeginPlay()
 	if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 	{
 		MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+		// Handle current game state if initialized with delay
+		if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+		{
+			OnGameStateChanged(ECurrentGameState::Menu);
+		}
 	}
 }
 

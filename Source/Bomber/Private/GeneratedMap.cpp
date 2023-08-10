@@ -2,32 +2,35 @@
 
 #include "GeneratedMap.h"
 //---
-#include "PoolManager.h"
+#include "PoolManagerSubsystem.h"
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/GeneratedMapDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "LevelActors/BombActor.h"
-#include "Structures/Cell.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Components/GameFrameworkComponentManager.h"
 #include "Engine/LevelStreaming.h"
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 #include "Net/UnrealNetwork.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
 #include "MyUnrealEdEngine.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 //---
 #include "EditorLevelUtils.h"
 #include "EditorUtilityLibrary.h"
 #include "Engine/LevelStreamingAlwaysLoaded.h"
 #include "Engine/LevelStreamingDynamic.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMap)
 
 /* ---------------------------------------------------
  *		Generated Map public functions
@@ -253,7 +256,7 @@ bool AGeneratedMap::DoesPathExistToCells(const FCells& CellsToFind, const FCells
 
 		for (const FCell& CellIt : CellsToIterate)
 		{
-			constexpr float MaxInteger = TNumericLimits<int32>::Max();
+			constexpr int32 MaxInteger = TNumericLimits<int32>::Max();
 			constexpr bool bBreakInputCells = true;
 			// InOutAllFoundCells include as wall cells as well all previous iterated cells
 			GetSidesCells(/*InOut*/InOutSideCells, CellIt, EPathType::Explosion, MaxInteger, TO_FLAG(ECellDirection::All), bBreakInputCells);
@@ -284,7 +287,7 @@ AActor* AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell)
 	}
 
 	const UClass* ClassToSpawn = UDataAssetsContainer::GetActorClassByType(Type);
-	AActor* SpawnedActor = UPoolManager::Get().TakeFromPool<AActor>(FTransform(Cell), ClassToSpawn);
+	AActor* SpawnedActor = UPoolManagerSubsystem::Get().TakeFromPool<AActor>(ClassToSpawn, FTransform(Cell));
 	if (!ensureMsgf(SpawnedActor, TEXT("ASSERT: 'SpawnedActor' is not valid")))
 	{
 		return nullptr;
@@ -487,7 +490,7 @@ void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* Dest
 	MapComponent->OnDeactivated(DestroyCauser);
 
 	// Deactivate the iterated owner
-	UPoolManager::Get().ReturnToPool(ComponentOwner);
+	UPoolManagerSubsystem::Get().ReturnToPool(ComponentOwner);
 
 	DestroyLevelActorDragged(MapComponent);
 }
@@ -558,9 +561,11 @@ FTransform AGeneratedMap::ActorTransformToGridTransform(const FTransform& ActorT
 	FTransform NewTransform = FTransform::Identity;
 
 	// Align location snapping to the grid size
-	const FVector NewLocation = UGeneratedMapDataAsset::Get().IsLockedOnZero()
-		                            ? FVector::ZeroVector
-		                            : FCell::SnapCell(ActorTransform.GetLocation());
+	FVector NewLocation = FVector::ZeroVector;
+	if (!UGeneratedMapDataAsset::Get().IsLockedOnZero())
+	{
+		NewLocation = FCell::SnapCell(ActorTransform.GetLocation());
+	}
 	NewTransform.SetLocation(NewLocation);
 
 	// Align rotation allowing only yaw axis
@@ -635,7 +640,7 @@ void AGeneratedMap::OnConstructionGeneratedMap(const FTransform& Transform)
 			return PoolObject && !PoolObject->HasAllFlags(RF_WasLoaded | RF_LoadCompleted);
 		};
 
-		UPoolManager::Get().EmptyAllByPredicate(IsDirtyPredicate);
+		UPoolManagerSubsystem::Get().EmptyAllByPredicate(IsDirtyPredicate);
 	}
 #endif // WITH_EDITOR // [Editor-Standalone]
 
@@ -681,6 +686,12 @@ void AGeneratedMap::PostInitializeComponents()
 		if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 		{
 			MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+			// Handle current game state if initialized with delay
+			if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+			{
+				OnGameStateChanged(ECurrentGameState::Menu);
+			}
 		}
 	}
 }
@@ -692,7 +703,7 @@ void AGeneratedMap::Destroyed()
 	    && HasAuthority())
 	{
 		// Destroy level actors
-		UPoolManager::Get().EmptyAllPools();
+		UPoolManagerSubsystem::Get().EmptyAllPools();
 
 		// Destroy level actors in internal arrays
 		const int32 MapComponentsNum = MapComponentsInternal.Num();
@@ -703,7 +714,7 @@ void AGeneratedMap::Destroyed()
 		}
 
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-		if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+		if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 		{
 			// Remove editor bound delegates
 			UMyUnrealEdEngine::GOnAnyDataAssetChanged.RemoveAll(this);
@@ -1014,7 +1025,7 @@ void AGeneratedMap::ApplyLevelType()
 	// ---- Changing streaming levels in the preview world ----
 
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		if (LevelTypeInternal == ELT::None)
 		{
@@ -1169,7 +1180,7 @@ void AGeneratedMap::PostLoad()
 void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 {
 #if WITH_EDITOR	 // [IsEditorNotPieWorld]
-	if (!UEditorUtilsLibrary::IsEditorNotPieWorld())
+	if (!FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		return;
 	}
@@ -1221,7 +1232,7 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 		DraggedCellsInternal.Emplace(AddedComponent->GetCell(), AddedComponent->GetActorType());
 	}
 
-	UPoolManager::Get().AddToPool(ComponentOwner, EPoolObjectState::Active);
+	UPoolManagerSubsystem::Get().RegisterObjectInPool(ComponentOwner, EPoolObjectState::Active);
 #endif	//WITH_EDITOR [IsEditorNotPieWorld]
 }
 
@@ -1229,7 +1240,7 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 void AGeneratedMap::SetNearestCellDragged(const UMapComponent* MapComponent, const FCell& NewCell)
 {
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (!UEditorUtilsLibrary::IsEditorNotPieWorld()
+	if (!FEditorUtilsLibrary::IsEditorNotPieWorld()
 	    || !MapComponent
 	    || !IsDraggedMapComponent(MapComponent)
 	    || NewCell.IsInvalidCell())
@@ -1252,7 +1263,7 @@ void AGeneratedMap::SetNearestCellDragged(const UMapComponent* MapComponent, con
 void AGeneratedMap::DestroyLevelActorDragged(const UMapComponent* MapComponent)
 {
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (!UEditorUtilsLibrary::IsEditorNotPieWorld()
+	if (!FEditorUtilsLibrary::IsEditorNotPieWorld()
 	    || !MapComponent
 	    || !IS_TRANSIENT(MapComponent->GetOwner())) // Never destroy valid actors, hide them instead
 	{

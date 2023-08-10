@@ -4,13 +4,12 @@
 //---
 #include "GeneratedMap.h"
 //---
-#include "Kismet/GameplayStatics.h"
-//---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
-//---
 #include "Editor.h"
-#endif // WITH_EDITOR
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
+#endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMapSubsystem)
 
 // Returns the Generated Map Subsystem, is checked and wil crash if can't be obtained
 UGeneratedMapSubsystem& UGeneratedMapSubsystem::Get()
@@ -25,37 +24,26 @@ UGeneratedMapSubsystem* UGeneratedMapSubsystem::GetGeneratedMapSubsystem()
 {
 	const UWorld* FoundWorld = GEngine ? GEngine->GetCurrentPlayWorld() : nullptr;
 
-#if WITH_EDITOR	 // [UEditorUtilsLibrary::IsEditor]
-	if (UEditorUtilsLibrary::IsEditor()
-		&& !FoundWorld)
+#if WITH_EDITOR
+	if (!FoundWorld)
 	{
-		if (UEditorUtilsLibrary::IsEditorNotPieWorld())
-		{
-			FoundWorld = GEditor->GetEditorWorldContext().World();
-		}
-		if (UEditorUtilsLibrary::IsPIE())
-		{
-			FoundWorld = GEditor->GetCurrentPlayWorld();
-		}
+		FoundWorld = FEditorUtilsLibrary::GetEditorWorld();
 	}
-#endif // WITH_EDITOR [UEditorUtilsLibrary::IsEditor]
+#endif
 
 	if (!ensureMsgf(FoundWorld, TEXT("%s: Can not obtain current world"), *FString(__FUNCTION__)))
 	{
 		return nullptr;
 	}
 
-	UGeneratedMapSubsystem* GeneratedMapSubsystem = FoundWorld->GetSubsystem<UGeneratedMapSubsystem>();
-	ensureMsgf(GeneratedMapSubsystem, TEXT("%s: 'GeneratedMapSubsystem' is not valid"), *FString(__FUNCTION__));
-
-	return GeneratedMapSubsystem;
+	return FoundWorld->GetSubsystem<UGeneratedMapSubsystem>();
 }
 
 // The Generated Map getter, nullptr otherwise
 AGeneratedMap* UGeneratedMapSubsystem::GetGeneratedMap() const
 {
 #if WITH_EDITOR
-	ensureMsgf(UEditorUtilsLibrary::IsCooking() || GeneratedMapInternal, TEXT("%s: [Editor] 'GeneratedMapInternal' is not valid"), *FString(__FUNCTION__));
+	ensureMsgf(FEditorUtilsLibrary::IsCooking() || GeneratedMapInternal, TEXT("%s: [Editor] 'GeneratedMapInternal' is not valid"), *FString(__FUNCTION__));
 #endif // WITH_EDITOR
 	return GeneratedMapInternal;
 }

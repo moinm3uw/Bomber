@@ -2,17 +2,21 @@
 
 #include "Components/MyCameraComponent.h"
 //---
+#include "Bomber.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/GameStateDataAsset.h"
 #include "Engine/MyGameViewportClient.h"
 #include "GameFramework/MyGameStateBase.h"
-#include "DataAssets/GameStateDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Structures/Cell.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #if WITH_EDITOR
-#include "EditorUtilsLibrary.h"
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
+//---
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MyCameraComponent)
 
 // If set, returns additional FOV modifier scaled by level size and current screen aspect ratio
 void FCameraDistanceParams::CalculateFitViewAdditiveAngle(float& InOutFOV) const
@@ -71,7 +75,7 @@ UMyCameraComponent::UMyCameraComponent()
 	// Camera defaults
 	SetConstraintAspectRatio(false); // viewport without black borders
 #if WITH_EDITOR // [Editor]
-	bCameraMeshHiddenInGame = !UEditorUtilsLibrary::IsEditor();
+	bCameraMeshHiddenInGame = !FEditorUtilsLibrary::IsEditor();
 #endif
 
 	// Disable Eye Adaptation
@@ -213,6 +217,12 @@ void UMyCameraComponent::BeginPlay()
 	if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 	{
 		MyGameState->OnGameStateChanged.AddDynamic(this, &ThisClass::OnGameStateChanged);
+
+		// Handle current game state if initialized with delay
+		if (MyGameState->GetCurrentGameState() == ECurrentGameState::Menu)
+		{
+			OnGameStateChanged(ECurrentGameState::Menu);
+		}
 	}
 
 	// Listen to recalculate camera location
@@ -223,7 +233,7 @@ void UMyCameraComponent::BeginPlay()
 }
 
 // Listen game states to manage the tick
-void UMyCameraComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
+void UMyCameraComponent::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
 	bool bShouldTick = false;
 
@@ -255,13 +265,13 @@ void UMyCameraComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
 }
 
 // Listen to recalculate camera location when screen aspect ratio was changed
-void UMyCameraComponent::OnAspectRatioChanged(float NewAspectRatio)
+void UMyCameraComponent::OnAspectRatioChanged_Implementation(float NewAspectRatio, EAspectRatioAxisConstraint NewAxisConstraint)
 {
 	UpdateLocation();
 }
 
 // Starts viewing through this camera
-void UMyCameraComponent::PossessCamera()
+void UMyCameraComponent::PossessCamera(bool bBlendCamera/* = true*/)
 {
 	AActor* Owner = GetOwner();
 	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
@@ -271,6 +281,6 @@ void UMyCameraComponent::PossessCamera()
 		return;
 	}
 
-	const float BlendTime = UGameStateDataAsset::Get().GetStartingCountdown();
+	const float BlendTime = bBlendCamera ? UGameStateDataAsset::Get().GetStartingCountdown() : 0.f;
 	MyPC->SetViewTargetWithBlend(Owner, BlendTime);
 }
