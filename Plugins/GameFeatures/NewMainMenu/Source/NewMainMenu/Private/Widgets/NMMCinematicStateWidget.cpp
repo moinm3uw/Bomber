@@ -3,29 +3,17 @@
 #include "Widgets/NMMCinematicStateWidget.h"
 //---
 #include "Bomber.h"
-#include "Components/MyCameraComponent.h"
-#include "Components/NMMSpotComponent.h"
 #include "Controllers/MyPlayerController.h"
-#include "Data/NMMSubsystem.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+//---
+#include "Components/Button.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMCinematicStateWidget)
 
 // Is called to skip cinematic
-void UNMMCinematicStateWidget::SkipCinematic()
+void UNMMCinematicStateWidget::OnSkipCinematicButtonPressed()
 {
-	if (UNMMSpotComponent* ActiveSpot = UNMMSubsystem::Get().GetActiveMainMenuSpotComponent())
-	{
-		ActiveSpot->StopMasterSequence();
-	}
-
-	if (UMyCameraComponent* CameraComponent = UMyBlueprintFunctionLibrary::GetLevelCamera())
-	{
-		constexpr bool bBlend = false;
-		CameraComponent->PossessCamera(bBlend);
-	}
-
 	if (AMyPlayerController* MyPC = GetOwningPlayer<AMyPlayerController>())
 	{
 		MyPC->SetGameStartingState();
@@ -48,6 +36,12 @@ void UNMMCinematicStateWidget::NativeConstruct()
 	else if (AMyPlayerController* MyPC = GetOwningPlayer<AMyPlayerController>())
 	{
 		MyPC->OnGameStateCreated.AddUniqueDynamic(this, &ThisClass::BindOnGameStateChanged);
+	}
+
+	if (SkipCinematicButton)
+	{
+		SkipCinematicButton->SetClickMethod(EButtonClickMethod::PreciseClick);
+		SkipCinematicButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnSkipCinematicButtonPressed);
 	}
 }
 

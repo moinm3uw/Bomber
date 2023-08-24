@@ -5,6 +5,7 @@
 #include "Components/NMMSpotComponent.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMSubsystem)
@@ -13,6 +14,16 @@
 UNMMSubsystem& UNMMSubsystem::Get()
 {
 	const UWorld* World = UMyBlueprintFunctionLibrary::GetStaticWorld();
+	checkf(World, TEXT("%s: 'World' is null"), *FString(__FUNCTION__));
+	UNMMSubsystem* ThisSubsystem = World->GetSubsystem<ThisClass>();
+	checkf(ThisSubsystem, TEXT("%s: 'SoundsSubsystem' is null"), *FString(__FUNCTION__));
+	return *ThisSubsystem;
+}
+
+// Returns this Subsystem, is checked and wil crash if can't be obtained
+UNMMSubsystem& UNMMSubsystem::Get(const UObject& WorldContextObject)
+{
+	const UWorld* World = GEngine->GetWorldFromContextObjectChecked(&WorldContextObject);
 	checkf(World, TEXT("%s: 'World' is null"), *FString(__FUNCTION__));
 	UNMMSubsystem* ThisSubsystem = World->GetSubsystem<ThisClass>();
 	checkf(ThisSubsystem, TEXT("%s: 'SoundsSubsystem' is null"), *FString(__FUNCTION__));
@@ -85,8 +96,9 @@ UNMMSpotComponent* UNMMSubsystem::MoveMainMenuSpot(int32 Incrementer)
 
 	// Stop the current spot
 	const int32 ActiveSpotPosition = SpotRowIndices.IndexOfByKey(ActiveMainMenuSpotIdx);
+	checkf(CurrentLevelTypeSpots.IsValidIndex(ActiveSpotPosition), TEXT("ERROR: [%i] %s:\n'CurrentLevelTypeSpots array has to have ActiveSpotPosition index since it's the same size as SpotRowIndices array!"), __LINE__, *FString(__FUNCTION__))
 	UNMMSpotComponent* CurrentSpot = CurrentLevelTypeSpots[ActiveSpotPosition];
-	check(CurrentSpot);
+	checkf(CurrentSpot, TEXT("ERROR: [%i] %s:\n'CurrentSpot' can't be null since CurrentLevelTypeSpots array does not contain nulls!"), __LINE__, *FString(__FUNCTION__))
 	CurrentSpot->StopMasterSequence();
 
 	// Find the new index based on the incrementer
@@ -95,8 +107,10 @@ UNMMSpotComponent* UNMMSubsystem::MoveMainMenuSpot(int32 Incrementer)
 	ActiveMainMenuSpotIdx = SpotRowIndices[NewSpotIndex];
 
 	// Play the new spot
+	checkf(CurrentLevelTypeSpots.IsValidIndex(NewSpotIndex), TEXT("ERROR: [%i] %s:\n'CurrentLevelTypeSpots array has to have NewSpotIndex since it's the same size as SpotRowIndices array!"), __LINE__, *FString(__FUNCTION__));
 	UNMMSpotComponent* NewSpot = CurrentLevelTypeSpots[NewSpotIndex];
-	NewSpot->PlayIdlePart();
+	checkf(NewSpot, TEXT("ERROR: [%i] %s:\n'NewSpot' can't be null since CurrentLevelTypeSpots array does not contain nulls!"), __LINE__, *FString(__FUNCTION__));
+	NewSpot->SetCinematicState(ENMMCinematicState::IdlePart);
 
 	return NewSpot;
 }

@@ -8,11 +8,14 @@ public class NewMainMenu : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Latest;
+		bEnableNonInlinedGenCppWarnings = true;
 
 		PublicDependencyModuleNames.AddRange(new[]
 			{
 				"Core", "Engine"
 				, "UMG" // UUserWidget creation
+				// My modules
+				, "MetaCheatManager" // UNMMCheatExtension
 			}
 		);
 

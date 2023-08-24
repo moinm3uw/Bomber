@@ -3,6 +3,7 @@
 #include "Widgets/NewMainMenuWidget.h"
 //---
 #include "Bomber.h"
+#include "NMMUtils.h"
 #include "Components/MySkeletalMeshComponent.h"
 #include "Components/NMMSpotComponent.h"
 #include "Controllers/MyPlayerController.h"
@@ -29,11 +30,11 @@ void UNewMainMenuWidget::NativeConstruct()
 	// Listen states to spawn widgets
 	if (AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState())
 	{
-		HandleGameState(MyGameState);
+		BindOnGameStateChanged(MyGameState);
 	}
 	else if (AMyPlayerController* MyPC = GetOwningPlayer<AMyPlayerController>())
 	{
-		MyPC->OnGameStateCreated.AddUniqueDynamic(this, &ThisClass::HandleGameState);
+		MyPC->OnGameStateCreated.AddUniqueDynamic(this, &ThisClass::BindOnGameStateChanged);
 	}
 
 	if (PlayButton)
@@ -81,7 +82,7 @@ void UNewMainMenuWidget::OnGameStateChanged(ECurrentGameState CurrentGameState)
 }
 
 // Is called to prepare the Main Menu widget for Menu game state
-void UNewMainMenuWidget::HandleGameState(AMyGameStateBase* MyGameState)
+void UNewMainMenuWidget::BindOnGameStateChanged(AMyGameStateBase* MyGameState)
 {
 	checkf(MyGameState, TEXT("ERROR: 'MyGameState' is null!"));
 
@@ -93,11 +94,6 @@ void UNewMainMenuWidget::HandleGameState(AMyGameStateBase* MyGameState)
 		// Handle current game state if initialized with delay
 		OnGameStateChanged(ECurrentGameState::Menu);
 	}
-	else
-	{
-		// Enter the game in Menu game state
-		MyGameState->ServerSetGameState(ECurrentGameState::Menu);
-	}
 }
 
 // Is called when player pressed the button to start the game
@@ -105,9 +101,14 @@ void UNewMainMenuWidget::OnPlayButtonPressed()
 {
 	USoundsSubsystem::Get().PlayUIClickSFX();
 
-	if (AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController())
+	if (AMyPlayerController* MyPC = GetOwningPlayer<AMyPlayerController>())
 	{
-		MyPC->ServerSetGameState(ECurrentGameState::Cinematic);
+		// Start cinematic
+		// If should skip, then start the game instead
+		const UNMMSpotComponent* MainMenuSpot = UNMMSubsystem::Get().GetActiveMainMenuSpotComponent();
+		const FNMMCinematicRow& CinematicRow = MainMenuSpot ? MainMenuSpot->GetCinematicRow() : FNMMCinematicRow::Empty;
+		const ECGS NewState = !UNMMUtils::ShouldSkipCinematic(CinematicRow) ? ECGS::Cinematic : ECGS::GameStarting;
+		MyPC->ServerSetGameState(NewState);
 	}
 }
 
@@ -190,6 +191,6 @@ void UNewMainMenuWidget::OnSettingsButtonPressed()
 // Is called when player pressed the button to quit the game
 void UNewMainMenuWidget::OnQuitGameButtonPressed()
 {
-	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
+	AMyPlayerController* MyPC = GetOwningPlayer<AMyPlayerController>();
 	UKismetSystemLibrary::QuitGame(this, MyPC, EQuitPreference::Background, false);
 }
