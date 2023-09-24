@@ -13,6 +13,7 @@ public class ProgressionSystemRuntime : ModuleRules
 			{
 				"Core"
 				, "Bomber" // Is included in header files
+				, "UMG"
 			}
 		);
 
