@@ -70,9 +70,9 @@ protected:
 	UFUNCTION(BlueprintPure, Category="C++")
 	FProgressionRowData GetProgressionRowData(ELevelType Map, FPlayerTag Character);
 	
-	/** Returns a current progression row name */
+	/** Returns a amount of points to unlock next level */
 	UFUNCTION(BlueprintPure, Category="C++")
-	int GetMaxAchievableLevelPoints(ELevelType Map, FPlayerTag Character);
+	int GetPointsToUnlockNextLevel(ELevelType Map, FPlayerTag Character);
 
 	/** Progression System data asset */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))
@@ -117,5 +117,9 @@ protected:
 	/** Is called when a player has been changed */
 	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
 	void OnPlayerTypeChanged(FPlayerTag PlayerTag);
+
+	/** Updates the progression menu widget when player changed */
+	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
+	void UpdateProgressionWidgetForPlayer();
 	
 };

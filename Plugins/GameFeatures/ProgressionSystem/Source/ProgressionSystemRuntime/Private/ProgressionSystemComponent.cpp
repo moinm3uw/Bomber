@@ -161,23 +161,28 @@ FProgressionRowData UProgressionSystemComponent::GetProgressionRowData(ELevelTyp
 }
 
 // to improve: make it to work per map.
-int UProgressionSystemComponent::GetMaxAchievableLevelPoints(ELevelType Map, FPlayerTag Character)
+int UProgressionSystemComponent::GetPointsToUnlockNextLevel(ELevelType Map, FPlayerTag Character)
 {
-	int MaxAchievableLevelPoints = 0;
+	FName SelectedCharacterRowName = GetProgressionRow(Map, Character);
+	int PointToUnlockNextLevel = 0;
+	
 	TArray<FName> RowNames = ProgressionDataTableInternal->GetRowNames();
-	for (auto RowName : RowNames)
+		 
+	for (int i = 0; i < RowNames.Num(); i++)
 	{
-		FProgressionRowData* Row = ProgressionDataTableInternal->FindRow<FProgressionRowData>(
-			RowName, "Finding row name");
-		if (Row)
+		int nextElementIndex = i; 
+		/* finding selected character row name */ 
+		if (SelectedCharacterRowName == RowNames[i])
 		{
-			if (Row->PointsToUnlock >= MaxAchievableLevelPoints)
+			if (++nextElementIndex < RowNames.Num())
 			{
-				MaxAchievableLevelPoints = Row->PointsToUnlock;
-			}
+				PointToUnlockNextLevel = ProgressionDataTableInternal->FindRow<FProgressionRowData>(RowNames[nextElementIndex], "Finding a needed row")->PointsToUnlock;
+			} else
+				PointToUnlockNextLevel = ProgressionDataTableInternal->FindRow<FProgressionRowData>(RowNames.Last(), "Finding a needed row")->PointsToUnlock;
+			break;
 		}
 	}
-	return MaxAchievableLevelPoints;
+	return PointToUnlockNextLevel;
 }
 
 void UProgressionSystemComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
@@ -189,26 +194,14 @@ void UProgressionSystemComponent::OnGameStateChanged(ECurrentGameState CurrentGa
 	ProgressionMenuWidgetInternal->SetVisibility(CurrentGameState == ECurrentGameState::Menu ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	if (CurrentGameState == ECurrentGameState::Menu)
 	{
-		ProgressionMenuWidgetInternal->ClearImagesFromHorizontalBox();
-		FString myString = FString::Printf(TEXT("%d"), GetCurrenTotalScore());
-		ProgressionMenuWidgetInternal->SetProgressionState(FText::FromString(myString));
-		int MaxAchievableLevelPoints = GetMaxAchievableLevelPoints(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal);
-		if (MaxAchievableLevelPoints > GetCurrenTotalScore())
-		{
-			int AmountOfLockedLevels = MaxAchievableLevelPoints - GetCurrenTotalScore();
-			int AmountOfUnlockedLevels = MaxAchievableLevelPoints - AmountOfLockedLevels;
-			ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(AmountOfUnlockedLevels, AmountOfLockedLevels);
-		} else if (MaxAchievableLevelPoints <= GetCurrenTotalScore())
-		{
-			ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(MaxAchievableLevelPoints, 0);
-		}
+		UpdateProgressionWidgetForPlayer();
 	}
 }
 
 void UProgressionSystemComponent::OnEndGameStateChanged(EEndGameState EndGameState)
 {
 	// Hide this widget in when game not End Game
-	ProgressionSaveWidgetInternal->SetVisibility(EndGameState != EEndGameState::None ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	//ProgressionSaveWidgetInternal->SetVisibility(EndGameState != EEndGameState::None ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
 	FString myString = FString::Printf(TEXT("%d"), GetCurrenTotalScore());
 	ProgressionMenuWidgetInternal->SetProgressionState(FText::FromString(myString));
@@ -219,6 +212,7 @@ void UProgressionSystemComponent::OnEndGameStateChanged(EEndGameState EndGameSta
 		FString totalScore = FString::Printf(TEXT("%d"),GetCurrenTotalScore());
 		ProgressionSaveWidgetInternal->ConfigureWidgetText(UUIDataAsset::Get().GetEndGameText(EndGameState), FText::FromString(progressionReward), FText::FromString(totalScore));
 	}
+	UpdateProgressionWidgetForPlayer();
 }
 
 void UProgressionSystemComponent::HandleGameState(AMyGameStateBase* MyGameState)
@@ -248,6 +242,40 @@ void UProgressionSystemComponent::HandleEndGameState(AMyPlayerState* MyPlayerSta
 
 void UProgressionSystemComponent::OnPlayerTypeChanged(FPlayerTag PlayerTag)
 {
-	FName PlayTagName = PlayerTag.GetTagName();
+	UE_LOG(LogTemp,Warning, TEXT("OnPlayerTypeChanged"));
 	CurrentPlayerTagInternal = PlayerTag;
+	UpdateProgressionWidgetForPlayer();
+}
+
+void UProgressionSystemComponent::UpdateProgressionWidgetForPlayer()
+{
+	ProgressionMenuWidgetInternal->ClearImagesFromHorizontalBox();
+	
+	FString myString = FString::Printf(TEXT("%d"), GetCurrenTotalScore()); //debug
+	ProgressionMenuWidgetInternal->SetProgressionState(FText::FromString(myString)); // debug
+	
+	int PointsToUnlockNextLevel = GetPointsToUnlockNextLevel(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal);
+	if (PointsToUnlockNextLevel >= GetCurrenTotalScore())
+	{
+		//AmountLockedLevels
+		int AmountLockedLevels = PointsToUnlockNextLevel - GetCurrenTotalScore();
+		int PointsRequiredForCurrentLevel = GetProgressionRowData(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal).PointsToUnlock;
+		int PointsDifferenceBetweenLevels = PointsToUnlockNextLevel - PointsRequiredForCurrentLevel;
+		
+		if (AmountLockedLevels > PointsDifferenceBetweenLevels)
+		{
+			AmountLockedLevels = PointsDifferenceBetweenLevels;
+		} 
+			int AmountOfUnlockedLevels = PointsToUnlockNextLevel - PointsRequiredForCurrentLevel - AmountLockedLevels;
+		if (AmountOfUnlockedLevels < 0 )
+		{
+			AmountOfUnlockedLevels = 0;
+		} 
+		UE_LOG(LogTemp, Warning, TEXT("AmountOfUnlockedLevels: %d"), AmountOfUnlockedLevels); // debug
+		UE_LOG(LogTemp, Warning, TEXT("AmountLockedLevels: %d"), AmountLockedLevels); // debug
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(AmountOfUnlockedLevels, AmountLockedLevels);
+	} else if (PointsToUnlockNextLevel < GetCurrenTotalScore())
+	{
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(PointsToUnlockNextLevel, 0);
+	}	
 }

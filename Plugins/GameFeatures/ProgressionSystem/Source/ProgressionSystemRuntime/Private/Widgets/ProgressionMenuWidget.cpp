@@ -29,10 +29,8 @@ void UProgressionMenuWidget::SetProgressionState(FText text)
 
 void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints, int AmountOfLockedPoints)
 {
-	UE_LOG(LogTemp, Warning, TEXT("--- AddImagesToHorizontalBox running ---"));
 	if (HorizontalBox)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("--- HorizontalBox true ---"));
 		// Loop to create and add images to the Horizontal Box for unlocked stars
 		for (int i = 0; i < AmountOfUnlockedPoints; i++)
 		{
@@ -40,7 +38,6 @@ void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints
 			ImageWidget->SetBrushFromTexture(ProgressionSystemDataAssetInternal->GetUnlockedProgressionIcon());
 			// Load and set the image texture here using ImagePath or other methods
 			HorizontalBox->AddChildToHorizontalBox(ImageWidget);
-			UE_LOG(LogTemp, Warning, TEXT("--- AddChildToHorizontalBox true ---"));
 
 			// Create the UHorizontalBoxSlot and assign it to the ImageWidget
 			UHorizontalBoxSlot* HorizontalBoxSlot = Cast<UHorizontalBoxSlot>(ImageWidget->Slot);
@@ -60,7 +57,6 @@ void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints
 			ImageWidget->SetBrushFromTexture(ProgressionSystemDataAssetInternal->GetLockedProgressionIcon());
 			// Load and set the image texture here using ImagePath or other methods
 			HorizontalBox->AddChildToHorizontalBox(ImageWidget);
-			UE_LOG(LogTemp, Warning, TEXT("--- AddChildToHorizontalBox true ---"));
 			// Create the UHorizontalBoxSlot and assign it to the ImageWidget
 			UHorizontalBoxSlot* HorizontalBoxSlot = Cast<UHorizontalBoxSlot>(ImageWidget->Slot);
 			if (HorizontalBoxSlot)
