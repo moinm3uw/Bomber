@@ -4,7 +4,6 @@
 
 #include "ProgressionSystemDataAsset.h"
 #include "Components/ActorComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "Structures/PlayerTag.h"
 //---
 #include "ProgressionSystemComponent.generated.h"
@@ -64,15 +63,15 @@ protected:
 
 	/** Returns a current progression row name */
 	UFUNCTION(BlueprintPure, Category="C++")
-	FName GetProgressionRow(ELevelType Map, FPlayerTag Character);
+	FName GetProgressionRowName(ELevelType Map, FPlayerTag Character);
 
 	/** Returns a current progression row name */
 	UFUNCTION(BlueprintPure, Category="C++")
 	FProgressionRowData GetProgressionRowData(ELevelType Map, FPlayerTag Character);
-	
-	/** Returns a amount of points to unlock next level */
-	UFUNCTION(BlueprintPure, Category="C++")
-	int GetPointsToUnlockNextLevel(ELevelType Map, FPlayerTag Character);
+
+	/** Returns the current level progression row data structure. */
+	UFUNCTION(BlueprintCallable, Category="C++")
+	FProgressionRowData GetCurrentLevelProgressionRowData();
 
 	/** Progression System data asset */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))

@@ -3,29 +3,14 @@
 
 #include "Widgets/ProgressionMenuWidget.h"
 //---
-#include "Bomber.h"
-#include "Controllers/MyPlayerController.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+
 //---
 #include <string>
-
-#include "ProgressionSystemComponent.h"
 #include "ProgressionSystemDataAsset.h"
 #include "Blueprint/WidgetTree.h"
-#include "Components/Button.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Image.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "GameFramework/MyPlayerState.h"
-
-void UProgressionMenuWidget::SetProgressionState(FText text)
-{
-	if (ProgressionState)
-	{
-		ProgressionState->SetText(text);
-	}
-}
 
 void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints, int AmountOfLockedPoints)
 {

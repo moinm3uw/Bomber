@@ -6,7 +6,6 @@
 #include "Engine/DataTable.h"
 #include "Bomber.h"
 #include "Structures/PlayerTag.h"
-#include "UObject/NoExportTypes.h"
 #include "ModuleStructures.generated.h"
 
 
@@ -29,6 +28,9 @@ struct FProgressionRowData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
 	FColor InactiveColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
+	int CurrentLevelProgression;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
 	int PointsToUnlock;

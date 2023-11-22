@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Bomber.h"
 #include "Blueprint/UserWidget.h"
 #include "ProgressionSaveWidget.generated.h"
 

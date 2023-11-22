@@ -3,15 +3,13 @@
 
 #include "Widgets/ProgressionSaveWidget.h"
 //---
-#include "Bomber.h"
+
 //---
 #include <string>
 
-#include "ProgressionSystemComponent.h"
 #include "ProgressionSystemDataAsset.h"
 #include "Components/Button.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "GameFramework/MyPlayerState.h"
+#include "Components/TextBlock.h"
 
 void UProgressionSaveWidget::ConfigureWidgetText(FText endGameState, FText pointsGained, FText totalScore)
 {
