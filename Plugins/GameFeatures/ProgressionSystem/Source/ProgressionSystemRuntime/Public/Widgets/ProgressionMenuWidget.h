@@ -20,11 +20,19 @@ class PROGRESSIONSYSTEMRUNTIME_API UProgressionMenuWidget : public UUserWidget
 	// Horizontal Box widget for storing stars
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, BindWidget))
 	TObjectPtr<class UHorizontalBox> HorizontalBox = nullptr;
+	
+	// Background overlay for tint effect
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, BindWidget))
+	TObjectPtr<class UImage> PSCBackgroundOverlay = nullptr;
+
+	// Background overlay lock icon
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, BindWidget))
+	TObjectPtr<class UImage> PSCBackgroundIconLock = nullptr;
 
 	// Function to add images to the Horizontal Box
 	UFUNCTION(BlueprintCallable)
 	void AddImagesToHorizontalBox(int AmountOfUnlockedPoints, int AmountOfLockedPoints);
-
+	
 	// Function to add images to the Horizontal Box
 	UFUNCTION(BlueprintCallable)
 	void ClearImagesFromHorizontalBox();

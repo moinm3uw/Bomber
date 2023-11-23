@@ -66,6 +66,7 @@ void UProgressionMenuWidget::ClearImagesFromHorizontalBox()
 void UProgressionMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
 	// Hide this widget by default
 	SetVisibility(ESlateVisibility::Collapsed);
 }

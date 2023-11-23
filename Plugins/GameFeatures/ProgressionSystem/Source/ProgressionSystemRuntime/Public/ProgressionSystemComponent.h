@@ -73,6 +73,14 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="C++")
 	FProgressionRowData GetCurrentLevelProgressionRowData();
 
+	/** Returns the next level from current progression row data structure. Returns last item if there is no next level. */
+	UFUNCTION(BlueprintCallable, Category="C++")
+	void UnlockNextLevel();
+
+	/** Returns the first player tag from the data table list **/
+	UFUNCTION(Blueprintable, Category="C++")
+	FPlayerTag GetFirstPlayerTag(); 
+
 	/** Progression System data asset */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))
 	TObjectPtr<UProgressionSystemDataAsset> ProgressionSystemDataAssetInternal;
@@ -120,5 +128,8 @@ protected:
 	/** Updates the progression menu widget when player changed */
 	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
 	void UpdateProgressionWidgetForPlayer();
-	
+
+	/** Show locked level ui overlay */
+	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
+	void DisplayLevelUIOverlay(bool IsLevelLocked);
 };

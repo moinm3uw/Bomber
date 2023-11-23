@@ -12,6 +12,7 @@
 #include "Widgets/ProgressionMenuWidget.h"
 #include "Widgets/ProgressionSaveWidget.h"
 #include "ModuleStructures.h"
+#include "Components/Image.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
 #include "LevelActors/PlayerCharacter.h"
@@ -125,6 +126,40 @@ FProgressionRowData UProgressionSystemComponent::GetCurrentLevelProgressionRowDa
 	return ProgressionRowData;
 }
 
+void UProgressionSystemComponent::UnlockNextLevel()
+{
+	TArray<FName> RowNames = ProgressionDataTableInternal->GetRowNames();
+	int32 CurrentRowIndex = RowNames.Find(SavedProgressionInternal.ProgressionRowName);
+	
+	if (CurrentRowIndex != INDEX_NONE && CurrentRowIndex + 1 < RowNames.Num())
+	{
+		FName NextRowName = RowNames[CurrentRowIndex + 1];
+		FProgressionRowData* NextRow = ProgressionDataTableInternal->FindRow<FProgressionRowData>(NextRowName, TEXT("Getting Next level progression row data at Progressino System Component"));
+		if (NextRow)
+		{
+			// not gona work.
+			NextRow->IsLevelLocked = false;
+		}
+	}
+}
+
+FPlayerTag UProgressionSystemComponent::GetFirstPlayerTag()
+{
+	TArray<FName> RowNames = ProgressionDataTableInternal->GetRowNames();
+	FPlayerTag FirstPlayerTagInTable = FPlayerTag::None;
+
+	if (RowNames.Num() > 0 )
+	{
+		FName FirstRowName = RowNames[0];
+		FProgressionRowData* FirstRowData = ProgressionDataTableInternal->FindRow<FProgressionRowData>(FirstRowName, "Getting first row from data table at Progression System Component");
+		if (FirstRowData)
+		{
+			FirstPlayerTagInTable = FirstRowData->Character;
+		}
+	}
+	return  FirstPlayerTagInTable;
+}
+
 void UProgressionSystemComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
 {
 	// Show Progression Menu widget in Main Menu
@@ -141,7 +176,6 @@ void UProgressionSystemComponent::OnEndGameStateChanged(EEndGameState EndGameSta
 	{
 		SavePoints(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal, EndGameState);
 	}
-	UpdateProgressionWidgetForPlayer();
 }
 
 void UProgressionSystemComponent::HandleGameState(AMyGameStateBase* MyGameState)
@@ -184,9 +218,24 @@ void UProgressionSystemComponent::UpdateProgressionWidgetForPlayer()
 	
 	if (CurrentProgressionRowData.CurrentLevelProgression >= CurrentProgressionRowData.PointsToUnlock)
 	{
-		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.PointsToUnlock, 0);	
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.PointsToUnlock, 0);
 	} else
 	{
-		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.CurrentLevelProgression, CurrentProgressionRowData.PointsToUnlock - CurrentProgressionRowData.CurrentLevelProgression);	
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.CurrentLevelProgression, CurrentProgressionRowData.PointsToUnlock - CurrentProgressionRowData.CurrentLevelProgression);
+	}
+	
+	DisplayLevelUIOverlay(CurrentProgressionRowData.IsLevelLocked);
+}
+
+void UProgressionSystemComponent::DisplayLevelUIOverlay(bool IsLevelLocked)
+{
+	if(IsLevelLocked)
+	{
+		ProgressionMenuWidgetInternal->PSCBackgroundOverlay->SetVisibility(ESlateVisibility::Visible);
+		ProgressionMenuWidgetInternal->PSCBackgroundIconLock->SetVisibility(ESlateVisibility::Visible);
+	} else
+	{
+		ProgressionMenuWidgetInternal->PSCBackgroundOverlay->SetVisibility(ESlateVisibility::Collapsed);
+		ProgressionMenuWidgetInternal->PSCBackgroundIconLock->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }

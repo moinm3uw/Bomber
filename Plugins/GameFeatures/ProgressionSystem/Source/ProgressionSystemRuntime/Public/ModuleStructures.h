@@ -36,6 +36,9 @@ struct FProgressionRowData : public FTableRowBase
 	int PointsToUnlock;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
+	bool IsLevelLocked;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
 	int WinReward;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
