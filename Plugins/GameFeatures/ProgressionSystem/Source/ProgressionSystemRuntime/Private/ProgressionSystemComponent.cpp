@@ -60,7 +60,7 @@ void UProgressionSystemComponent::BeginPlay()
 // Save the progression depends on EEndGameState
 void UProgressionSystemComponent::SavePoints(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState)
 {
-	SavedProgressionInternal.Points += GetProgressionReward(Map, Character, EndGameState);
+	SavedProgressionRowDataInternal.CurrentLevelProgression += GetProgressionReward(Map, Character, EndGameState);
 	UpdateProgressionRowName();
 }
 
@@ -69,10 +69,15 @@ void UProgressionSystemComponent::UpdateProgressionRowName()
 {
 	FName CurrentProgressionRowName = GetProgressionRowName(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal);
 	FProgressionRowData* ProgressionRowData = ProgressionDataTableInternal->FindRow<FProgressionRowData>(CurrentProgressionRowName, "Finding a needed row");
-	ProgressionRowData->CurrentLevelProgression = SavedProgressionInternal.Points;
+	ProgressionRowData->CurrentLevelProgression = SavedProgressionRowDataInternal.CurrentLevelProgression;
+
+	if (ProgressionRowData->CurrentLevelProgression >= ProgressionRowData->PointsToUnlock)
+	{
+		NextLevelProgressionRowData();
+	}
 }
 
-int UProgressionSystemComponent::GetProgressionReward(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState)
+int32 UProgressionSystemComponent::GetProgressionReward(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState)
 {
 	FName CurrentProgressionRowName = GetProgressionRowName(Map, Character);
 	FProgressionRowData* ProgressionRowData = ProgressionDataTableInternal->FindRow<FProgressionRowData>(CurrentProgressionRowName, "Finding a needed row");
@@ -129,17 +134,35 @@ FProgressionRowData UProgressionSystemComponent::GetCurrentLevelProgressionRowDa
 void UProgressionSystemComponent::UnlockNextLevel()
 {
 	TArray<FName> RowNames = ProgressionDataTableInternal->GetRowNames();
-	int32 CurrentRowIndex = RowNames.Find(SavedProgressionInternal.ProgressionRowName);
 	
+	int32 CurrentRowIndex = RowNames.Find(SavedProgressionNameInternal);
+	
+	if (CurrentRowIndex != INDEX_NONE && CurrentRowIndex > 0)
+	{
+		FName PreviousRowName = RowNames[CurrentRowIndex -1];
+		FProgressionRowData* PreviousRow = ProgressionDataTableInternal->FindRow<FProgressionRowData>(PreviousRowName, TEXT("Getting previouse level progression row data at Progressino System Component"));
+		if (PreviousRow)
+		{
+			if (PreviousRow->CurrentLevelProgression >= PreviousRow->PointsToUnlock)
+			{
+				DisplayLevelUIOverlay(false);
+			}  else
+			{
+				DisplayLevelUIOverlay(true);
+			}
+		}
+	}
+}
+
+void UProgressionSystemComponent::NextLevelProgressionRowData()
+{
+	TArray<FName> RowNames = ProgressionDataTableInternal->GetRowNames();
+	int32 CurrentRowIndex = RowNames.Find(GetProgressionRowName(UMyBlueprintFunctionLibrary::GetLevelType(), CurrentPlayerTagInternal));
 	if (CurrentRowIndex != INDEX_NONE && CurrentRowIndex + 1 < RowNames.Num())
 	{
 		FName NextRowName = RowNames[CurrentRowIndex + 1];
-		FProgressionRowData* NextRow = ProgressionDataTableInternal->FindRow<FProgressionRowData>(NextRowName, TEXT("Getting Next level progression row data at Progressino System Component"));
-		if (NextRow)
-		{
-			// not gona work.
-			NextRow->IsLevelLocked = false;
-		}
+		FProgressionRowData* NextRow = ProgressionDataTableInternal->FindRow<FProgressionRowData>(NextRowName, TEXT("NextLevelProgressionRowData Context"));
+			NextRow->IsLevelLocked = false;	
 	}
 }
 
@@ -213,18 +236,16 @@ void UProgressionSystemComponent::UpdateProgressionWidgetForPlayer()
 {
 	ProgressionMenuWidgetInternal->ClearImagesFromHorizontalBox();
 	
-	FProgressionRowData CurrentProgressionRowData = GetCurrentLevelProgressionRowData();
-	SavedProgressionInternal.Points = CurrentProgressionRowData.CurrentLevelProgression;
-	
-	if (CurrentProgressionRowData.CurrentLevelProgression >= CurrentProgressionRowData.PointsToUnlock)
+	SavedProgressionRowDataInternal = GetCurrentLevelProgressionRowData();
+	if (SavedProgressionRowDataInternal.CurrentLevelProgression >= SavedProgressionRowDataInternal.PointsToUnlock)
 	{
-		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.PointsToUnlock, 0);
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(SavedProgressionRowDataInternal.PointsToUnlock, 0);
 	} else
 	{
-		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(CurrentProgressionRowData.CurrentLevelProgression, CurrentProgressionRowData.PointsToUnlock - CurrentProgressionRowData.CurrentLevelProgression);
+		ProgressionMenuWidgetInternal->AddImagesToHorizontalBox(SavedProgressionRowDataInternal.CurrentLevelProgression, SavedProgressionRowDataInternal.PointsToUnlock - SavedProgressionRowDataInternal.CurrentLevelProgression);
 	}
 	
-	DisplayLevelUIOverlay(CurrentProgressionRowData.IsLevelLocked);
+	DisplayLevelUIOverlay(SavedProgressionRowDataInternal.IsLevelLocked);
 }
 
 void UProgressionSystemComponent::DisplayLevelUIOverlay(bool IsLevelLocked)

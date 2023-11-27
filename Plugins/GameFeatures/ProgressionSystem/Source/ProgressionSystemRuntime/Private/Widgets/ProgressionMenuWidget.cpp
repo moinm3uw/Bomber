@@ -12,12 +12,12 @@
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Image.h"
 
-void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints, int AmountOfLockedPoints)
+void UProgressionMenuWidget::AddImagesToHorizontalBox(int32 AmountOfUnlockedPoints, int32 AmountOfLockedPoints)
 {
 	if (HorizontalBox)
 	{
 		// Loop to create and add images to the Horizontal Box for unlocked stars
-		for (int i = 0; i < AmountOfUnlockedPoints; i++)
+		for (int32 i = 0; i < AmountOfUnlockedPoints; i++)
 		{
 			UImage* ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
 			ImageWidget->SetBrushFromTexture(ProgressionSystemDataAssetInternal->GetUnlockedProgressionIcon());
@@ -36,7 +36,7 @@ void UProgressionMenuWidget::AddImagesToHorizontalBox(int AmountOfUnlockedPoints
 		}
 
 		// Loop to create and add images to the Horizontal Box for unlocked stars
-		for (int i = 0; i < AmountOfLockedPoints; i++)
+		for (int32 i = 0; i < AmountOfLockedPoints; i++)
 		{
 			UImage* ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
 			ImageWidget->SetBrushFromTexture(ProgressionSystemDataAssetInternal->GetLockedProgressionIcon());

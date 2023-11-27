@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "ModuleStructures.h"
 #include "ProgressionSystemDataAsset.h"
 #include "Components/ActorComponent.h"
 #include "Structures/PlayerTag.h"
@@ -12,17 +13,6 @@
  * Implements the core logic on project about Progression System.
  */
 
-USTRUCT(BlueprintType)
-struct FSavedProgression
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Current Progression")
-	FName ProgressionRowName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Current Progression")
-	int Points;
-};
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PROGRESSIONSYSTEMRUNTIME_API UProgressionSystemComponent final : public UActorComponent
 {
@@ -35,14 +25,18 @@ public:
 	/** Returns the Progression System data asset. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static const UProgressionSystemDataAsset* GetProgressionSystemDataAsset() {return &UProgressionSystemDataAsset::Get(); }
-	
+
 	/** Returns current saved progression. */
 	UFUNCTION(BlueprintCallable, Category="C++")
-	FORCEINLINE FSavedProgression GetSavedProgression() const { return SavedProgressionInternal; }
+	FORCEINLINE FProgressionRowData GetSavedProgressionRowData() const { return SavedProgressionRowDataInternal; }
 
+	/** Returns current saved progression anme . */
+	UFUNCTION(BlueprintCallable, Category="C++")
+	FORCEINLINE FName GetSavedProgressionName() const { return  SavedProgressionNameInternal; }
+	
 	/** Returns the endgame reward. */
 	UFUNCTION(BlueprintCallable, Category="C++")
-	FORCEINLINE int GetCurrenTotalScore() const { return SavedProgressionInternal.Points; }
+	FORCEINLINE int32 GetCurrenTotalScore() const { return SavedProgressionRowDataInternal.CurrentLevelProgression; }
 
 	/** Save the progression depends on EEndGameState. */
 	UFUNCTION(BlueprintCallable, Category="C++")
@@ -54,7 +48,7 @@ public:
 
 	/** Returns the endgame reward. */
 	UFUNCTION(BlueprintCallable, Category="C++")
-	int GetProgressionReward(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState);
+	int32 GetProgressionReward(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState);
 	
 protected:
 	
@@ -77,6 +71,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="C++")
 	void UnlockNextLevel();
 
+	UFUNCTION(BlueprintCallable, Category="C++")
+	void NextLevelProgressionRowData();
+
 	/** Returns the first player tag from the data table list **/
 	UFUNCTION(Blueprintable, Category="C++")
 	FPlayerTag GetFirstPlayerTag(); 
@@ -94,8 +91,11 @@ protected:
 	TObjectPtr<class UProgressionSaveWidget> ProgressionSaveWidgetInternal = nullptr;
 
 	/** The current Saved Progression of a player. */
-	UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
-	FSavedProgression SavedProgressionInternal;
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
+	FProgressionRowData SavedProgressionRowDataInternal;
+
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
+	FName SavedProgressionNameInternal;
 
 	/** The current selected player */
 	UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "Currnet Player Tag", ShowOnlyInnerProperties))

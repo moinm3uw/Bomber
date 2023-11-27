@@ -51,9 +51,9 @@ protected:
 
 	/** Amount of Stars unlocked on a level */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Amount of Unlocked points debug"))
-	int AmountOfStarsUnlockedDebug = 0;
+	int32 AmountOfStarsUnlockedDebug = 0;
 
 	/** Amount of Stars locked on a level */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Amount of locked points debug"))
-	int AmountOfStarsLockedDebug = 0;
+	int32 AmountOfStarsLockedDebug = 0;
 };

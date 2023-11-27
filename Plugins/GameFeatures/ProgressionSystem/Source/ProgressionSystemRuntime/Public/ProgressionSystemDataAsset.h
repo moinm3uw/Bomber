@@ -44,8 +44,7 @@ public:
 
 protected:
 	/** The Progression Data Table that is responsible for progression configuration. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,
-		meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
 	TObjectPtr<UDataTable> ProgressionDataTableInternal = nullptr;
 
 	/**  Progression acquiring (adding, saving) widget */
@@ -67,8 +66,4 @@ protected:
 	/** Image for unlocked progression */
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UTexture2D> UnlockedProgressionIconInternal = nullptr;
-
-	
-
-	
 };

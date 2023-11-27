@@ -30,22 +30,22 @@ struct FProgressionRowData : public FTableRowBase
 	FColor InactiveColor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
-	int CurrentLevelProgression;
+	int32 CurrentLevelProgression;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
-	int PointsToUnlock;
+	int32 PointsToUnlock;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
 	bool IsLevelLocked;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
-	int WinReward;
+	int32 WinReward;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
-	int DrawReward;
+	int32 DrawReward;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
-	int LossReward;
+	int32 LossReward;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="C++")
 	float SecondsToSurvive;
