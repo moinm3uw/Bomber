@@ -55,6 +55,8 @@ void UProgressionSystemComponent::BeginPlay()
 	{
 		MyPlayerCharacter->OnPlayerTypeChanged.AddUniqueDynamic(this, &ThisClass::OnPlayerTypeChanged);
 	}
+
+	CurrentPlayCharacterInternal = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 }
 
 // Save the progression depends on EEndGameState
@@ -229,6 +231,7 @@ void UProgressionSystemComponent::HandleEndGameState(AMyPlayerState* MyPlayerSta
 void UProgressionSystemComponent::OnPlayerTypeChanged(FPlayerTag PlayerTag)
 {
 	CurrentPlayerTagInternal = PlayerTag;
+	CurrentPlayCharacterInternal = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	UpdateProgressionWidgetForPlayer();
 }
 
@@ -259,4 +262,9 @@ void UProgressionSystemComponent::DisplayLevelUIOverlay(bool IsLevelLocked)
 		ProgressionMenuWidgetInternal->PSCBackgroundOverlay->SetVisibility(ESlateVisibility::Collapsed);
 		ProgressionMenuWidgetInternal->PSCBackgroundIconLock->SetVisibility(ESlateVisibility::Collapsed);
 	}
+	if (CurrentPlayCharacterInternal)
+	{
+		CurrentPlayCharacterInternal->SetActorHiddenInGame(IsLevelLocked);
+	}
+	
 }

@@ -76,7 +76,11 @@ protected:
 
 	/** Returns the first player tag from the data table list **/
 	UFUNCTION(Blueprintable, Category="C++")
-	FPlayerTag GetFirstPlayerTag(); 
+	FPlayerTag GetFirstPlayerTag();
+
+	/** Current Player Character */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Current PlayerCharacter"))
+	TObjectPtr<ACharacter> CurrentPlayCharacterInternal = nullptr; 
 
 	/** Progression System data asset */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))
