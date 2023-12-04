@@ -57,6 +57,7 @@ void UProgressionSystemComponent::BeginPlay()
 	}
 
 	CurrentPlayCharacterInternal = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	ProgressionSystemDataAssetInternal->SetProgressionSystemComponent(this);
 }
 
 // Save the progression depends on EEndGameState
@@ -262,9 +263,4 @@ void UProgressionSystemComponent::DisplayLevelUIOverlay(bool IsLevelLocked)
 		ProgressionMenuWidgetInternal->PSCBackgroundOverlay->SetVisibility(ESlateVisibility::Collapsed);
 		ProgressionMenuWidgetInternal->PSCBackgroundIconLock->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	if (CurrentPlayCharacterInternal)
-	{
-		CurrentPlayCharacterInternal->SetActorHiddenInGame(IsLevelLocked);
-	}
-	
 }

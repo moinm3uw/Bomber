@@ -33,6 +33,10 @@ public:
 	/** Returns current saved progression anme . */
 	UFUNCTION(BlueprintCallable, Category="C++")
 	FORCEINLINE FName GetSavedProgressionName() const { return  SavedProgressionNameInternal; }
+
+	/** The current Saved Progression of a player. */
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
+	FProgressionRowData SavedProgressionRowDataInternal;
 	
 	/** Returns the endgame reward. */
 	UFUNCTION(BlueprintCallable, Category="C++")
@@ -93,10 +97,6 @@ protected:
 	/** Created Save points widget. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Main Menu Widget"))
 	TObjectPtr<class UProgressionSaveWidget> ProgressionSaveWidgetInternal = nullptr;
-
-	/** The current Saved Progression of a player. */
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
-	FProgressionRowData SavedProgressionRowDataInternal;
 
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
 	FName SavedProgressionNameInternal;
