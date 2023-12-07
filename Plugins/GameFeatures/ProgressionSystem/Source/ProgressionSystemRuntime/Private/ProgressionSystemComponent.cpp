@@ -12,6 +12,7 @@
 #include "Widgets/ProgressionMenuWidget.h"
 #include "Widgets/ProgressionSaveWidget.h"
 #include "ModuleStructures.h"
+#include "PSCWorldSubsystem.h"
 #include "Components/Image.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
@@ -57,7 +58,9 @@ void UProgressionSystemComponent::BeginPlay()
 	}
 
 	CurrentPlayCharacterInternal = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
-	ProgressionSystemDataAssetInternal->SetProgressionSystemComponent(this);
+	
+	// Save reference of this component to the world subsystem
+	UPSCWorldSubsystem::Get().SetProgressionSystemComponent(this);
 }
 
 // Save the progression depends on EEndGameState

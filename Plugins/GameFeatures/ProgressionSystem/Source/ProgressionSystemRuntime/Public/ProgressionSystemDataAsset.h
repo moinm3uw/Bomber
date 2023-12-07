@@ -36,10 +36,6 @@ public:
 	/** Returns a progression System component reference */
 	FORCEINLINE TObjectPtr<class UProgressionSystemComponent> GetProgressionSystemComponent() const { return ProgressionSystemComponentInternal; }
 
-	/** Sets a progression System component reference */
-	void SetProgressionSystemComponent(UProgressionSystemComponent* ProgressionSystemComponent);
-	
-
 	/** Returns a locked progression icon reference */
 	FORCEINLINE TObjectPtr<class UTexture2D> GetLockedProgressionIcon() const { return LockedProgressionIconInternal; }
 

@@ -4,6 +4,7 @@
 #include "PSSpotComponent.h"
 
 #include "ProgressionSystemComponent.h"
+#include "PSCWorldSubsystem.h"
 #include "Components/MySkeletalMeshComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -113,14 +114,15 @@ void UPSSpotComponent::ChangeSpotVisibilityStatus()
 {
 	 if (ProgressionSystemDataAssetInternal != nullptr)
 	 {
-	 	MyProgressionSystemComponentInternal = ProgressionSystemDataAssetInternal->GetProgressionSystemComponent();	 
+	 	MyProgressionSystemComponentInternal = UPSCWorldSubsystem::Get().GetProgressionSystemComponent();	 
 	 }
 	// Locks and unlocks the spot depends on the current level progression status
 	if (MyProgressionSystemComponentInternal != nullptr)
 	{
 		if (PlayerSpotOnLevelInternal)
 		{
-			PlayerSpotOnLevelInternal->SetActive(!MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked);	
+			PlayerSpotOnLevelInternal->SetActive(!MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked);
+			UE_LOG(LogTemp, Warning, TEXT("MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked %s"), MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked ? TEXT("true") : TEXT("false"));
 		}
 	}
 }
