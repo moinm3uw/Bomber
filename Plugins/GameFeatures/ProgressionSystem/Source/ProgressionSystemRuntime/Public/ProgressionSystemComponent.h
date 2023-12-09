@@ -30,62 +30,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category="C++")
 	FORCEINLINE FProgressionRowData GetSavedProgressionRowData() const { return SavedProgressionRowDataInternal; }
 
-	/** Returns current saved progression anme . */
-	UFUNCTION(BlueprintCallable, Category="C++")
-	FORCEINLINE FName GetSavedProgressionName() const { return  SavedProgressionNameInternal; }
-
-	/** The current Saved Progression of a player. */
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
-	FProgressionRowData SavedProgressionRowDataInternal;
-	
-	/** Returns the endgame reward. */
-	UFUNCTION(BlueprintCallable, Category="C++")
-	FORCEINLINE int32 GetCurrenTotalScore() const { return SavedProgressionRowDataInternal.CurrentLevelProgression; }
-
 	/** Save the progression depends on EEndGameState. */
 	UFUNCTION(BlueprintCallable, Category="C++")
 	void SavePoints(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState);
 
-	/** Checks and updates the progression row name if points to unlock for the next progression reached. */
-	UFUNCTION(BlueprintCallable, Category="C++")
-	void UpdateProgressionRowName();
-
 	/** Returns the endgame reward. */
 	UFUNCTION(BlueprintCallable, Category="C++")
 	int32 GetProgressionReward(ELevelType Map, FPlayerTag Character, EEndGameState EndGameState);
-	
+
+	/** Saves the current progression. */
+	UFUNCTION(BlueprintCallable, Category="C++")
+	void SaveCurrentGameProgression();
+
+	UFUNCTION()
+	void SaveDataAsync();
+
+	/*********************************************************************************************
+	* Protected properties
+	********************************************************************************************* */
 protected:
-	
-	/** Called when the game starts. */
-	virtual void BeginPlay() override;
-
-	/** Returns a current progression row name */
-	UFUNCTION(BlueprintPure, Category="C++")
-	FName GetProgressionRowName(ELevelType Map, FPlayerTag Character);
-
-	/** Returns a current progression row name */
-	UFUNCTION(BlueprintPure, Category="C++")
-	FProgressionRowData GetProgressionRowData(ELevelType Map, FPlayerTag Character);
-
-	/** Returns the current level progression row data structure. */
-	UFUNCTION(BlueprintCallable, Category="C++")
-	FProgressionRowData GetCurrentLevelProgressionRowData();
-
-	/** Returns the next level from current progression row data structure. Returns last item if there is no next level. */
-	UFUNCTION(BlueprintCallable, Category="C++")
-	void UnlockNextLevel();
-
-	UFUNCTION(BlueprintCallable, Category="C++")
-	void NextLevelProgressionRowData();
-
-	/** Returns the first player tag from the data table list **/
-	UFUNCTION(Blueprintable, Category="C++")
-	FPlayerTag GetFirstPlayerTag();
-
-	/** Current Player Character */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Current PlayerCharacter"))
-	TObjectPtr<ACharacter> CurrentPlayCharacterInternal = nullptr; 
-
 	/** Progression System data asset */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))
 	TObjectPtr<UProgressionSystemDataAsset> ProgressionSystemDataAssetInternal;
@@ -98,8 +61,13 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Main Menu Widget"))
 	TObjectPtr<class UProgressionSaveWidget> ProgressionSaveWidgetInternal = nullptr;
 
+	/** Store the save game instance */
+	UPROPERTY()
+	TObjectPtr<class UPSCSaveGame> SaveGameInstanceInternal = nullptr;
+
+	/** The current Saved Progression of a player. */
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "Saved Progression", ShowOnlyInnerProperties))
-	FName SavedProgressionNameInternal;
+	FProgressionRowData SavedProgressionRowDataInternal;
 
 	/** The current selected player */
 	UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "Currnet Player Tag", ShowOnlyInnerProperties))
@@ -108,6 +76,21 @@ protected:
 	/** The Progression Data Table that is responsible for progression configuration. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
 	TObjectPtr<UDataTable> ProgressionDataTableInternal = nullptr;
+
+	/*********************************************************************************************
+	* Protected functions
+	********************************************************************************************* */
+protected:
+	/** Called when the game starts. */
+	virtual void BeginPlay() override;
+
+	/** Returns a current progression row name */
+	UFUNCTION(BlueprintPure, Category="C++")
+	FName GetProgressionRowName(ELevelType Map, FPlayerTag Character);
+
+	/** */
+	UFUNCTION(BlueprintCallable, Category="C++")
+	void NextLevelProgressionRowData();
 	
 	/** Called when the current game state was changed. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
@@ -136,4 +119,8 @@ protected:
 	/** Show locked level ui overlay */
 	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
 	void DisplayLevelUIOverlay(bool IsLevelLocked);
+
+	/** Load game from save */
+	UFUNCTION(BlueprintCallable, Category= "C++", meta = (BlueprintProtected))
+	void LoadGameFromSave();
 };

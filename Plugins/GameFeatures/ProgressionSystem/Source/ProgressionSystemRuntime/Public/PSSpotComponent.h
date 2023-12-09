@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ModuleStructures.h"
 #include "ProgressionSystemDataAsset.h"
 #include "Components/ActorComponent.h"
 #include "Components/MySkeletalMeshComponent.h"
@@ -20,10 +21,6 @@ class PROGRESSIONSYSTEMRUNTIME_API UPSSpotComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UPSSpotComponent();
-
-	/** Returns the Progression System data asset. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static const UProgressionSystemDataAsset* GetProgressionSystemDataAsset() {return &UProgressionSystemDataAsset::Get(); }
 
 	/** Returns the Skeletal Mesh of the Bomber character. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -58,10 +55,6 @@ protected:
 		/** Locks the player spot when progression for level achieved */
 	UFUNCTION(BlueprintCallable,Category= "C++", meta=(BlueprintProtected))
 	void ChangeSpotVisibilityStatus();
-
-	/** Progression System data asset */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression System Data Asset"))
-	TObjectPtr<UProgressionSystemDataAsset> ProgressionSystemDataAssetInternal;
 	
 	/** A Progression System Component */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
@@ -71,7 +64,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
 	TObjectPtr<UMySkeletalMeshComponent> PlayerSpotOnLevelInternal = nullptr;
 
-public:	
+	/** Current Progression  */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Progression Data Table", ShowOnlyInnerProperties))
+	FProgressionRowData CurrentProgressionRowDataInternal; 
 	
 		
 };

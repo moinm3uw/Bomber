@@ -19,7 +19,7 @@ public class ProgressionSystemRuntime : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new[]
 			{
-				"CoreUObject", "Engine", "Slate", "SlateCore" // Core
+				"CoreUObject", "Engine", "Slate", "SlateCore", "MyUtils" // Core
 			}
 		);
 	}

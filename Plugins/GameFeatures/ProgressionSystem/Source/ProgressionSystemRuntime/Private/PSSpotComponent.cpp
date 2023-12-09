@@ -25,9 +25,7 @@ UPSSpotComponent::UPSSpotComponent()
 void UPSSpotComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	UE_LOG(LogTemp, Warning, TEXT("PSSpotComponent is running."));
-	
+
 	PlayerSpotOnLevelInternal = GetMeshChecked();
 	
 	// Listen states to spawn widgets
@@ -112,17 +110,15 @@ void UPSSpotComponent::OnPlayerTypeChanged(FPlayerTag PlayerTag)
 
 void UPSSpotComponent::ChangeSpotVisibilityStatus()
 {
-	 if (ProgressionSystemDataAssetInternal != nullptr)
-	 {
-	 	MyProgressionSystemComponentInternal = UPSCWorldSubsystem::Get().GetProgressionSystemComponent();	 
-	 }
+	MyProgressionSystemComponentInternal = UPSCWorldSubsystem::Get().GetProgressionSystemComponent();	 
+	
 	// Locks and unlocks the spot depends on the current level progression status
 	if (MyProgressionSystemComponentInternal != nullptr)
 	{
 		if (PlayerSpotOnLevelInternal)
 		{
-			PlayerSpotOnLevelInternal->SetActive(!MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked);
-			UE_LOG(LogTemp, Warning, TEXT("MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked %s"), MyProgressionSystemComponentInternal->SavedProgressionRowDataInternal.IsLevelLocked ? TEXT("true") : TEXT("false"));
+			CurrentProgressionRowDataInternal = MyProgressionSystemComponentInternal->GetSavedProgressionRowData();
+			PlayerSpotOnLevelInternal->SetActive(!CurrentProgressionRowDataInternal.IsLevelLocked);
 		}
 	}
 }
