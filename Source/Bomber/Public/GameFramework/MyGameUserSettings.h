@@ -154,6 +154,49 @@ protected:
 	int32 OverallQualityInternal;
 
 	/*********************************************************************************************
+	 * Language
+	 ********************************************************************************************* */
+public:
+	/** Returns the index of chosen language */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetLanguageIndex() const { return CurrentLanguageIndexInternal; }
+
+	/** Get all supported languages in text format. */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	void GetTextLanguages(TArray<FText>& OutTextLanguages) const { OutTextLanguages = DisplayLanguagesInternal; }
+
+	/** Set and apply a new language by index. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetLanguageByIndex(int32 Index);
+
+	/** Is called to apply the currently chosen language. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void ApplyCurrentLanguage();
+
+	/** Call to update supported languages in arrays. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void UpdateSupportedLanguages();
+
+protected:
+	/** Contains all available languages in their native names to display on UI.
+	 * Order is in sync with CulturesInternal. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Text Languages"))
+	TArray<FText> DisplayLanguagesInternal;
+
+	/** Contains all available cultures available to apply: en, ru, etc.
+	 * Order is in sync with TextLanguagesInternal. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Cultures"))
+	TArray<FName> CulturesInternal;
+
+	/** The index of chosen language. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Current Language Index"))
+	int32 CurrentLanguageIndexInternal = INDEX_NONE;
+
+	/** Is currently selected culture (e.g: 'en'), is config property. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, meta = (BlueprintProtected, DisplayName = "Applied Culture"))
+	FName AppliedCultureInternal;
+
+	/*********************************************************************************************
 	 * Overrides
 	 ********************************************************************************************* */
 public:

@@ -114,7 +114,7 @@
 					"FunctionName": "IsAutoSkipCinematicsEnabled"
 				},
 				"Caption": "NSLOCTEXT(\"[AA1F16E2D6ABE7075C32DD123060C4A5]\", \"E76D8412443F242779726C9825623BB0\", \"Auto Skip Cinematics\")",
-				"Tooltip": "NSLOCTEXT(\"[AA1F16E2D6ABE7075C32DD123060C4A5]\", \"1835102C4C50DBD336D89F9D389D006F\", \"Skips previously seen cinematics automatically.\\r\\nWith other players, cinematics are always skipped.\")",
+				"Tooltip": "NSLOCTEXT(\"[AA1F16E2D6ABE7075C32DD123060C4A5]\", \"1835102C4C50DBD336D89F9D389D006F\", \"Skips previously seen cinematics automatically. With other players, cinematics are always skipped.\")",
 				"Padding":
 				{
 					"Left": 0,

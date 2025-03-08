@@ -106,6 +106,8 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 - Migrated networking to the **Push Model** and **Iris** replication, [resulting](https://trello.com/c/A3kK1Uqj) in significant improvement to network efficiency.
 - Added new skins for each character by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
 > ![NewSkins](https://github.com/user-attachments/assets/11decad0-fa4c-45ff-ba33-9a6e2d805773)
+- Added the **Language setting** and fully localized the game in 30 languages, including Arabic, Chinese, Korean, and Thai:
+> ![Localization](https://github.com/user-attachments/assets/68d3c9db-c850-4346-8ffb-231c5c6ec0e8)
  ---
 #### `2024-12-29:`
 - Updated to **Unreal Engine 5.4**.

@@ -2,10 +2,13 @@
 
 #include "GameFramework/MyGameUserSettings.h"
 //---
+#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "DynamicRHI.h"
+#include "Kismet/KismetInternationalizationLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameUserSettings)
@@ -25,6 +28,15 @@ UMyGameUserSettings& UMyGameUserSettings::Get()
 // Get all supported resolutions of the primary monitor
 void UMyGameUserSettings::UpdateSupportedResolutions()
 {
+	if (UUtilsLibrary::IsEditor())
+	{
+		// In editor, engine never applies resolutions
+		static const FText EditorMsg = FText::FromString(TEXT("NO EDITOR SUPPORT"));
+		TextResolutionsInternal.Empty();
+		TextResolutionsInternal.Emplace(EditorMsg);
+		return;
+	}
+
 	FScreenResolutionArray ResolutionsArray;
 	const bool bWasFound = RHIGetAvailableResolutions(ResolutionsArray, true);
 	if (!bWasFound)
@@ -114,8 +126,10 @@ void UMyGameUserSettings::UpdateSupportedResolutions()
 void UMyGameUserSettings::SetResolutionByIndex(int32 Index)
 {
 	if (!IntResolutionsInternal.IsValidIndex(Index)
-	    || GetResolutionIndex() == Index)
+	    || GetResolutionIndex() == Index
+	    || UUtilsLibrary::IsEditor())
 	{
+		// Is not supported (editor)
 		return;
 	}
 
@@ -322,6 +336,103 @@ void UMyGameUserSettings::SetOverallScalabilityLevel(int32 Value)
 }
 
 /*********************************************************************************************
+ * Language
+ ********************************************************************************************* */
+
+// Set new language by index
+void UMyGameUserSettings::SetLanguageByIndex(int32 Index)
+{
+	if (!CulturesInternal.IsValidIndex(Index)
+	    || UUtilsLibrary::IsEditor())
+	{
+		// Is not supported (editor)
+		return;
+	}
+
+	AppliedCultureInternal = CulturesInternal[Index];
+	CurrentLanguageIndexInternal = Index;
+	ApplyCurrentLanguage();
+}
+
+// Is called to apply the currently chosen language
+void UMyGameUserSettings::ApplyCurrentLanguage()
+{
+	const bool bIsApplied = FInternationalization::Get().SetCurrentLanguageAndLocale(AppliedCultureInternal.ToString());
+	if (!bIsApplied)
+	{
+		return;
+	}
+
+	SaveSettings();
+}
+
+// Get all supported languages
+void UMyGameUserSettings::UpdateSupportedLanguages()
+{
+	if (UUtilsLibrary::IsEditor())
+	{
+		// In editor, engine never applies cultures
+		static const FText EditorMsg = FText::FromString(TEXT("NO EDITOR SUPPORT"));
+		DisplayLanguagesInternal.Empty();
+		DisplayLanguagesInternal.Emplace(EditorMsg);
+		return;
+	}
+
+	// Get all available cultures
+	const FTextLocalizationManager& LocalizationManager = FTextLocalizationManager::Get();
+	const TArray<FString> AllAvailableCultures = LocalizationManager.GetLocalizedCultureNames(ELocalizationLoadFlags::Game);
+	if (AllAvailableCultures.IsEmpty())
+	{
+		// No localization data found
+		return;
+	}
+
+	// Always add English by default as fallback language to display first if system language is not supported
+	CulturesInternal.Empty();
+	static const FString FallbackDefaultLanguage = TEXT("en");
+	CulturesInternal.Emplace(FallbackDefaultLanguage);
+
+	// Make the system (OS) language to be displayed first, if supported: it contains within available cultures
+	const FString SystemCulture = UKismetSystemLibrary::GetDefaultLanguage();
+	const FString* AvailableSystemCulture = AllAvailableCultures.FindByPredicate([&SystemCulture](const FString& It) { return SystemCulture.Contains(It); });
+	if (AvailableSystemCulture
+	    && *AvailableSystemCulture != FallbackDefaultLanguage)
+	{
+		CulturesInternal.Insert(**AvailableSystemCulture, 0);
+	}
+
+	// Add all remaining cultures
+	for (const FString& AvailableCultureIt : AllAvailableCultures)
+	{
+		CulturesInternal.AddUnique(*AvailableCultureIt);
+	}
+
+	// Convert culture names (en) to localized language names (English) to be displayed on UI, in their translated form
+	DisplayLanguagesInternal.Empty();
+	for (const FName LocalizedCultureNameIt : CulturesInternal)
+	{
+		constexpr bool bLocalized = false;
+		const FString LocalizedCultureName = UKismetInternationalizationLibrary::GetCultureDisplayName(LocalizedCultureNameIt.ToString(), bLocalized);
+		ensureAlwaysMsgf(LocalizedCultureName.Len() == FCString::Strlen(*LocalizedCultureName), TEXT("ASSERT: [%i] %hs:\n'%s' culture name is not supported!"), __LINE__, __FUNCTION__, *LocalizedCultureName);
+		DisplayLanguagesInternal.Emplace(FText::FromString(LocalizedCultureName));
+	}
+
+	// If very first launch of the game, then set the system language as default
+	if (AppliedCultureInternal.IsNone())
+    {
+        // Set the system language as default
+        checkf(CulturesInternal.IsValidIndex(0), TEXT("ERROR: [%i] %hs:\n'CulturesInternal.IsValidIndex(0)' is null!"), __LINE__, __FUNCTION__);
+        AppliedCultureInternal = CulturesInternal[0];
+    }
+
+	// Always update current language index
+	if (CurrentLanguageIndexInternal == INDEX_NONE)
+	{
+		CurrentLanguageIndexInternal = CulturesInternal.IndexOfByKey(AppliedCultureInternal);
+	}
+}
+
+/*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
 
@@ -340,9 +451,17 @@ void UMyGameUserSettings::LoadSettings(bool bForceReload)
 		GConfig->GetInt(*Section, TEXT("MinWindowHeight"), MinResolutionSizeYInternal, GGameIni);
 	}
 
-	if (!IntResolutionsInternal.Num())
+	if (IntResolutionsInternal.IsEmpty())
 	{
 		UpdateSupportedResolutions();
+	}
+
+	if (DisplayLanguagesInternal.IsEmpty()
+	    || CulturesInternal.IsEmpty()
+	    || CurrentLanguageIndexInternal < 0)
+	{
+		UpdateSupportedLanguages();
+		ApplyCurrentLanguage();
 	}
 
 	constexpr float NoBenchmarkRun = -1.f;
