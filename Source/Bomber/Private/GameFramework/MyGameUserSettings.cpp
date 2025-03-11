@@ -324,7 +324,12 @@ void UMyGameUserSettings::SetOverallScalabilityLevel(int32 Value)
 	}
 
 	OverallQualityInternal = Value;
+	ApplyOverallScalabilityLevel();
+}
 
+// Is called to apply the currently chosen overall quality level
+void UMyGameUserSettings::ApplyOverallScalabilityLevel()
+{
 	if (!OverallQualityInternal)
 	{
 		// Custom scalability is set
@@ -332,7 +337,9 @@ void UMyGameUserSettings::SetOverallScalabilityLevel(int32 Value)
 	}
 
 	static constexpr int32 QualityOffset = 1;
-	Super::SetOverallScalabilityLevel(Value - QualityOffset);
+	Super::SetOverallScalabilityLevel(OverallQualityInternal - QualityOffset);
+
+	SetQualityLevels(ScalabilityQuality);
 }
 
 /*********************************************************************************************
@@ -464,12 +471,7 @@ void UMyGameUserSettings::LoadSettings(bool bForceReload)
 		ApplyCurrentLanguage();
 	}
 
-	constexpr float NoBenchmarkRun = -1.f;
-	if (GetLastGPUBenchmarkResult() == NoBenchmarkRun)
-	{
-		RunHardwareBenchmark();
-		ApplyHardwareBenchmarkResults();
-	}
+	ApplyOverallScalabilityLevel();
 }
 
 // Validates and resets bad user settings to default. Deletes stale user settings file if necessary

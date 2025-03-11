@@ -147,6 +147,10 @@ public:
 	 * @see UMyGameUserSettings::OverallQualityInternal */
 	virtual void SetOverallScalabilityLevel(int32 Value) override;
 
+	/** Is called to apply the currently chosen overall quality level. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void ApplyOverallScalabilityLevel();
+
 protected:
 	/** The overall quality level, is config property.
 	 * 0:custom, 1:low, 2:medium, 3:high, 4:very high, 5:ultra. */
