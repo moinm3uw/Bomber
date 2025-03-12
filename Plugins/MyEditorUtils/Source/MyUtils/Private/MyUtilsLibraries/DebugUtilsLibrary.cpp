@@ -6,8 +6,8 @@
 #include "HAL/PlatformStackWalk.h"
 #endif // !UE_BUILD_SHIPPING
 
-// Returns previous function in current callstack
-const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI()
+// Returns previous function(s) in current callstack
+const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI(int32 NumCallers)
 {
 #if UE_BUILD_SHIPPING
 	static constexpr ANSICHAR UnavailableMsg[] = "None";
@@ -25,19 +25,38 @@ const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI()
 		return FunctionName;
 	}
 
-	FProgramCounterSymbolInfo SymbolInfo;
-	FPlatformStackWalk::ProgramCounterToSymbolInfo(StackTrace[CallerFrameIndex], /*out*/SymbolInfo);
-	if (SymbolInfo.FunctionName[0] == '\0')
-	{
-		return FunctionName;
-	}
+	FunctionName[0] = '\0';
+	const int32 FramesToCapture = FMath::Clamp(NumCallers, 1, MaxDepth - CallerFrameIndex);
 
-	FCStringAnsi::Strncpy(FunctionName, SymbolInfo.FunctionName, sizeof(FunctionName) - 1);
-	FunctionName[sizeof(FunctionName) - 1] = '\0';
-
-	if (ANSICHAR* BracketPos = FCStringAnsi::Strrchr(FunctionName, '('))
+	for (int32 Index = 0; Index < FramesToCapture; ++Index)
 	{
-		*BracketPos = '\0';
+		const int32 FrameIndex = CallerFrameIndex + Index;
+		if (FrameIndex >= Depth)
+		{
+			break;
+		}
+
+		FProgramCounterSymbolInfo SymbolInfo;
+		FPlatformStackWalk::ProgramCounterToSymbolInfo(StackTrace[FrameIndex], /*out*/SymbolInfo);
+		if (SymbolInfo.FunctionName[0] == '\0')
+		{
+			continue;
+		}
+
+		ANSICHAR TempFunction[256];
+		FCStringAnsi::Strncpy(TempFunction, SymbolInfo.FunctionName, sizeof(TempFunction) - 1);
+		TempFunction[sizeof(TempFunction) - 1] = '\0';
+
+		if (ANSICHAR* BracketPos = FCStringAnsi::Strrchr(TempFunction, '('))
+		{
+			*BracketPos = '\0';
+		}
+
+		if (Index > 0)
+		{
+			FCStringAnsi::Strcat(FunctionName, sizeof(FunctionName), " -> ");
+		}
+		FCStringAnsi::Strcat(FunctionName, sizeof(FunctionName), TempFunction);
 	}
 
 	return FunctionName;
