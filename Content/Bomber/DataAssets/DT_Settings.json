@@ -36,6 +36,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -124,6 +125,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -212,6 +214,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -300,6 +303,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -388,6 +392,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -481,6 +486,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -569,6 +575,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -657,6 +664,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -745,6 +753,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -833,6 +842,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -921,6 +931,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1009,6 +1020,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": true,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1097,6 +1109,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1185,6 +1198,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -1284,6 +1298,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -1383,6 +1398,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1479,6 +1495,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1567,6 +1584,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1655,6 +1673,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": true,
+				"bApplyImmediately": false,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [],
@@ -1743,6 +1762,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -1870,6 +1890,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -1975,6 +1996,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2080,6 +2102,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2185,6 +2208,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2290,6 +2314,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2395,6 +2420,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2500,6 +2526,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
@@ -2605,6 +2632,7 @@
 				},
 				"LineHeight": 48,
 				"bStartOnNextColumn": false,
+				"bApplyImmediately": true,
 				"SettingsToUpdate":
 				{
 					"GameplayTags": [
