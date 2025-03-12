@@ -628,15 +628,15 @@
 		}
 	},
 	{
-		"Name": "Settings.TextLine.AudioTab",
+		"Name": "Settings.CustomWidget.InputControls",
 		"SettingsPicker":
 		{
-			"SettingsType": "TextLine",
+			"SettingsType": "CustomWidget",
 			"PrimaryData":
 			{
 				"Tag":
 				{
-					"TagName": "Settings.TextLine.AudioTab"
+					"TagName": "Settings.CustomWidget.InputControls"
 				},
 				"Owner":
 				{
@@ -653,102 +653,13 @@
 					"FunctionClass": "None",
 					"FunctionName": "None"
 				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"EE8937004D3303A4D1637DBFFE1B4ED6\", \"AUDIO\")",
+				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"034DA8B649A7D12B0CE11488B7A32D41\", \"CONTROLS\")",
 				"Tooltip": "NSLOCTEXT(\"Core\", \"None\", \"None\")",
 				"Padding":
 				{
 					"Left": 0,
 					"Top": 0,
-					"Right": 0,
-					"Bottom": 15
-				},
-				"LineHeight": 48,
-				"bStartOnNextColumn": false,
-				"bApplyImmediately": false,
-				"SettingsToUpdate":
-				{
-					"GameplayTags": [],
-					"ParentTags": []
-				},
-				"ShowNextToSettingOverride":
-				{
-					"TagName": "None"
-				}
-			},
-			"Button":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"Checkbox":
-			{
-			},
-			"Combobox":
-			{
-				"SetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"GetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"Members": [],
-				"TextJustify": "Center"
-			},
-			"Slider":
-			{
-			},
-			"TextLine":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Center"
-			},
-			"UserInput":
-			{
-				"MaxCharactersNumber": 0
-			},
-			"CustomWidget":
-			{
-				"CustomWidgetClass": "None"
-			}
-		}
-	},
-	{
-		"Name": "Settings.Slider.MasterVolume",
-		"SettingsPicker":
-		{
-			"SettingsType": "Slider",
-			"PrimaryData":
-			{
-				"Tag":
-				{
-					"TagName": "Settings.Slider.MasterVolume"
-				},
-				"Owner":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetSoundsSubsystem"
-				},
-				"Setter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "SetMasterVolume"
-				},
-				"Getter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetMasterVolume"
-				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"3FC144E945D22BA8DB903BB7FBD1AE1E\", \"Master Volume\")",
-				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"B94B90AB43C910906DA3658FE85EBDDC\", \"Set the overall volume for all sounds in the game\")",
-				"Padding":
-				{
-					"Left": 0,
-					"Top": 0,
-					"Right": 30,
+					"Right": 10,
 					"Bottom": 15
 				},
 				"LineHeight": 48,
@@ -801,185 +712,7 @@
 			},
 			"CustomWidget":
 			{
-				"CustomWidgetClass": "None"
-			}
-		}
-	},
-	{
-		"Name": "Settings.Slider.MusicVolume",
-		"SettingsPicker":
-		{
-			"SettingsType": "Slider",
-			"PrimaryData":
-			{
-				"Tag":
-				{
-					"TagName": "Settings.Slider.MusicVolume"
-				},
-				"Owner":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetSoundsSubsystem"
-				},
-				"Setter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "SetMusicVolume"
-				},
-				"Getter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetMusicVolume"
-				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"FDDC03E84D349EAC5743FEB1C9E6B87D\", \"Music Volume\")",
-				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"3EC174FB4DEA3029A69CEEA9C382A9DD\", \"Set the sound volume for the background music\")",
-				"Padding":
-				{
-					"Left": 0,
-					"Top": 0,
-					"Right": 30,
-					"Bottom": 15
-				},
-				"LineHeight": 48,
-				"bStartOnNextColumn": false,
-				"bApplyImmediately": false,
-				"SettingsToUpdate":
-				{
-					"GameplayTags": [],
-					"ParentTags": []
-				},
-				"ShowNextToSettingOverride":
-				{
-					"TagName": "None"
-				}
-			},
-			"Button":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"Checkbox":
-			{
-			},
-			"Combobox":
-			{
-				"SetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"GetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"Members": [],
-				"TextJustify": "Center"
-			},
-			"Slider":
-			{
-			},
-			"TextLine":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"UserInput":
-			{
-				"MaxCharactersNumber": 0
-			},
-			"CustomWidget":
-			{
-				"CustomWidgetClass": "None"
-			}
-		}
-	},
-	{
-		"Name": "Settings.Slider.SFXVolume",
-		"SettingsPicker":
-		{
-			"SettingsType": "Slider",
-			"PrimaryData":
-			{
-				"Tag":
-				{
-					"TagName": "Settings.Slider.SFXVolume"
-				},
-				"Owner":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetSoundsSubsystem"
-				},
-				"Setter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "SetSFXVolume"
-				},
-				"Getter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
-					"FunctionName": "GetSFXVolume"
-				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"DC1E69F1449E9C4CD8B1D58CFCBB7676\", \"Sound Effects Volume\")",
-				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"CE6CBAFE4B647A492890C4883AB59F95\", \"Set the sound volume for the effects like bomb explosions\")",
-				"Padding":
-				{
-					"Left": 0,
-					"Top": 0,
-					"Right": 30,
-					"Bottom": 15
-				},
-				"LineHeight": 48,
-				"bStartOnNextColumn": false,
-				"bApplyImmediately": false,
-				"SettingsToUpdate":
-				{
-					"GameplayTags": [],
-					"ParentTags": []
-				},
-				"ShowNextToSettingOverride":
-				{
-					"TagName": "None"
-				}
-			},
-			"Button":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"Checkbox":
-			{
-			},
-			"Combobox":
-			{
-				"SetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"GetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"Members": [],
-				"TextJustify": "Center"
-			},
-			"Slider":
-			{
-			},
-			"TextLine":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"UserInput":
-			{
-				"MaxCharactersNumber": 0
-			},
-			"CustomWidget":
-			{
-				"CustomWidgetClass": "None"
+				"CustomWidgetClass": "/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Bomber/UI/UI1-3_Settings/Input/WBP_InputControls.WBP_InputControls_C'"
 			}
 		}
 	},
@@ -1548,15 +1281,15 @@
 		}
 	},
 	{
-		"Name": "Settings.CustomWidget.InputControls",
+		"Name": "Settings.TextLine.AudioTab",
 		"SettingsPicker":
 		{
-			"SettingsType": "CustomWidget",
+			"SettingsType": "TextLine",
 			"PrimaryData":
 			{
 				"Tag":
 				{
-					"TagName": "Settings.CustomWidget.InputControls"
+					"TagName": "Settings.TextLine.AudioTab"
 				},
 				"Owner":
 				{
@@ -1573,13 +1306,102 @@
 					"FunctionClass": "None",
 					"FunctionName": "None"
 				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"034DA8B649A7D12B0CE11488B7A32D41\", \"CONTROLS\")",
+				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"EE8937004D3303A4D1637DBFFE1B4ED6\", \"AUDIO\")",
 				"Tooltip": "NSLOCTEXT(\"Core\", \"None\", \"None\")",
 				"Padding":
 				{
 					"Left": 0,
 					"Top": 0,
-					"Right": 10,
+					"Right": 0,
+					"Bottom": 15
+				},
+				"LineHeight": 48,
+				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
+				"SettingsToUpdate":
+				{
+					"GameplayTags": [],
+					"ParentTags": []
+				},
+				"ShowNextToSettingOverride":
+				{
+					"TagName": "None"
+				}
+			},
+			"Button":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Fill"
+			},
+			"Checkbox":
+			{
+			},
+			"Combobox":
+			{
+				"SetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"GetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"Members": [],
+				"TextJustify": "Center"
+			},
+			"Slider":
+			{
+			},
+			"TextLine":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Center"
+			},
+			"UserInput":
+			{
+				"MaxCharactersNumber": 0
+			},
+			"CustomWidget":
+			{
+				"CustomWidgetClass": "None"
+			}
+		}
+	},
+	{
+		"Name": "Settings.Slider.MasterVolume",
+		"SettingsPicker":
+		{
+			"SettingsType": "Slider",
+			"PrimaryData":
+			{
+				"Tag":
+				{
+					"TagName": "Settings.Slider.MasterVolume"
+				},
+				"Owner":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetSoundsSubsystem"
+				},
+				"Setter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "SetMasterVolume"
+				},
+				"Getter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetMasterVolume"
+				},
+				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"3FC144E945D22BA8DB903BB7FBD1AE1E\", \"Master Volume\")",
+				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"B94B90AB43C910906DA3658FE85EBDDC\", \"Set the overall volume for all sounds in the game\")",
+				"Padding":
+				{
+					"Left": 0,
+					"Top": 0,
+					"Right": 30,
 					"Bottom": 15
 				},
 				"LineHeight": 48,
@@ -1632,7 +1454,185 @@
 			},
 			"CustomWidget":
 			{
-				"CustomWidgetClass": "/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Bomber/UI/UI1-3_Settings/Input/WBP_InputControls.WBP_InputControls_C'"
+				"CustomWidgetClass": "None"
+			}
+		}
+	},
+	{
+		"Name": "Settings.Slider.MusicVolume",
+		"SettingsPicker":
+		{
+			"SettingsType": "Slider",
+			"PrimaryData":
+			{
+				"Tag":
+				{
+					"TagName": "Settings.Slider.MusicVolume"
+				},
+				"Owner":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetSoundsSubsystem"
+				},
+				"Setter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "SetMusicVolume"
+				},
+				"Getter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetMusicVolume"
+				},
+				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"FDDC03E84D349EAC5743FEB1C9E6B87D\", \"Music Volume\")",
+				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"3EC174FB4DEA3029A69CEEA9C382A9DD\", \"Set the sound volume for the background music\")",
+				"Padding":
+				{
+					"Left": 0,
+					"Top": 0,
+					"Right": 30,
+					"Bottom": 15
+				},
+				"LineHeight": 48,
+				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
+				"SettingsToUpdate":
+				{
+					"GameplayTags": [],
+					"ParentTags": []
+				},
+				"ShowNextToSettingOverride":
+				{
+					"TagName": "None"
+				}
+			},
+			"Button":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Fill"
+			},
+			"Checkbox":
+			{
+			},
+			"Combobox":
+			{
+				"SetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"GetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"Members": [],
+				"TextJustify": "Center"
+			},
+			"Slider":
+			{
+			},
+			"TextLine":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Fill"
+			},
+			"UserInput":
+			{
+				"MaxCharactersNumber": 0
+			},
+			"CustomWidget":
+			{
+				"CustomWidgetClass": "None"
+			}
+		}
+	},
+	{
+		"Name": "Settings.Slider.SFXVolume",
+		"SettingsPicker":
+		{
+			"SettingsType": "Slider",
+			"PrimaryData":
+			{
+				"Tag":
+				{
+					"TagName": "Settings.Slider.SFXVolume"
+				},
+				"Owner":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetSoundsSubsystem"
+				},
+				"Setter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "SetSFXVolume"
+				},
+				"Getter":
+				{
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.SoundsSubsystem'",
+					"FunctionName": "GetSFXVolume"
+				},
+				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"DC1E69F1449E9C4CD8B1D58CFCBB7676\", \"Sound Effects Volume\")",
+				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"CE6CBAFE4B647A492890C4883AB59F95\", \"Set the sound volume for the effects like bomb explosions\")",
+				"Padding":
+				{
+					"Left": 0,
+					"Top": 0,
+					"Right": 30,
+					"Bottom": 15
+				},
+				"LineHeight": 48,
+				"bStartOnNextColumn": false,
+				"bApplyImmediately": false,
+				"SettingsToUpdate":
+				{
+					"GameplayTags": [],
+					"ParentTags": []
+				},
+				"ShowNextToSettingOverride":
+				{
+					"TagName": "None"
+				}
+			},
+			"Button":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Fill"
+			},
+			"Checkbox":
+			{
+			},
+			"Combobox":
+			{
+				"SetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"GetMembers":
+				{
+					"FunctionClass": "None",
+					"FunctionName": "None"
+				},
+				"Members": [],
+				"TextJustify": "Center"
+			},
+			"Slider":
+			{
+			},
+			"TextLine":
+			{
+				"VerticalAlignment": "Content",
+				"HorizontalAlignment": "HAlign_Fill"
+			},
+			"UserInput":
+			{
+				"MaxCharactersNumber": 0
+			},
+			"CustomWidget":
+			{
+				"CustomWidgetClass": "None"
 			}
 		}
 	},
@@ -1881,112 +1881,6 @@
 				},
 				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"0AFFFA6E41922B98E518148C195366C8\", \"View Distance\")",
 				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"85CAA36A40052F6A6E2916BBA604F756\", \"Choose the view distance quality level\")",
-				"Padding":
-				{
-					"Left": 0,
-					"Top": 0,
-					"Right": 30,
-					"Bottom": 15
-				},
-				"LineHeight": 48,
-				"bStartOnNextColumn": false,
-				"bApplyImmediately": true,
-				"SettingsToUpdate":
-				{
-					"GameplayTags": [
-						{
-							"TagName": "Settings.Combobox.OverallQuality"
-						}
-					],
-					"ParentTags": [
-						{
-							"TagName": "Settings.Combobox"
-						},
-						{
-							"TagName": "Settings"
-						}
-					]
-				},
-				"ShowNextToSettingOverride":
-				{
-					"TagName": "None"
-				}
-			},
-			"Button":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"Checkbox":
-			{
-			},
-			"Combobox":
-			{
-				"SetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"GetMembers":
-				{
-					"FunctionClass": "None",
-					"FunctionName": "None"
-				},
-				"Members": [
-					"NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"9DF5FE0544F93D49F8AE25AF6371B067\", \"Low Quality\")",
-					"NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"8642E36749EAEB860B2005BC52CFE5CF\", \"Medium Quality\")",
-					"NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"E8B2577745E0DD87448B218C5E6D0519\", \"High Quality\")",
-					"NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"EB7E162D4837053CBA6760BF2CE2786A\", \"Very High Quality\")",
-					"NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"E9E2CACB4D4D0906038317A4A422AF02\", \"Ultra Quality\")"
-				],
-				"TextJustify": "Center"
-			},
-			"Slider":
-			{
-			},
-			"TextLine":
-			{
-				"VerticalAlignment": "Content",
-				"HorizontalAlignment": "HAlign_Fill"
-			},
-			"UserInput":
-			{
-				"MaxCharactersNumber": 0
-			},
-			"CustomWidget":
-			{
-				"CustomWidgetClass": "None"
-			}
-		}
-	},
-	{
-		"Name": "Settings.Combobox.AntiAliasing",
-		"SettingsPicker":
-		{
-			"SettingsType": "Combobox",
-			"PrimaryData":
-			{
-				"Tag":
-				{
-					"TagName": "Settings.Combobox.AntiAliasing"
-				},
-				"Owner":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.MyBlueprintFunctionLibrary'",
-					"FunctionName": "GetMyGameUserSettings"
-				},
-				"Setter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Engine.GameUserSettings'",
-					"FunctionName": "SetAntiAliasingQuality"
-				},
-				"Getter":
-				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Engine.GameUserSettings'",
-					"FunctionName": "GetAntiAliasingQuality"
-				},
-				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"AA661EBE442C495F179EEB9102E7D050\", \"Anti Aliasing\")",
-				"Tooltip": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"7DB3E7A5495F4715BDBC5AA25156ABBC\", \"Choose the anti-aliasing quality level\")",
 				"Padding":
 				{
 					"Left": 0,
