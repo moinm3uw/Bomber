@@ -10,6 +10,7 @@
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 //---
 #include "Engine/World.h"
 //---
@@ -133,4 +134,6 @@ void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacte
 	UMouseActivityComponent* MouseActivityComponent = UMyBlueprintFunctionLibrary::GetMouseActivityComponent();
 	checkf(MouseActivityComponent, TEXT("ERROR: [%i] %hs:\n'MouseActivityComponent' is null!"), __LINE__, __FUNCTION__);
 	MouseActivityComponent->OnMouseVisibilityChanged.AddUniqueDynamic(this, &ThisClass::OnMouseVisibilityChanged);
+
+	SetIsPartyLeader(UMultiplayerUtilsLibrary::IsPartyLeader());
 }

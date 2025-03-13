@@ -14,6 +14,7 @@
 #include "GameFramework/MyPlayerState.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
@@ -51,7 +52,7 @@ AMyPlayerController::AMyPlayerController()
 
 /*********************************************************************************************
  * Game States
- * Is designed for clients to change the game state
+ * Is designed for clients to change the game state (if CanChangeGameState is true)
  * Server can call AMyGameStateBase::Get().SetGameState(NewState) directly
  ********************************************************************************************* */
 
@@ -65,6 +66,12 @@ bool AMyPlayerController::CanChangeGameState(ECurrentGameState NewGameState) con
 		return false;
 	}
 
+	if (!UMultiplayerUtilsLibrary::IsPartyLeader())
+	{
+		// Is joined client
+		return false;
+	}
+	
 	// Don't change the game state if game is run from the `Render Movie`
 	return !bCinematicMode;
 }

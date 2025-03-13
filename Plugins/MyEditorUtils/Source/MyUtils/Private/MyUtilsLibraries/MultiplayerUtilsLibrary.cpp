@@ -10,6 +10,20 @@
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MultiplayerUtilsLibrary)
 
+// Returns true if running from the server or party-leader client
+bool UMultiplayerUtilsLibrary::IsPartyLeader()
+{
+	const UWorld* World = UUtilsLibrary::GetPlayWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	const bool bIsServer = World->GetNetMode() != NM_Client;
+	const bool bIsAuthoritativeClient = IsAuthoritativeClient();
+	return bIsServer || bIsAuthoritativeClient;
+}
+
 // Returns true in editor game is running from client-only mode, so if caller is client, which is connected to the dedicated server
 bool UMultiplayerUtilsLibrary::IsAuthoritativeClient()
 {

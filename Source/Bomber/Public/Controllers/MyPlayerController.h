@@ -25,7 +25,7 @@ public:
 
 	/*********************************************************************************************
 	 * Game States
-	 * Is designed for clients to change the game state
+	 * Is designed for clients to change the game state (if CanChangeGameState is true).
 	 * Server can call AMyGameStateBase::Get().SetGameState(NewState) directly
 	 ********************************************************************************************* */
 public:

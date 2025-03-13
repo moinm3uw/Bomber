@@ -171,6 +171,19 @@ protected:
 	void OnMouseVisibilityChanged(bool bIsShown);
 
 	/*********************************************************************************************
+	 * Party Leader State
+	 ********************************************************************************************* */
+public:
+	/** Setter and Getter about the Party Leader status */
+	void SetIsPartyLeader(const bool bNewIsPartyLeader) { UE_MVVM_SET_PROPERTY_VALUE(bIsPartyLeader, bNewIsPartyLeader); }
+	bool IsPartyLeader() const { return bIsPartyLeader; }
+
+protected:
+	/** Determines if the player is the party leader */
+	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter = "SetIsPartyLeader", Getter = "IsPartyLeader", Category = "C++")
+	bool bIsPartyLeader = false;
+
+	/*********************************************************************************************
 	 * Events
 	 ********************************************************************************************* */
 protected:
