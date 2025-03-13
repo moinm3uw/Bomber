@@ -27,6 +27,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static int32 GetPlayersInMultiplayerNum();
 
+	/** Returns the index of the current player during multiplayer.
+	 * 0 is the server or party-leader client.
+	 * 1 (or higher) is joined client. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static int32 GetPlayerId();
+
 	/** Returns the ping in milliseconds to the server in milliseconds.
 	 * Is only valid on the local client, is 0 on the server or in standalone mode. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")

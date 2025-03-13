@@ -37,17 +37,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (DevelopmentOnly))
 	static bool IsPIE();
 
-	/** Returns true if is started multiplayer game (server + client(s)) right in the Editor. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (DevelopmentOnly))
-	static bool IsEditorMultiplayer();
-
-	/** Returns the index of current player during editor multiplayer.
-	 * 0 is server.
-	 * 1 (or higher) is client.
-	 * -1 in the standalone game. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (DevelopmentOnly))
-	static int32 GetEditorPlayerIndex();
-
 	/** Returns true if game was started. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static bool HasWorldBegunPlay();

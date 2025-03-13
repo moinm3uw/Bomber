@@ -72,26 +72,6 @@ bool UUtilsLibrary::IsPIE()
 #endif
 }
 
-// Returns true if is started multiplayer game (server + client(s)) right in the Editor
-bool UUtilsLibrary::IsEditorMultiplayer()
-{
-#if WITH_EDITOR
-	return FEditorUtilsLibrary::IsEditorMultiplayer();
-#else
-	return false;
-#endif
-}
-
-// Returns the index of current player during editor multiplayer
-int32 UUtilsLibrary::GetEditorPlayerIndex()
-{
-#if WITH_EDITOR
-	return FEditorUtilsLibrary::IsEditorMultiplayer();
-#else
-	return INDEX_NONE;
-#endif
-}
-
 // Returns true if game was started
 bool UUtilsLibrary::HasWorldBegunPlay()
 {
