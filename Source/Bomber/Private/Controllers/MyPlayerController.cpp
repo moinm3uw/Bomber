@@ -71,12 +71,12 @@ bool AMyPlayerController::CanChangeGameState(ECurrentGameState NewGameState) con
 		// Is joined client
 		return false;
 	}
-	
+
 	// Don't change the game state if game is run from the `Render Movie`
 	return !bCinematicMode;
 }
 
-// Sets and replicates the Starting game state (3-2-1 countdown), can be called on the client
+// Sets and replicates the Starting game state (3-2-1 countdown)
 void AMyPlayerController::SetGameStartingState()
 {
 	if (CanChangeGameState(ECGS::GameStarting))
@@ -85,7 +85,7 @@ void AMyPlayerController::SetGameStartingState()
 	}
 }
 
-// Sets and replicates the Menu game state, can be called on the client
+// Sets and replicates the Menu game state
 void AMyPlayerController::SetMenuState()
 {
 	if (CanChangeGameState(ECGS::Menu))

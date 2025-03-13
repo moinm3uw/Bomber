@@ -39,7 +39,7 @@ void USaveUtilsLibrary::AsyncLoadGameFromSlot(const UObject* WorldContextObject,
 			{
 				InWorld->GetTimerManager().SetTimerForNextTick([Callback, SaveGame = TStrongObjectPtr(LoadedSaveGame)]
 				{
-					Callback.Execute(SaveGame.Get());
+					Callback.ExecuteIfBound(SaveGame.Get());
 				});
 			}
 		});

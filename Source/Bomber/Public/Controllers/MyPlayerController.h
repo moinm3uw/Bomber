@@ -33,16 +33,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	bool CanChangeGameState(ECurrentGameState NewGameState) const;
 
-	/** Sets and replicates the Starting game state (3-2-1 countdown), can be called on the client. */
+	/** Sets and replicates the Starting game state (3-2-1 countdown). */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetGameStartingState();
 
-	/** Sets and replicates the Menu game state, can be called on the client. */
+	/** Sets and replicates the Menu game state. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetMenuState();
 
-	/** Is called during the In-Game state to show results to all players regarding finished match (Win, Lose or Draw).
-	 * Can be called on the client. */
+	/** Is called during the In-Game state to show results to all players regarding finished match (Win, Lose or Draw). */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetEndGameState();
 
