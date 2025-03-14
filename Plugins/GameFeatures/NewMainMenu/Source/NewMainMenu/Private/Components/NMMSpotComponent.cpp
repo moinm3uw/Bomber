@@ -150,10 +150,13 @@ void UNMMSpotComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (GetWorld()->bIsTearingDown)
+	const UWorld* World = GetWorld();
+	if (!World
+		|| World->bIsTearingDown
+		|| World->IsNetMode(NM_DedicatedServer))
 	{
-		// Don't process modular if world is restarting
-		// It could happen since module could be loaded very late, right after request of restarting a level
+		// Don't process spot if world is restarting (which could happen since module could be loaded very late, right after request of restarting a level)
+		// or if it's a dedicated server (when client-only mode is running)
 		return;
 	}
 
