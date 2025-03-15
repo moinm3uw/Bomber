@@ -19,7 +19,7 @@ class BOMBER_API UMVVM_MyGameViewModel : public UMVVM_MyBaseViewModel
 	GENERATED_BODY()
 
 	/*********************************************************************************************
-	 * Game State
+	 * Current Game State
 	 ********************************************************************************************* */
 public:
 	/** Setter and Getter widgets about the current game state. */
@@ -33,6 +33,10 @@ protected:
 	 * Is commonly used by 'UMyBlueprintFunctionLibrary::GetVisibilityByGameState' to show or hide own widget. */
 	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
 	ECurrentGameState CurrentGameState = ECurrentGameState::None;
+
+	/** Called when the current game state was changed. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnGameStateChanged(ECurrentGameState InGameState);
 
 	/*********************************************************************************************
 	 * End-Game State
@@ -171,17 +175,17 @@ protected:
 	void OnMouseVisibilityChanged(bool bIsShown);
 
 	/*********************************************************************************************
-	 * Party Leader State
+	 * Can Restart Game
 	 ********************************************************************************************* */
 public:
-	/** Setter and Getter about the Party Leader status */
-	void SetIsPartyLeader(const bool bNewIsPartyLeader) { UE_MVVM_SET_PROPERTY_VALUE(bIsPartyLeader, bNewIsPartyLeader); }
-	bool IsPartyLeader() const { return bIsPartyLeader; }
+	/** Setter and Getter about does running game allow to be restarted. */
+	void SetCanRestartGame(const bool bNewIsPartyLeader) { UE_MVVM_SET_PROPERTY_VALUE(bCanRestart, bNewIsPartyLeader); }
+	bool GetCanRestartGame() const { return bCanRestart; }
 
 protected:
 	/** Determines if the player is the party leader */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter = "SetIsPartyLeader", Getter = "IsPartyLeader", Category = "C++")
-	bool bIsPartyLeader = false;
+	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter = "SetCanRestartGame", Getter = "GetCanRestartGame", Category = "C++")
+	bool bCanRestart = true;
 
 	/*********************************************************************************************
 	 * Events

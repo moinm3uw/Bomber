@@ -164,3 +164,15 @@ enum class EEndGameState : uint8
 	///< Last players have blasted each other or the time has run out
 	Draw
 };
+
+/**
+ * Represents the type of the character.
+ */
+UENUM(BlueprintType)
+enum class EPlayerType : uint8
+{
+	None,
+	Human,
+	Bot,
+	Any
+};

@@ -53,6 +53,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static ECurrentGameState GetPreviousGameState();
 
+	/** Returns true if the match can be started or restarted. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	bool CanStartGame() const;
+
 protected:
 	/** Is read-only local version of the game state that is not replicated, can be read on both server and client, but never should be set directly.
 	 * Is populated in order to allow local clients apply (update) the game state before it will be replicated.
@@ -73,7 +77,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void ApplyGameState();
 
-	/** Called on the AMyGameStateBase::CurrentGameState property updating. */
+	/** Called on the AMyGameStateBase::ReplicatedGameStateInternal property updating. */
 	UFUNCTION()
 	void OnRep_CurrentGameState();
 

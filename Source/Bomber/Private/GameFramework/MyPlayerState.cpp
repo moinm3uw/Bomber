@@ -72,7 +72,7 @@ void AMyPlayerState::UpdateEndGameState()
 
 	const EEndGameState NewEndGameState = [&]
 	{
-		const int32 PlayerNum = UMyBlueprintFunctionLibrary::GetAlivePlayersNum();
+		const int32 PlayerNum = UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any);
 
 		if (IsCharacterDead())
 		{
@@ -119,10 +119,13 @@ void AMyPlayerState::OnRep_EndGameState()
 void AMyPlayerState::ApplyEndGameState()
 {
 	// Try to end the game globally for all players
-	if (EndGameStateInternal != EEndGameState::None
-	    && UMyBlueprintFunctionLibrary::GetAlivePlayersNum() <= 1)
+	if (EndGameStateInternal != EEndGameState::None)
 	{
-		AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
+		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1       // no characters to play with
+		    || UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Human) == 0) // all human players are dead
+		{
+			AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
+		}
 	}
 
 	if (OnEndGameStateChanged.IsBound())

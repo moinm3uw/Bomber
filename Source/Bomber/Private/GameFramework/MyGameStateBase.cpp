@@ -5,6 +5,7 @@
 #include "GeneratedMap.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -41,6 +42,13 @@ bool AMyGameStateBase::CanChangeGameState(ECurrentGameState NewGameState) const
 {
 	if (LocalGameStateInternal == NewGameState)
 	{
+		return false;
+	}
+
+	if (NewGameState == ECurrentGameState::GameStarting
+	    && !CanStartGame())
+	{
+		// Game is not allowed to start at current moment
 		return false;
 	}
 
@@ -82,6 +90,26 @@ ECurrentGameState AMyGameStateBase::GetPreviousGameState()
 		return MyGameState->LocalPreviousGameStateInternal;
 	}
 	return ECurrentGameState::None;
+}
+
+// Returns true if the match can be started or restarted
+bool AMyGameStateBase::CanStartGame() const
+{
+	if (LocalGameStateInternal == ECGS::GameStarting)
+	{
+		// The game is already starting (3-2-1)
+		return false;
+	}
+
+	if (UMultiplayerUtilsLibrary::IsMultiplayerGame())
+	{
+		// In multiplayer, the game can be started only when it is ended or not running yet
+		return LocalGameStateInternal == ECurrentGameState::EndGame
+		       || LocalGameStateInternal == ECurrentGameState::Menu;
+	}
+
+	// In singleplayer, the game can be started or restarted at any time
+	return true;
 }
 
 // Updates current game state

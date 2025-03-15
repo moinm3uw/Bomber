@@ -8,6 +8,7 @@
 
 enum class ELevelType : uint8;
 enum class EActorType : uint8;
+enum class EPlayerType : uint8;
 
 /**
  * 	The static functions library
@@ -22,9 +23,10 @@ public:
 	 *		Static library functions
 	 * --------------------------------------------------- */
 
-	/** Returns number of alive players. */
+	/** Returns number of alive players.
+	 * @param InPlayerType - the type of the characters to count. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	static int32 GetAlivePlayersNum();
+	static int32 GetAlivePlayersNum(EPlayerType InPlayerType);
 
 	/** Returns the type of the current level. */
 	UFUNCTION(BlueprintPure, Category = "C++")

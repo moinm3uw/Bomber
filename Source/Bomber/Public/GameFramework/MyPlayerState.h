@@ -8,6 +8,8 @@
 //---
 #include "MyPlayerState.generated.h"
 
+enum class EPlayerType : uint8;
+
 /**
  * Holds Player's data like nickname.
  * It's replicated to all clients and persists between matches.
@@ -211,6 +213,10 @@ public:
 	/** Called when player is changed from human to bot or vice versa. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnIsABotChanged OnIsABotChanged;
+
+	/** Returns the type of owner: Human or AI. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE EPlayerType GetPlayerType() const { return IsABot() ? EPlayerType::Bot : EPlayerType::Human; }
 
 	/** Applies bot status, overloads engine's APlayerState::SetIsABot(bool) that is not virtual and not exposed to blueprints. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")

@@ -108,7 +108,7 @@ bool UMyCameraComponent::UpdateLocation(float DeltaTime/* = 0.f*/)
 
 	// If true, the camera will be forced moving to the start position
 	if (bIsCameraLockedOnCenterInternal
-	    || !UMyBlueprintFunctionLibrary::GetAlivePlayersNum()
+	    || !UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any)
 	    || bForceStartInternal)
 	{
 		static constexpr float Tolerance = 10.f;

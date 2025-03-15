@@ -14,7 +14,6 @@
 #include "GameFramework/MyPlayerState.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
-#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
@@ -66,12 +65,6 @@ bool AMyPlayerController::CanChangeGameState(ECurrentGameState NewGameState) con
 		return false;
 	}
 
-	if (!UMultiplayerUtilsLibrary::IsPartyLeader())
-	{
-		// Is joined client
-		return false;
-	}
-
 	// Don't change the game state if game is run from the `Render Movie`
 	return !bCinematicMode;
 }
@@ -91,16 +84,6 @@ void AMyPlayerController::SetMenuState()
 	if (CanChangeGameState(ECGS::Menu))
 	{
 		ServerSetGameState(ECGS::Menu);
-	}
-}
-
-// Is called during the In-Game state to show results to all players regarding finished match (Win, Lose or Draw)
-void AMyPlayerController::SetEndGameState()
-{
-	if (CanChangeGameState(ECGS::EndGame)
-	    && UMyBlueprintFunctionLibrary::GetAlivePlayersNum() <= 1)
-	{
-		ServerSetGameState(ECGS::EndGame);
 	}
 }
 

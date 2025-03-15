@@ -10,11 +10,22 @@
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 //---
 #include "Engine/World.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MVVM_MyGameViewModel)
+
+/*********************************************************************************************
+ * Current Game State
+ ********************************************************************************************* */
+
+// Called when the current game state was changed
+void UMVVM_MyGameViewModel::OnGameStateChanged_Implementation(ECurrentGameState InGameState)
+{
+	SetCurrentGameState(InGameState);
+
+	SetCanRestartGame(AMyGameStateBase::Get().CanStartGame());
+}
 
 /*********************************************************************************************
  * End-Game State
@@ -88,7 +99,7 @@ void UMVVM_MyGameViewModel::OnViewModelConstruct_Implementation(const UUserWidge
 {
 	Super::OnViewModelConstruct_Implementation(UserWidget);
 
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::SetCurrentGameState);
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
 	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
 
@@ -118,6 +129,7 @@ void UMVVM_MyGameViewModel::OnGameStateCreated_Implementation(AGameStateBase* Ga
 	AMyGameStateBase& MyGameState = *CastChecked<AMyGameStateBase>(GameState);
 	MyGameState.OnStartingTimerSecRemainChanged.AddUniqueDynamic(this, &ThisClass::OnStartingTimerSecRemainChanged);
 	MyGameState.OnInGameTimerSecRemainChanged.AddUniqueDynamic(this, &ThisClass::OnInGameTimerSecRemainChanged);
+	MyGameState.GetWorld()->GameStateSetEvent.RemoveAll(this);
 }
 
 // Called when the local player character is spawned, possessed, and replicated
@@ -134,6 +146,4 @@ void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacte
 	UMouseActivityComponent* MouseActivityComponent = UMyBlueprintFunctionLibrary::GetMouseActivityComponent();
 	checkf(MouseActivityComponent, TEXT("ERROR: [%i] %hs:\n'MouseActivityComponent' is null!"), __LINE__, __FUNCTION__);
 	MouseActivityComponent->OnMouseVisibilityChanged.AddUniqueDynamic(this, &ThisClass::OnMouseVisibilityChanged);
-
-	SetIsPartyLeader(UMultiplayerUtilsLibrary::IsPartyLeader());
 }
