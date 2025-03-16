@@ -23,6 +23,15 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static FORCEINLINE bool IsMultiplayerGame() { return GetPlayersInMultiplayerNum() > 1; }
 
+	/** Returns true if running from the server or party-leader client
+	 * If false, then caller is joined client. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static bool IsPartyLeader();
+
+	/** Returns true in editor game if running from client-only mode, so caller is single-player client or party-leader client. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static bool IsAuthoritativeClient();
+
 	/** Returns amount of players (host + clients) playing this game. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static int32 GetPlayersInMultiplayerNum();
