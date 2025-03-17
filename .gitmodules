@@ -29,3 +29,6 @@
 	path = Plugins/LevelSequencerAudioTrimmer
 	url = https://github.com/JanSeliv/LevelSequencerAudioTrimmer.git
 	branch = develop
+[submodule "Plugins/AdvancedSessionsPlugin"]
+	path = Plugins/AdvancedSessionsPlugin
+	url = git@github.com:JanSeliv/AdvancedSessionsPlugin.git
