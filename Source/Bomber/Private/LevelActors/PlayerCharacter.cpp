@@ -668,6 +668,13 @@ void APlayerCharacter::TryPossessController(bool bForcePlayerController/* = fals
 // Move the player character
 void APlayerCharacter::MovePlayer(const FInputActionValue& ActionValue)
 {
+	const AController* OwnedController = GetController();
+	if (!OwnedController
+	    || OwnedController->IsMoveInputIgnored())
+	{
+		return;
+	}
+
 	// input is a Vector2D
 	const FVector2D MovementVector = ActionValue.Get<FVector2D>();
 
@@ -886,22 +893,24 @@ void APlayerCharacter::OnRep_PlayerMeshData()
  ********************************************************************************************* */
 
 // Spawns bomb on character position
-void APlayerCharacter::ServerSpawnBomb_Implementation()
+void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 {
-	if (UUtilsLibrary::IsEditorNotPieWorld())
+	const AController* OwnedController = GetController();
+	if (!ensureMsgf(OwnedController, TEXT("ASSERT: [%i] %hs:\n'OwnedController' is not valid!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(MapComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MapComponentInternal' is not valid!"), __LINE__, __FUNCTION__))
 	{
-		// Should not spawn bomb in PIE
 		return;
 	}
 
-	const AController* OwnedController = GetController();
-	if (!MapComponentInternal                     // The Map Component is not valid or transient
-	    || PowerupsInternal.FireN <= 0            // Null length of explosion
-	    || PowerupsInternal.BombNCurrent <= 0     // No more bombs
-	    || !OwnedController                       // controller is not valid
-	    || OwnedController->IsMoveInputIgnored()) // controller is blocked
+	if (!bForce)
 	{
-		return;
+		if (UUtilsLibrary::IsEditorNotPieWorld()      // Should not spawn bomb in PIE
+		    || PowerupsInternal.FireN <= 0            // Null length of explosion
+		    || PowerupsInternal.BombNCurrent <= 0     // No more bombs
+		    || OwnedController->IsMoveInputIgnored()) // controller is blocked
+		{
+			return;
+		}
 	}
 
 	// Bomb is spawned on the current location, so make sure it's synced

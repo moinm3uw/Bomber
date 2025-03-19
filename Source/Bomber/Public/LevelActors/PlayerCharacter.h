@@ -311,9 +311,10 @@ protected:
 	 * Bomb Placement
 	 ********************************************************************************************* */
 public:
-	/** Spawns bomb on character position */
+	/** Spawns bomb on character position.
+	 * @param bForce If true, will force spawning bomb without any checks, might be useful for testing or modding. */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "C++")
-	void ServerSpawnBomb();
+	void ServerSpawnBomb(bool bForce = false);
 
 	/** Changes the amount of currently available bombs for this player, can be called only on the server. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
