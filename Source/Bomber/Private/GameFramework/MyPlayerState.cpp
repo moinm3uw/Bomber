@@ -2,6 +2,8 @@
 
 #include "GameFramework/MyPlayerState.h"
 //---
+#include "AdvancedIdentityLibrary.h"
+#include "AdvancedSteamFriendsLibrary.h"
 #include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
@@ -156,20 +158,45 @@ void AMyPlayerState::SetSavedPlayerName(FName NewName)
 }
 
 // Applies default AI name based on current character ID like "AI 0", "AI 1" etc
-void AMyPlayerState::SetDefaultBotName()
+void AMyPlayerState::SetDefaultPlayerName()
 {
-	if (!HasAuthority()
-	    || !IsABot())
+	if (!HasAuthority())
 	{
-		// Is not bot
 		return;
 	}
 
-	const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
-	const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
-	if (GetPlayerName() != AIName)
+	const EPlayerType PlayerType = GetPlayerType();
+	switch (PlayerType)
 	{
-		SetPlayerName(AIName);
+		case EPlayerType::Bot:
+		{
+			const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
+			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
+			if (GetPlayerName() != AIName)
+			{
+				SetPlayerName(AIName);
+			}
+			break;
+		}
+
+		case EPlayerType::Human:
+		{
+			// First, try to obtain player name from the OS
+			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+
+			// Then, try to obtain player name from online subsystem
+			FString OnlinePlayerName;
+			const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
+			UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/ OnlinePlayerName);
+			if (!OnlinePlayerName.IsEmpty())
+			{
+				SavedPlayerNameInternal = *OnlinePlayerName;
+			}
+			break;
+		}
+
+		default:
+			break;
 	}
 }
 
@@ -520,7 +547,7 @@ void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 		// Apply custom player name from config
 		if (SavedPlayerNameInternal.IsNone())
 		{
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+			SetDefaultPlayerName();
 		}
 		SetPlayerName(SavedPlayerNameInternal.ToString());
 		SetPendingPlayerName(SavedPlayerNameInternal);
