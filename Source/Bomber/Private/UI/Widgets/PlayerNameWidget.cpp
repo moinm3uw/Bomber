@@ -1,37 +1,29 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
-#include "UI/Widgets/PlayerName3DWidget.h"
+#include "UI/Widgets/PlayerNameWidget.h"
 //---
 #include "LevelActors/PlayerCharacter.h"
+#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextBlock.h"
 //---
-#include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerName3DWidget)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerNameWidget)
 
 // Is overridden to hide dependent 3D widget components along with this widget
-void UPlayerName3DWidget::SetVisibility(ESlateVisibility InVisibility)
+void UPlayerNameWidget::SetVisibility(ESlateVisibility InVisibility)
 {
 	Super::SetVisibility(InVisibility);
 
 	// Hide 3D widget components if this widget is hidden
-	if (PlayerOwnerInternal)
+	const APlayerCharacter* PlayerOwner = UMyBlueprintFunctionLibrary::GetPlayerCharacter(AssociatedPlayerIdInternal);
+	UStaticMeshComponent* NameplateMesh = PlayerOwner ? PlayerOwner->GetNameplateMesh() : nullptr;
+	if (NameplateMesh)
 	{
 		constexpr bool bPropagateToChildren = true;
 		const bool bMakeVisible = InVisibility == ESlateVisibility::Visible;
-
-		UStaticMeshComponent* NameplateMesh = PlayerOwnerInternal->GetNameplateMesh();
-		checkf(NameplateMesh, TEXT("ERROR: [%i] %hs:\n'NameplateMesh' is null!"), __LINE__, __FUNCTION__);
 		NameplateMesh->SetVisibility(bMakeVisible, bPropagateToChildren);
 	}
-}
-
-// Is overridden to perform cleanup
-void UPlayerName3DWidget::BeginDestroy()
-{
-	Super::BeginDestroy();
-
-	PlayerOwnerInternal = nullptr;
 }
 
 /*********************************************************************************************
@@ -39,13 +31,13 @@ void UPlayerName3DWidget::BeginDestroy()
  ********************************************************************************************* */
 
 // Returns the player name from the widget
-FText UPlayerName3DWidget::GetPlayerName() const
+FText UPlayerNameWidget::GetPlayerName() const
 {
 	return PlayerNameTextWidget ? PlayerNameTextWidget->GetText() : FText::GetEmpty();
 }
 
 // Sets player name to the widget
-void UPlayerName3DWidget::SetPlayerName(const FText& NewPlayerName)
+void UPlayerNameWidget::SetPlayerName(const FText& NewPlayerName)
 {
 	checkf(PlayerNameTextWidget, TEXT("ERROR: [%i] %hs:\n'PlayerNameTextWidget' is null!"), __LINE__, __FUNCTION__);
 	if (!PlayerNameTextWidget->GetText().IdenticalTo(NewPlayerName))
@@ -59,10 +51,10 @@ void UPlayerName3DWidget::SetPlayerName(const FText& NewPlayerName)
  ********************************************************************************************* */
 
 // Sets the player character to the widget
-void UPlayerName3DWidget::SetPlayerOwner(APlayerCharacter* NewPlayer)
+void UPlayerNameWidget::SetAssociatedPlayerId(int32 NewPlayerId)
 {
-	if (ensureMsgf(NewPlayer, TEXT("ASSERT: [%i] %hs:\n'NewPlayer' is null!"), __LINE__, __FUNCTION__))
+	if (ensureMsgf(NewPlayerId >= 0, TEXT("ASSERT: [%i] %hs:\n'NewPlayer' is null!"), __LINE__, __FUNCTION__))
 	{
-		PlayerOwnerInternal = NewPlayer;
+		AssociatedPlayerIdInternal = NewPlayerId;
 	}
 }

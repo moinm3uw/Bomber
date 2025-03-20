@@ -8,7 +8,7 @@
 #include "MyUtilsLibraries/WidgetUtilsLibrary.h"
 #include "UI/SettingsWidget.h"
 #include "UI/Widgets/HUDWidget.h"
-#include "UI/Widgets/PlayerName3DWidget.h"
+#include "UI/Widgets/PlayerNameWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Components/Viewport.h"
@@ -98,8 +98,8 @@ void UWidgetsSubsystem::InitWidgets()
 	NicknameWidgetsInternal.Reserve(MaxPlayersNum);
 	for (int32 Index = 0; Index < MaxPlayersNum; ++Index)
 	{
-		UPlayerName3DWidget* NicknameWidget = CreateManageableWidgetChecked<UPlayerName3DWidget>(UIDataAsset.GetNicknameWidgetData());
-		NicknameWidgetsInternal.Emplace(NicknameWidget);
+		UPlayerNameWidget* NicknameWidget = CreateManageableWidgetChecked<UPlayerNameWidget>(UIDataAsset.GetNicknameWidgetData());
+		NicknameWidgetsInternal.Add(NicknameWidget);
 	}
 
 	bAreWidgetInitializedInternal = true;

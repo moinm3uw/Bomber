@@ -18,7 +18,7 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
-#include "UI/Widgets/PlayerName3DWidget.h"
+#include "UI/Widgets/PlayerNameWidget.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -724,7 +724,7 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 void APlayerCharacter::SetNicknameOnNameplate(FName NewName)
 {
 	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
-	UPlayerName3DWidget* PlayerNameWidget = WidgetsSubsystem ? WidgetsSubsystem->GetNicknameWidget(GetPlayerId()) : nullptr;
+	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem ? WidgetsSubsystem->GetNicknameWidget(GetPlayerId()) : nullptr;
 	if (!PlayerNameWidget)
 	{
 		// Widget is not created yet, might be called before UI Subsystem is initialized
@@ -732,7 +732,7 @@ void APlayerCharacter::SetNicknameOnNameplate(FName NewName)
 	}
 
 	PlayerNameWidget->SetPlayerName(FText::FromName(NewName));
-	PlayerNameWidget->SetPlayerOwner(this);
+	PlayerNameWidget->SetAssociatedPlayerId(GetPlayerId());
 
 	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	const UUserWidget* LastWidget = PlayerName3DWidgetComponentInternal->GetWidget();
