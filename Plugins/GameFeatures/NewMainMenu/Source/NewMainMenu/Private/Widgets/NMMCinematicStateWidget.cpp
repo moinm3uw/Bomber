@@ -24,13 +24,7 @@ void UNMMCinematicStateWidget::SetCurrentHoldTime(float NewHoldTime)
 	checkf(SkipHoldProgress, TEXT("ERROR: [%i] %s:\n'SkipHoldProgress' is null!"), __LINE__, *FString(__FUNCTION__));
 	SkipHoldProgress->SetValue(HoldProgressNormalized);
 
-	const UWorld* World = GetWorld();
-	checkf(World, TEXT("ERROR: [%i] %s:\n'World' is null!"), __LINE__, *FString(__FUNCTION__));
-	if (CurrentHoldTimeInternal > 0.f && CurrentHoldTimeInternal <= World->GetDeltaSeconds())
-	{
-		OnCinematicSkipStarted();
-	}
-	else if (CurrentHoldTimeInternal >= MaxHoldTime)
+	if (CurrentHoldTimeInternal >= MaxHoldTime)
 	{
 		OnCinematicSkipFinished();
 	}
@@ -40,9 +34,6 @@ void UNMMCinematicStateWidget::SetCurrentHoldTime(float NewHoldTime)
 void UNMMCinematicStateWidget::ResetWidget()
 {
 	SetCurrentHoldTime(0.f);
-
-	checkf(SkipText, TEXT("ERROR: [%i] %s:\n'SkipText' is null!"), __LINE__, *FString(__FUNCTION__));
-	SkipText->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 // // Called after the underlying slate widget is constructed
@@ -96,13 +87,6 @@ void UNMMCinematicStateWidget::OnCinematicSkipOngoing_Implementation()
 void UNMMCinematicStateWidget::OnCinematicSkipReleased_Implementation()
 {
 	ResetWidget();
-}
-
-// Is called on the beginning of holding the skip button
-void UNMMCinematicStateWidget::OnCinematicSkipStarted_Implementation()
-{
-	checkf(SkipText, TEXT("ERROR: [%i] %s:\n'SkipText' is null!"), __LINE__, *FString(__FUNCTION__));
-	SkipText->SetVisibility(ESlateVisibility::Visible);
 }
 
 // Is called to skip cinematic on finished holding the skip button or clicked on UI
