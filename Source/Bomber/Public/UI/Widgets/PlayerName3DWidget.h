@@ -27,11 +27,11 @@ protected:
 public:
 	/** Returns the player name from the widget. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FName GetPlayerName() const;
+	FText GetPlayerName() const;
 
 	/** Sets player name to the widget. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetPlayerName(FName NewPlayerName);
+	void SetPlayerName(const FText& NewPlayerName);
 
 protected:
 	/** The text block with player name. */
@@ -53,6 +53,6 @@ public:
 
 protected:
 	/** Contains cached player character owner, which can be AI or Player. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "NAME"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Player Owner"))
 	TObjectPtr<class APlayerCharacter> PlayerOwnerInternal = nullptr;
 };

@@ -39,19 +39,18 @@ void UPlayerName3DWidget::BeginDestroy()
  ********************************************************************************************* */
 
 // Returns the player name from the widget
-FName UPlayerName3DWidget::GetPlayerName() const
+FText UPlayerName3DWidget::GetPlayerName() const
 {
-	return PlayerNameTextWidget ? FName(*PlayerNameTextWidget->GetText().ToString()) : NAME_None;
+	return PlayerNameTextWidget ? PlayerNameTextWidget->GetText() : FText::GetEmpty();
 }
 
 // Sets player name to the widget
-void UPlayerName3DWidget::SetPlayerName(FName NewPlayerName)
+void UPlayerName3DWidget::SetPlayerName(const FText& NewPlayerName)
 {
 	checkf(PlayerNameTextWidget, TEXT("ERROR: [%i] %hs:\n'PlayerNameTextWidget' is null!"), __LINE__, __FUNCTION__);
-	const FText PlayerNameText = FText::FromName(NewPlayerName);
-	if (!PlayerNameTextWidget->GetText().IdenticalTo(PlayerNameText))
+	if (!PlayerNameTextWidget->GetText().IdenticalTo(NewPlayerName))
 	{
-		PlayerNameTextWidget->SetText(PlayerNameText);
+		PlayerNameTextWidget->SetText(NewPlayerName);
 	}
 }
 
