@@ -102,9 +102,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE FName GetSavedPlayerName() const { return SavedPlayerNameInternal; }
 
-	/** Assigns default bots name based on current character ID like "AI 0", "AI 1" etc. */
+	/** Attempts to assign default nickname.
+	 * - Bots names rely on current character ID like "AI 0", "AI 1" etc.
+	 * - Human names are obtained from the OS or online subsystem if available. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetDefaultBotName();
+	void SetDefaultPlayerName();
 
 	/** Is overridden to additionally set player name on server and broadcast it. */
 	virtual void SetPlayerName(const FString& S) override;

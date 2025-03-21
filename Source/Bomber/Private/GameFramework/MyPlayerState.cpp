@@ -155,21 +155,38 @@ void AMyPlayerState::SetSavedPlayerName(FName NewName)
 	}
 }
 
-// Applies default AI name based on current character ID like "AI 0", "AI 1" etc
-void AMyPlayerState::SetDefaultBotName()
+// Attempts to assign default nickname
+void AMyPlayerState::SetDefaultPlayerName()
 {
-	if (!HasAuthority()
-	    || !IsABot())
+	if (!HasAuthority())
 	{
-		// Is not bot
 		return;
 	}
 
-	const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
-	const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
-	if (GetPlayerName() != AIName)
+	const EPlayerType PlayerType = GetPlayerType();
+	switch (PlayerType)
 	{
-		SetPlayerName(AIName);
+		case EPlayerType::Bot:
+		{
+			const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
+			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
+			if (GetPlayerName() != AIName)
+			{
+				SetPlayerName(AIName);
+			}
+			break;
+		}
+
+		case EPlayerType::Human:
+		{
+			// First, try to obtain player name from the OS
+			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+
+			break;
+		}
+
+		default:
+			break;
 	}
 }
 
@@ -447,7 +464,7 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 		// Apply custom player name from config
 		if (SavedPlayerNameInternal.IsNone())
 		{
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+			SetDefaultPlayerName();
 		}
 		SetPlayerName(SavedPlayerNameInternal.ToString());
 		SetPendingPlayerName(SavedPlayerNameInternal);

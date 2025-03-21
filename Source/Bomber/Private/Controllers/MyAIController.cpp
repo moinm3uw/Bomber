@@ -143,7 +143,7 @@ void AMyAIController::OnPossess(APawn* InPawn)
 		OwnerInternal->SetPlayerState(NewPlayerState);
 
 		// Update default nickname for AI
-		NewPlayerState->SetDefaultBotName();
+		NewPlayerState->SetDefaultPlayerName();
 	}
 
 	// Notify host about bot possession
