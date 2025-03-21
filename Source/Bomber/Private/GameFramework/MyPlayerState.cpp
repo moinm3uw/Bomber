@@ -13,6 +13,7 @@
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 //---
@@ -35,10 +36,18 @@ bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 	return PC && PC->IsLocalPlayerController();
 }
 
+// Returns owner human or bot character
+APlayerCharacter* AMyPlayerState::GetPlayerCharacter() const
+{
+	return Cast<APlayerCharacter>(GetPawn());
+}
+
 // Returns always valid owner (human or bot), or crash if nullptr
 APlayerCharacter& AMyPlayerState::GetPlayerCharacterChecked() const
 {
-	return *CastChecked<APlayerCharacter>(GetPawn());
+	APlayerCharacter* PlayerCharacter = GetPlayerCharacter();
+	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
+	return *PlayerCharacter;
 }
 
 /*********************************************************************************************
@@ -176,7 +185,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 	{
 		case EPlayerType::Bot:
 		{
-			const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
+			const int32 CharacterID = GetPlayerId();
 			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
 			if (GetPlayerName() != AIName)
 			{
@@ -545,6 +554,13 @@ void AMyPlayerState::BeginPlay()
 	}
 }
 
+// Is overridden to prevent the player state from being destroyed to be able to reuse it by bots
+void AMyPlayerState::OnDeactivated()
+{
+	// Do not call super to avoid destroying the player state
+	return;
+}
+
 // Register a player with the online subsystem
 void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
@@ -558,7 +574,17 @@ void AMyPlayerState::UnregisterPlayerWithSession()
 {
 	Super::UnregisterPlayerWithSession();
 
+	const UWorld* World = GetWorld();
+	if (!World || World->bIsTearingDown)
+	{
+		return;
+	}
+
+	// Human player left session, so set it as bot
 	SetIsABot();
+
+	// Reset player name to default
+	SetDefaultPlayerName();
 }
 
 // Is overridden to handle own OnRep functions for engine properties

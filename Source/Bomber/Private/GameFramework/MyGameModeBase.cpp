@@ -76,10 +76,14 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 void AMyGameModeBase::Logout(AController* Exiting)
 {
 	AMyPlayerController* MyPC = Cast<AMyPlayerController>(Exiting);
-	if (MyPC
-	    && MyPC->HasClientLoadedCurrentWorld())
+	if (MyPC && MyPC->HasClientLoadedCurrentWorld())
 	{
-		PlayerControllersInternal.Remove(MyPC);
+		PlayerControllersInternal.RemoveSwap(MyPC);
+
+		if (APlayerState* PlayerState = MyPC->GetPlayerState<APlayerState>())
+		{
+			PlayerState->UnregisterPlayerWithSession();
+		}
 	}
 
 	Super::Logout(Exiting);

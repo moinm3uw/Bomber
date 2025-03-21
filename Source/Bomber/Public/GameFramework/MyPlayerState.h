@@ -24,10 +24,12 @@ public:
 	AMyPlayerState();
 
 	/** Returns true if this Player State is controlled by a locally controlled player. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	bool IsPlayerStateLocallyControlled() const;
 
-	/** Returns always valid owner (human or bot), or crash if nullptr. */
+	/** Returns owner human or bot character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	class APlayerCharacter* GetPlayerCharacter() const;
 	class APlayerCharacter& GetPlayerCharacterChecked() const;
 
 	/*********************************************************************************************
@@ -292,6 +294,9 @@ protected:
 
 	/** Called when the game starts. */
 	virtual void BeginPlay() override;
+
+	/** Is overridden to prevent the player state from being destroyed to be able to reuse it by bots. */
+	virtual void OnDeactivated() override;
 
 	/** Register a player with the online subsystem. */
 	virtual void RegisterPlayerWithSession(bool bWasFromInvite) override;
