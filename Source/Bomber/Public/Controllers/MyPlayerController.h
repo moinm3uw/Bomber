@@ -55,7 +55,7 @@ protected:
 	TArray<TObjectPtr<const UMyInputMappingContext>> AllInputContextsInternal;
 
 	/** Component that responsible for mouse-related logic like showing and hiding itself. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = ""))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mouse Component"))
 	TObjectPtr<class UMouseActivityComponent> MouseComponentInternal = nullptr;
 
 	/*********************************************************************************************

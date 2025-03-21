@@ -15,6 +15,7 @@
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 //---
@@ -37,10 +38,18 @@ bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 	return PC && PC->IsLocalPlayerController();
 }
 
+// Returns owner human or bot character
+APlayerCharacter* AMyPlayerState::GetPlayerCharacter() const
+{
+	return Cast<APlayerCharacter>(GetPawn());
+}
+
 // Returns always valid owner (human or bot), or crash if nullptr
 APlayerCharacter& AMyPlayerState::GetPlayerCharacterChecked() const
 {
-	return *CastChecked<APlayerCharacter>(GetPawn());
+	APlayerCharacter* PlayerCharacter = GetPlayerCharacter();
+	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
+	return *PlayerCharacter;
 }
 
 /*********************************************************************************************
@@ -146,6 +155,13 @@ void AMyPlayerState::ServerSetPlayerName_Implementation(FName NewName)
 	SetPlayerName(NewName.ToString());
 }
 
+// Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change
+FName AMyPlayerState::GetPendingPlayerName() const
+{
+	const FName OldPlayerName = *GetOldPlayerName();
+	return !OldPlayerName.IsNone() ? OldPlayerName : SavedPlayerNameInternal;
+}
+
 // Sets saved human name to config property
 void AMyPlayerState::SetSavedPlayerName(FName NewName)
 {
@@ -157,7 +173,7 @@ void AMyPlayerState::SetSavedPlayerName(FName NewName)
 	}
 }
 
-// Applies default AI name based on current character ID like "AI 0", "AI 1" etc
+// Attempts to assign default nickname
 void AMyPlayerState::SetDefaultPlayerName()
 {
 	if (!HasAuthority())
@@ -165,16 +181,17 @@ void AMyPlayerState::SetDefaultPlayerName()
 		return;
 	}
 
+	FString NewName;
 	const EPlayerType PlayerType = GetPlayerType();
 	switch (PlayerType)
 	{
 		case EPlayerType::Bot:
 		{
-			const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
+			const int32 CharacterID = GetPlayerId();
 			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
 			if (GetPlayerName() != AIName)
 			{
-				SetPlayerName(AIName);
+				NewName = AIName;
 			}
 			break;
 		}
@@ -182,7 +199,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 		case EPlayerType::Human:
 		{
 			// First, try to obtain player name from the OS
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+			NewName = UKismetSystemLibrary::GetPlatformUserName();
 
 			// Then, try to obtain player name from online subsystem
 			FString OnlinePlayerName;
@@ -190,7 +207,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 			UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/ OnlinePlayerName);
 			if (!OnlinePlayerName.IsEmpty())
 			{
-				SavedPlayerNameInternal = *OnlinePlayerName;
+				NewName = *OnlinePlayerName;
 			}
 			break;
 		}
@@ -198,23 +215,26 @@ void AMyPlayerState::SetDefaultPlayerName()
 		default:
 			break;
 	}
+
+	SetPlayerName(NewName);
 }
 
 // Overrides base method to additionally set player name on server and broadcast it
-void AMyPlayerState::SetPlayerName(const FString& S)
+void AMyPlayerState::SetPlayerName(const FString& NewPlayerName)
 {
-	if (S == GetPlayerName())
+	if (NewPlayerName == GetPlayerName()
+	    || NewPlayerName.IsEmpty())
 	{
 		return;
 	}
 
 	if (HasAuthority())
 	{
-		Super::SetPlayerName(S);
+		Super::SetPlayerName(NewPlayerName);
 	}
 	else
 	{
-		ServerSetPlayerName(*S);
+		ServerSetPlayerName(*NewPlayerName);
 		ApplyPlayerName(); // apply locally
 	}
 }
@@ -465,13 +485,19 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 	}
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnPlayerStateInit(*this);
-}
 
-// Listens game settings to apply them once saved
-void AMyPlayerState::OnSaveSettings_Implementation()
-{
-	const FName PendingPlayerName = GetPendingPlayerName();
-	SetSavedPlayerName(PendingPlayerName);
+	if (IsPlayerStateLocallyControlled())
+	{
+		// Listen game settings to apply them once saved
+		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
+
+		// Apply custom player name from config
+		SetPlayerName(SavedPlayerNameInternal.ToString());
+		if (SavedPlayerNameInternal.IsNone())
+		{
+			SetDefaultPlayerName();
+		}
+	}
 }
 
 // Listen game states to notify server about ending game for controlled player
@@ -496,6 +522,13 @@ void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState Current
 		default:
 			break;
 	}
+}
+
+// Listens game settings to apply them once saved
+void AMyPlayerState::OnSaveSettings_Implementation()
+{
+	const FName PendingPlayerName = GetPendingPlayerName();
+	SetSavedPlayerName(PendingPlayerName);
 }
 
 /*********************************************************************************************
@@ -531,27 +564,19 @@ void AMyPlayerState::BeginPlay()
 	}
 }
 
+// Is overridden to prevent the player state from being destroyed to be able to reuse it by bots
+void AMyPlayerState::OnDeactivated()
+{
+	// Do not call super to avoid destroying the player state
+	return;
+}
+
 // Register a player with the online subsystem
 void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
 	Super::RegisterPlayerWithSession(bWasFromInvite);
 
 	SetIsHuman();
-
-	// Apply custom player name from config if any
-	if (IsPlayerStateLocallyControlled())
-	{
-		// Listen game settings to apply them once saved
-		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
-
-		// Apply custom player name from config
-		if (SavedPlayerNameInternal.IsNone())
-		{
-			SetDefaultPlayerName();
-		}
-		SetPlayerName(SavedPlayerNameInternal.ToString());
-		SetPendingPlayerName(SavedPlayerNameInternal);
-	}
 }
 
 // Unregister a player with the online subsystem
@@ -559,7 +584,17 @@ void AMyPlayerState::UnregisterPlayerWithSession()
 {
 	Super::UnregisterPlayerWithSession();
 
+	const UWorld* World = GetWorld();
+	if (!World || World->bIsTearingDown)
+	{
+		return;
+	}
+
+	// Human player left session, so set it as bot
 	SetIsABot();
+
+	// Reset player name to default
+	SetDefaultPlayerName();
 }
 
 // Is overridden to handle own OnRep functions for engine properties

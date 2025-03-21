@@ -24,10 +24,12 @@ public:
 	AMyPlayerState();
 
 	/** Returns true if this Player State is controlled by a locally controlled player. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	bool IsPlayerStateLocallyControlled() const;
 
-	/** Returns always valid owner (human or bot), or crash if nullptr. */
+	/** Returns owner human or bot character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	class APlayerCharacter* GetPlayerCharacter() const;
 	class APlayerCharacter& GetPlayerCharacterChecked() const;
 
 	/*********************************************************************************************
@@ -89,9 +91,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetPendingPlayerName(FName NewName) { SetOldPlayerName(NewName.ToString()); }
 
-	/** Exposes Base::GetOldPlayerName() to blueprints to get locally the player name on each nickname change.*/
+	/** Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE FName GetPendingPlayerName() const { return *GetOldPlayerName(); }
+	FName GetPendingPlayerName() const;
 
 	/** Sets saved human name to config property.
 	 * SaveConfig() needs to be called separately to save it to the file. */
@@ -109,7 +111,7 @@ public:
 	void SetDefaultPlayerName();
 
 	/** Is overridden to additionally set player name on server and broadcast it. */
-	virtual void SetPlayerName(const FString& S) override;
+	virtual void SetPlayerName(const FString& NewPlayerName) override;
 
 	/** Applies and broadcasts player name. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
@@ -270,7 +272,8 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 public:
-	/** Is called when player state is initialized with assigned character. */
+	/** Is called when player state is initialized with assigned character.
+	 * Can be called multiple times on each player join due to reusing player states. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnPlayerStateInit();
 
@@ -291,6 +294,9 @@ protected:
 
 	/** Called when the game starts. */
 	virtual void BeginPlay() override;
+
+	/** Is overridden to prevent the player state from being destroyed to be able to reuse it by bots. */
+	virtual void OnDeactivated() override;
 
 	/** Register a player with the online subsystem. */
 	virtual void RegisterPlayerWithSession(bool bWasFromInvite) override;

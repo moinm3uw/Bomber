@@ -530,7 +530,7 @@
 			},
 			"UserInput":
 			{
-				"MaxCharactersNumber": 8
+				"MaxCharactersNumber": 32
 			},
 			"CustomWidget":
 			{
