@@ -144,6 +144,13 @@ void AMyPlayerState::ServerSetPlayerName_Implementation(FName NewName)
 	SetPlayerName(NewName.ToString());
 }
 
+// Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change
+FName AMyPlayerState::GetPendingPlayerName() const
+{
+	const FName OldPlayerName = *GetOldPlayerName();
+	return !OldPlayerName.IsNone() ? OldPlayerName : SavedPlayerNameInternal;
+}
+
 // Sets saved human name to config property
 void AMyPlayerState::SetSavedPlayerName(FName NewName)
 {
@@ -163,6 +170,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 		return;
 	}
 
+	FString NewName;
 	const EPlayerType PlayerType = GetPlayerType();
 	switch (PlayerType)
 	{
@@ -172,7 +180,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
 			if (GetPlayerName() != AIName)
 			{
-				SetPlayerName(AIName);
+				NewName = AIName;
 			}
 			break;
 		}
@@ -180,7 +188,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 		case EPlayerType::Human:
 		{
 			// First, try to obtain player name from the OS
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+			NewName = UKismetSystemLibrary::GetPlatformUserName();
 
 			break;
 		}
@@ -188,23 +196,26 @@ void AMyPlayerState::SetDefaultPlayerName()
 		default:
 			break;
 	}
+
+	SetPlayerName(NewName);
 }
 
 // Overrides base method to additionally set player name on server and broadcast it
-void AMyPlayerState::SetPlayerName(const FString& S)
+void AMyPlayerState::SetPlayerName(const FString& NewPlayerName)
 {
-	if (S == GetPlayerName())
+	if (NewPlayerName == GetPlayerName()
+		|| NewPlayerName.IsEmpty())
 	{
 		return;
 	}
 
 	if (HasAuthority())
 	{
-		Super::SetPlayerName(S);
+		Super::SetPlayerName(NewPlayerName);
 	}
 	else
 	{
-		ServerSetPlayerName(*S);
+		ServerSetPlayerName(*NewPlayerName);
 		ApplyPlayerName(); // apply locally
 	}
 }
@@ -462,12 +473,11 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
 
 		// Apply custom player name from config
+		SetPlayerName(SavedPlayerNameInternal.ToString());
 		if (SavedPlayerNameInternal.IsNone())
 		{
 			SetDefaultPlayerName();
 		}
-		SetPlayerName(SavedPlayerNameInternal.ToString());
-		SetPendingPlayerName(SavedPlayerNameInternal);
 	}
 }
 

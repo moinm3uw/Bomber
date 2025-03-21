@@ -89,9 +89,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetPendingPlayerName(FName NewName) { SetOldPlayerName(NewName.ToString()); }
 
-	/** Exposes Base::GetOldPlayerName() to blueprints to get locally the player name on each nickname change.*/
+	/** Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE FName GetPendingPlayerName() const { return *GetOldPlayerName(); }
+	FName GetPendingPlayerName() const;
 
 	/** Sets saved human name to config property.
 	 * SaveConfig() needs to be called separately to save it to the file. */
@@ -109,7 +109,7 @@ public:
 	void SetDefaultPlayerName();
 
 	/** Is overridden to additionally set player name on server and broadcast it. */
-	virtual void SetPlayerName(const FString& S) override;
+	virtual void SetPlayerName(const FString& NewPlayerName) override;
 
 	/** Applies and broadcasts player name. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
