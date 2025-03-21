@@ -2,6 +2,8 @@
 
 #include "GameFramework/MyPlayerState.h"
 //---
+#include "AdvancedIdentityLibrary.h"
+#include "AdvancedSteamFriendsLibrary.h"
 #include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
@@ -199,6 +201,14 @@ void AMyPlayerState::SetDefaultPlayerName()
 			// First, try to obtain player name from the OS
 			NewName = UKismetSystemLibrary::GetPlatformUserName();
 
+			// Then, try to obtain player name from online subsystem
+			FString OnlinePlayerName;
+			const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
+			UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/ OnlinePlayerName);
+			if (!OnlinePlayerName.IsEmpty())
+			{
+				NewName = *OnlinePlayerName;
+			}
 			break;
 		}
 
@@ -213,7 +223,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 void AMyPlayerState::SetPlayerName(const FString& NewPlayerName)
 {
 	if (NewPlayerName == GetPlayerName()
-		|| NewPlayerName.IsEmpty())
+	    || NewPlayerName.IsEmpty())
 	{
 		return;
 	}

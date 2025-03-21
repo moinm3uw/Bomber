@@ -41,6 +41,7 @@ public class Bomber : ModuleRules
                 , "ModelViewViewModel" // MVVM UI pattern
 				//My modules
 				, "SettingsWidgetConstructor" // Generates settings
+				, "AdvancedSessions", "AdvancedSteamSessions" // Steam
 			}
 		);
 
