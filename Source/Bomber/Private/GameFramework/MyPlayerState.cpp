@@ -438,13 +438,20 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 	}
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnPlayerStateInit(*this);
-}
 
-// Listens game settings to apply them once saved
-void AMyPlayerState::OnSaveSettings_Implementation()
-{
-	const FName PendingPlayerName = GetPendingPlayerName();
-	SetSavedPlayerName(PendingPlayerName);
+	if (IsPlayerStateLocallyControlled())
+	{
+		// Listen game settings to apply them once saved
+		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
+
+		// Apply custom player name from config
+		if (SavedPlayerNameInternal.IsNone())
+		{
+			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
+		}
+		SetPlayerName(SavedPlayerNameInternal.ToString());
+		SetPendingPlayerName(SavedPlayerNameInternal);
+	}
 }
 
 // Listen game states to notify server about ending game for controlled player
@@ -469,6 +476,13 @@ void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState Current
 		default:
 			break;
 	}
+}
+
+// Listens game settings to apply them once saved
+void AMyPlayerState::OnSaveSettings_Implementation()
+{
+	const FName PendingPlayerName = GetPendingPlayerName();
+	SetSavedPlayerName(PendingPlayerName);
 }
 
 /*********************************************************************************************
@@ -510,21 +524,6 @@ void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 	Super::RegisterPlayerWithSession(bWasFromInvite);
 
 	SetIsHuman();
-
-	// Apply custom player name from config if any
-	if (IsPlayerStateLocallyControlled())
-	{
-		// Listen game settings to apply them once saved
-		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
-
-		// Apply custom player name from config
-		if (SavedPlayerNameInternal.IsNone())
-		{
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
-		}
-		SetPlayerName(SavedPlayerNameInternal.ToString());
-		SetPendingPlayerName(SavedPlayerNameInternal);
-	}
 }
 
 // Unregister a player with the online subsystem

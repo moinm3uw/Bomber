@@ -268,7 +268,8 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 public:
-	/** Is called when player state is initialized with assigned character. */
+	/** Is called when player state is initialized with assigned character.
+	 * Can be called multiple times on each player join due to reusing player states. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnPlayerStateInit();
 
