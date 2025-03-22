@@ -2,7 +2,6 @@
 
 #include "DataAssets/UIDataAsset.h"
 //---
-#include "Bomber.h"
 #include "DataAssets/DataAssetsContainer.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UIDataAsset)
@@ -24,4 +23,16 @@ const FText& UUIDataAsset::GetEndGameText(EEndGameState EndGameState) const
 	}
 
 	return EndGameTextsInternal.FindChecked(EndGameState);
+}
+
+// Returns the default avatar for the specified player type
+UTexture2D* UUIDataAsset::GetDefaultAvatar(EPlayerType PlayerType) const
+{
+	if (PlayerType == EPlayerType::None)
+	{
+		return nullptr;
+	}
+
+	const TObjectPtr<UTexture2D>* FoundTexturePtr = DefaultAvatarsInternal.Find(PlayerType);
+	return FoundTexturePtr ? *FoundTexturePtr : nullptr;
 }

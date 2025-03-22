@@ -204,10 +204,13 @@ void AMyPlayerState::SetDefaultPlayerName()
 			// Then, try to obtain player name from online subsystem
 			FString OnlinePlayerName;
 			const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
-			UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/ OnlinePlayerName);
-			if (!OnlinePlayerName.IsEmpty())
+			if (LocalID.IsValid())
 			{
-				NewName = *OnlinePlayerName;
+				UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/OnlinePlayerName);
+				if (!OnlinePlayerName.IsEmpty())
+				{
+					NewName = *OnlinePlayerName;
+				}
 			}
 			break;
 		}
@@ -394,9 +397,9 @@ void AMyPlayerState::OnRep_IsABot()
 // Applies and broadcasts IsABot status
 void AMyPlayerState::ApplyIsABot()
 {
-	if (OnIsABotChanged.IsBound())
+	if (OnPlayerTypeChanged.IsBound())
 	{
-		OnIsABotChanged.Broadcast(IsABot());
+		OnPlayerTypeChanged.Broadcast(GetPlayerType());
 	}
 }
 

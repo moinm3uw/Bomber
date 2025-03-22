@@ -2,8 +2,9 @@
 
 #include "UI/ViewModel/MVVM_MyCharacterBase.h"
 //---
+#include "AdvancedSteamFriendsLibrary.h"
+#include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
-#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -34,6 +35,32 @@ void UMVVM_MyCharacterBase::OnNicknameChanged_Implementation(FName NewNickname)
 void UMVVM_MyCharacterBase::OnCharacterDeadChanged_Implementation(bool bIsCharacterDead)
 {
 	SetIsDeadVisibility(bIsCharacterDead ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+/*********************************************************************************************
+ * Avatar (Human / Bot / Online)
+ ********************************************************************************************* */
+
+void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType PlayerType)
+{
+	UTexture2D* NewAvatar = UUIDataAsset::Get().GetDefaultAvatar(PlayerType);
+
+	if (PlayerType == EPlayerType::Human)
+	{
+		const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
+		checkf(MyPlayerState, TEXT("ERROR: [%i] %hs:\n'MyPlayerState' is null!"), __LINE__, __FUNCTION__);
+
+		EBlueprintAsyncResultSwitch Result;
+		FBPUniqueNetId PlayerID;
+		PlayerID.SetUniqueNetId(MyPlayerState->GetUniqueId().GetV1());
+		UTexture2D* OnlineAvatar = PlayerID.IsValid() ? UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(PlayerID, /*out*/Result) : nullptr;
+		if (OnlineAvatar)
+		{
+			NewAvatar = OnlineAvatar;
+		}
+	}
+
+	SetAvatar(NewAvatar);
 }
 
 /*********************************************************************************************
@@ -77,13 +104,6 @@ void UMVVM_MyCharacterBase::OnPlayerStateReady_Implementation(AMyPlayerState* Pl
 	PlayerState->OnCharacterDeadChanged.AddUniqueDynamic(this, &ThisClass::OnCharacterDeadChanged);
 	OnCharacterDeadChanged(PlayerState->IsCharacterDead());
 
-	PlayerState->OnIsABotChanged.AddUniqueDynamic(this, &ThisClass::OnIsBotChanged);
-	OnIsBotChanged(PlayerState->IsABot());
-}
-
-// Called when changed character Bot status is changed, applies both bot and human visibility
-void UMVVM_MyCharacterBase::OnIsBotChanged_Implementation(bool bIsBot)
-{
-	SetIsHumanVisibility(bIsBot ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-	SetIsBotVisibility(bIsBot ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	PlayerState->OnPlayerTypeChanged.AddUniqueDynamic(this, &ThisClass::OnPlayerTypeChanged);
+	OnPlayerTypeChanged(PlayerState->GetPlayerType());
 }

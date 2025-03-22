@@ -4,6 +4,7 @@
 
 #include "Data/MyPrimaryDataAsset.h"
 //---
+#include "Bomber.h" // EPlayerState
 #include "Structures/ManageableWidgetData.h"
 //---
 #include "UIDataAsset.generated.h"
@@ -52,6 +53,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FText& GetEndGameText(EEndGameState EndGameState) const;
 
+	/** Returns the default avatar for the specified player type.
+	 * @see UUIDataAsset::DefaultAvatarsInternal. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	class UTexture2D* GetDefaultAvatar(EPlayerType PlayerType) const;
+
 protected:
 	/** Data for the In-Game Widget. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "HUD Widget"))
@@ -76,4 +82,8 @@ protected:
 	/** Contains the localized texts about specified end game to display on UI. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "End-Game Names"))
 	TMap<EEndGameState, FText> EndGameTextsInternal;
+
+	/** Returns the default avatar for the specified player type. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Default Avatars"))
+	TMap<EPlayerType, TObjectPtr<class UTexture2D>> DefaultAvatarsInternal;
 };

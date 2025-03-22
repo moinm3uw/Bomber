@@ -8,6 +8,10 @@
 //---
 #include "MVVM_MyCharacterBase.generated.h"
 
+class UTexture2D;
+
+enum class EPlayerType : uint8;
+
 /**
  * Contains UI character-related data to be used only by widgets, it can represent player as well as bot.
  */
@@ -58,29 +62,21 @@ protected:
 	void OnCharacterDeadChanged(bool bIsCharacterDead);
 
 	/*********************************************************************************************
-	 * Is Human / Bot
+	 * Avatar (Human / Bot / Online)
 	 ********************************************************************************************* */
 public:
-	/** Setter and Getter is character human controlled, should be 'Visible' when character is human. */
-	void SetIsHumanVisibility(ESlateVisibility NewIsHumanVisibility) { UE_MVVM_SET_PROPERTY_VALUE(IsHumanVisibility, NewIsHumanVisibility); }
-	ESlateVisibility GetIsHumanVisibility() const { return IsHumanVisibility; }
-
-	/** Setter and Getter character bot controlled, should be 'Visible' when character is bot. */
-	void SetIsBotVisibility(ESlateVisibility NewIsBotVisibility) { UE_MVVM_SET_PROPERTY_VALUE(IsBotVisibility, NewIsBotVisibility); }
-	ESlateVisibility GetIsBotVisibility() const { return IsBotVisibility; }
+	/** Setter and Getter about character's avatar, is always valid: default human, bot, or player's online avatar. */
+	void SetAvatar(UTexture2D* NewAvatar) { UE_MVVM_SET_PROPERTY_VALUE(Avatar, NewAvatar); }
+	UTexture2D* GetAvatar() const { return Avatar; }
 
 protected:
-	/** Is 'Visible' when character is human. */
+	/** Character's avatar, is always valid: default human, bot, or player's online avatar. */
 	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	ESlateVisibility IsHumanVisibility = ESlateVisibility::Collapsed;
-
-	/** Is 'Visible' when character is bot. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	ESlateVisibility IsBotVisibility = ESlateVisibility::Collapsed;
+	TObjectPtr<UTexture2D> Avatar = nullptr;
 
 	/** Called when changed character Bot status is changed, applies both bot and human visibility. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnIsBotChanged(bool bIsBot);
+	void OnPlayerTypeChanged(EPlayerType PlayerType);
 
 	/*********************************************************************************************
 	 * Events

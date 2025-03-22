@@ -212,11 +212,11 @@ protected:
 	 * - SetIsHuman() to assign human status
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsABotChanged, bool, bIsABot);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerTypeChanged, EPlayerType, PlayerType);
 
 	/** Called when player is changed from human to bot or vice versa. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
-	FOnIsABotChanged OnIsABotChanged;
+	FOnPlayerTypeChanged OnPlayerTypeChanged;
 
 	/** Returns the type of owner: Human or AI. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
