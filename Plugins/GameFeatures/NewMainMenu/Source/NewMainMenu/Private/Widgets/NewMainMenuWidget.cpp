@@ -96,6 +96,12 @@ void UNewMainMenuWidget::OnPlayButtonPressed()
 		// The spot is locked
 		return;
 	}
+	
+	if (!MainMenuSpot->IsSpotSkinAvailable())
+	{
+		// the spot's skin unavailable 
+		return;
+	}
 
 	USoundsSubsystem::Get().PlayUIClickSFX();
 

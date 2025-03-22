@@ -52,6 +52,13 @@ bool UNMMSpotComponent::IsSpotAvailable() const
 		&& MeshComponent->IsVisible();
 }
 
+// Returns true if this spot current skin is unlocked and can be selected by player
+bool UNMMSpotComponent::IsSpotSkinAvailable() const
+{
+	const UMySkeletalMeshComponent* MeshComponent = GetMySkeletalMeshComponent();
+	return MeshComponent && MeshComponent->IsSkinAvailable(MeshComponent->GetAppliedSkinIndex());
+}
+
 // Returns the Skeletal Mesh of the Bomber character
 UMySkeletalMeshComponent* UNMMSpotComponent::GetMySkeletalMeshComponent() const
 {
