@@ -137,7 +137,7 @@ void UWidgetsSubsystem::CleanupWidgets()
 // If true, changes all visible manageable widgets to hidden
 void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater/* = true*/)
 {
-	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
 	const TArray<TObjectPtr<UUserWidget>>& WidgetsToProcess = bMakeVisible ? AllHiddenWidgetsInternal : AllManageableWidgetsInternal;
 
 	if (!bMakeVisible)
