@@ -6,6 +6,7 @@
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMTypes.h"
 #include "Subsystems/NMMBaseSubsystem.h"
+#include "Subsystems/WidgetsSubsystem.h"
 //---
 #include "Components/Button.h"
 #include "Components/RadialSlider.h"
@@ -63,8 +64,17 @@ void UNMMCinematicStateWidget::NativeConstruct()
 // Called when the Main Menu state was changed
 void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
 {
+	const bool bIsCinematic = NewState == ENMMState::Cinematic;
+
+	if (bIsCinematic)
+	{
+		// Hide all other widgets in Cinematic state
+		constexpr bool bCanRestoreVisibilityLater = false; // Dont cache hidden widgets, they are not going to restore since we transit to different state
+		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic, bCanRestoreVisibilityLater);
+	}
+
 	// Show this widget in Cinematic state
-	SetVisibility(NewState == ENMMState::Cinematic ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	SetVisibility(bIsCinematic ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
 	ResetWidget();
 }

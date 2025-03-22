@@ -22,7 +22,7 @@ class BOMBER_API UWidgetsSubsystem : public ULocalPlayerSubsystem
 public:
 	/** Returns the pointer the UI Subsystem.
 	 * It will return null if Local Player is not initialized yet. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
 	static UWidgetsSubsystem* GetWidgetsSubsystem(const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the UI subsystem checked: it will crash if player controller is not initialized yet.
@@ -62,7 +62,7 @@ public:
 	FOnWidgetsInitialized OnWidgetsInitialized;
 
 	/** Returns true if widgets ere initialized. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE bool AreWidgetInitialized() const { return bAreWidgetInitializedInternal; }
 
 protected:
@@ -87,13 +87,13 @@ protected:
 	 ********************************************************************************************* */
 public:
 	/** Is called to toggle all manageable widgets visibility.
-	 * If true, changes all visible manageable widgets to hidden.
-	 * If false, restores visibility of all previously hidden widgets. */
+	 * @param bMakeVisible - if true, changes all visible manageable widgets to hidden; false, restores visibility of all previously hidden widgets.
+	 * @param bCanRestoreVisibilityLater - if true, original visibilities will be remembered, so they can be restored later if call this function again with reverse value. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetAllWidgetsVisibility(bool bMakeVisible);
+	void SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater = true);
 
 	/** Returns true if all manageable widgets are hidden. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE bool AreAllWidgetsHidden() const { return !AllHiddenWidgetsInternal.IsEmpty(); }
 
 protected:
@@ -106,15 +106,19 @@ protected:
 	 ********************************************************************************************* */
 public:
 	/** Returns the current in-game widget object. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE class UHUDWidget* GetHUDWidget() const { return HUDWidgetInternal; }
 
 	/** Returns the current settings widget object. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE class USettingsWidget* GetSettingsWidget() const { return SettingsWidgetInternal; }
 
+	/** Returns the multiplayer widget object. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE class UUserWidget* GetMultiplayerWidget() const { return MultiplayerWidgetInternal; }
+
 	/** Returns the nickname widget by a player index. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE class UPlayerNameWidget* GetNicknameWidget(int32 Index) const { return NicknameWidgetsInternal.IsValidIndex(Index) ? NicknameWidgetsInternal[Index] : nullptr; }
 
 protected:
@@ -126,8 +130,12 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Settings Widget"))
 	TObjectPtr<class USettingsWidget> SettingsWidgetInternal = nullptr;
 
+	/** The multiplayer widget, which displays all players's avatars and nicknames. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Multiplayer Widget"))
+	TObjectPtr<class UUserWidget> MultiplayerWidgetInternal = nullptr;
+
 	/** All nickname widget objects for each player. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Nickname Widgets"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "3D Nickname Widgets"))
 	TArray<TObjectPtr<class UPlayerNameWidget>> NicknameWidgetsInternal;
 
 	/*********************************************************************************************
@@ -135,7 +143,7 @@ protected:
 	 ********************************************************************************************* */
 public:
 	/** Returns the current FPS counter widget object. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE UUserWidget* GetFPSCounterWidget() const { return FPSCounterWidgetInternal; }
 
 	/** Set true to show the FPS counter widget on the HUD. */
@@ -143,7 +151,7 @@ public:
 	void SetFPSCounterEnabled(bool bEnable);
 
 	/** Returns true if the FPS counter widget is shown on the HUD. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE bool IsFPSCounterEnabled() const { return bIsFPSCounterEnabledInternal; }
 
 protected:

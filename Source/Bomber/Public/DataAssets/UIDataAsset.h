@@ -24,27 +24,32 @@ public:
 
 	/** Returns data for the in-game widget.
 	 * @see UUIDataAsset::HUDWidgetDataInternal. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FManageableWidgetData& GetHUDWidgetData() const { return HUDWidgetDataInternal; }
 
 	/** Returns data for the settings widget.
 	 * @see UUIDataAsset::SettingsWidgetDataInternal. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FManageableWidgetData& GetSettingsWidgetData() const { return SettingsWidgetDataInternal; }
 
 	/** Returns data for the nickname widget.
 	 * @see UUIDataAsset::NicknameWidgetDataInternal. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FManageableWidgetData& GetNicknameWidgetData() const { return NicknameWidgetDataInternal; }
 
 	/** Returns data for the FPS counter widget.
 	 * @see UUIDataAsset::FPSCounterWidgetDataInternal. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FManageableWidgetData& GetFPSCounterWidgetData() const { return FPSCounterWidgetDataInternal; }
+
+	/** Returns data for the multiplayer widget.
+	 * @see UUIDataAsset::MultiplayerWidgetDataInternal. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const FORCEINLINE FManageableWidgetData& GetMultiplayerWidgetData() const { return MultiplayerWidgetDataInternal; }
 
 	/** Returns the localized texts about specified end game to display on UI.
 	 * @see UUIDataAsset::EndGameTexts. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FText& GetEndGameText(EEndGameState EndGameState) const;
 
 protected:
@@ -63,6 +68,10 @@ protected:
 	/** Data for the FPS Counter Widget. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "FPS Counter Widget"))
 	FManageableWidgetData FPSCounterWidgetDataInternal;
+
+	/** Data for the Multiplayer Widget. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Multiplayer Widget"))
+	FManageableWidgetData MultiplayerWidgetDataInternal;
 
 	/** Contains the localized texts about specified end game to display on UI. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "End-Game Names"))

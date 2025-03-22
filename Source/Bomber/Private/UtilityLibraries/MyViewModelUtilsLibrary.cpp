@@ -12,7 +12,7 @@
 ESlateVisibility UMyViewModelUtilsLibrary::GetVisibilityByGameState(const ECurrentGameState& GameStateProperty, int32 GameStates)
 {
 	const bool bMatching = EnumHasAnyFlags(GameStateProperty, TO_ENUM(ECurrentGameState, GameStates));
-	return bMatching ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+	return bMatching ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
 }
 
 // Used widely by UI View Models as a 'Conversion Function' to determine state-based activity

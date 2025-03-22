@@ -94,6 +94,8 @@ void UWidgetsSubsystem::InitWidgets()
 	SettingsWidgetInternal = CreateManageableWidgetChecked<USettingsWidget>(UIDataAsset.GetSettingsWidgetData());
 	SettingsWidgetInternal->TryConstructSettings();
 
+	MultiplayerWidgetInternal = CreateManageableWidget(UIDataAsset.GetMultiplayerWidgetData());
+
 	static constexpr int32 MaxPlayersNum = 4;
 	NicknameWidgetsInternal.Reserve(MaxPlayersNum);
 	for (int32 Index = 0; Index < MaxPlayersNum; ++Index)
@@ -133,7 +135,7 @@ void UWidgetsSubsystem::CleanupWidgets()
  ********************************************************************************************* */
 
 // If true, changes all visible manageable widgets to hidden
-void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible)
+void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater/* = true*/)
 {
 	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
 	const TArray<TObjectPtr<UUserWidget>>& WidgetsToProcess = bMakeVisible ? AllHiddenWidgetsInternal : AllManageableWidgetsInternal;
@@ -143,13 +145,14 @@ void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible)
 		AllHiddenWidgetsInternal.Empty();
 	}
 
-	for (TObjectPtr<UUserWidget> Widget : WidgetsToProcess)
+	for (UUserWidget* Widget : WidgetsToProcess)
 	{
 		if (Widget && Widget->IsVisible() != bMakeVisible)
 		{
 			Widget->SetVisibility(DesiredVisibility);
 
-			if (!bMakeVisible)
+			if (!bMakeVisible
+				&& bCanRestoreVisibilityLater)
 			{
 				AllHiddenWidgetsInternal.Add(Widget);
 			}
