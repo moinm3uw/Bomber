@@ -22,7 +22,7 @@ void UNMMCinematicStateWidget::SetCurrentHoldTime(float NewHoldTime)
 	const float MaxHoldTime = UNMMDataAsset::Get().GetSkipCinematicHoldTime();
 	const float HoldProgressNormalized = FMath::Clamp(CurrentHoldTimeInternal / MaxHoldTime, 0.f, 1.f);
 
-	checkf(SkipHoldProgress, TEXT("ERROR: [%i] %s:\n'SkipHoldProgress' is null!"), __LINE__, *FString(__FUNCTION__));
+	checkf(SkipHoldProgress, TEXT("ERROR: [%i] %hs:\n'SkipHoldProgress' is null!"), __LINE__, __FUNCTION__);
 	SkipHoldProgress->SetValue(HoldProgressNormalized);
 
 	if (CurrentHoldTimeInternal >= MaxHoldTime)
@@ -66,12 +66,8 @@ void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMStat
 {
 	const bool bIsCinematic = NewState == ENMMState::Cinematic;
 
-	if (bIsCinematic)
-	{
-		// Hide all other widgets in Cinematic state
-		constexpr bool bCanRestoreVisibilityLater = false; // Dont cache hidden widgets, they are not going to restore since we transit to different state
-		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic, bCanRestoreVisibilityLater);
-	}
+	// Hide all other widgets in Cinematic state
+	UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
 
 	// Show this widget in Cinematic state
 	SetVisibility(bIsCinematic ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
@@ -87,7 +83,7 @@ void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMStat
 void UNMMCinematicStateWidget::OnCinematicSkipOngoing_Implementation()
 {
 	const UWorld* World = GetWorld();
-	checkf(World, TEXT("ERROR: [%i] %s:\n'World' is null!"), __LINE__, *FString(__FUNCTION__));
+	checkf(World, TEXT("ERROR: [%i] %hs:\n'World' is null!"), __LINE__, __FUNCTION__);
 	const float NewHoldTime = CurrentHoldTimeInternal + World->GetDeltaSeconds();
 
 	SetCurrentHoldTime(NewHoldTime);
