@@ -412,6 +412,8 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
 	SetPowerups(FPowerUp::DefaultLevel);
+
+	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
 }
 
 // Triggers when this player character starts something overlap.

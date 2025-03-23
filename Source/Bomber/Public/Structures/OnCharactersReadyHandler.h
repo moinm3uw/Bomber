@@ -32,6 +32,9 @@ public:
 	/** Should be called when player state is replicated. */
 	void Broadcast_OnPlayerStateInit(const AMyPlayerState& PlayerState);
 
+	/** Should be called when character is added to the Generated Map. */
+	void Broadcast_OnCharacterAdded(APlayerCharacter& Character);
+
 	/*********************************************************************************************
 	 * Public Helpers
 	 ********************************************************************************************* */
@@ -55,12 +58,17 @@ private:
 		TWeakObjectPtr<APlayerCharacter> Character = nullptr;
 		TWeakObjectPtr<const AMyPlayerState> PlayerState = nullptr;
 		bool bIsPossessed = false;
+		bool bIsAddedOnGeneratedMap = false;
 	};
 
 	/** All registered character ready handles. */
 	TArray<FOnCharacterReadyData> OnCharacterReadyHandles;
 
 	FOnCharacterReadyData& FindOrAdd(APlayerCharacter& Character);
+
+	/** Returns true if player controller is possessed and ready at this moment.*
+	 * It does not check any other conditions, only possession. */
+	static bool IsCharacterPossessed(const FOnCharacterReadyData& FoundHandle);
 
 	/** Is internal method, shouldn't be called directly, instead Broadcast_ methods should be used. */
 	void TryBroadcastOnReady_Internal(APlayerCharacter& Character);
