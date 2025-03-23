@@ -45,21 +45,29 @@ void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType Playe
 {
 	UTexture2D* NewAvatar = UUIDataAsset::Get().GetDefaultAvatar(PlayerType);
 
-	if (PlayerType == EPlayerType::Human)
+	if (PlayerType == EPlayerType::Bot)
 	{
-		const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
-		checkf(MyPlayerState, TEXT("ERROR: [%i] %hs:\n'MyPlayerState' is null!"), __LINE__, __FUNCTION__);
+		// Set default bot avatar
+		SetAvatar(NewAvatar);
+		return;
+	}
 
+	const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
+	if (ensureMsgf(MyPlayerState, TEXT("ASSERT: [%i] %hs:\n'MyPlayerState' is null despite it just changed player type!"), __LINE__, __FUNCTION__))
+	{
+		// Try to obtain online avatar, if not found - human default will be used
 		EBlueprintAsyncResultSwitch Result;
 		FBPUniqueNetId PlayerID;
 		PlayerID.SetUniqueNetId(MyPlayerState->GetUniqueId().GetV1());
 		UTexture2D* OnlineAvatar = PlayerID.IsValid() ? UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(PlayerID, /*out*/Result) : nullptr;
 		if (OnlineAvatar)
 		{
+			// Online avatar is found
 			NewAvatar = OnlineAvatar;
 		}
 	}
 
+	// Set human avatar
 	SetAvatar(NewAvatar);
 }
 
