@@ -140,7 +140,7 @@ protected:
 
 	/** Called when the Main Menu state was changed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnNewMainMenuStateChanged(ENMMState NewState);
+	void OnNewMainMenuStateChanged(ENMMState NewState, ENMMState PreviousState);
 
 	/** Called when the sequence is paused or when cinematic was ended. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

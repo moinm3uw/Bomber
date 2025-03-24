@@ -56,7 +56,7 @@ protected:
 
 	/** Called when the Main Menu state was changed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnNewMainMenuStateChanged(ENMMState NewState);
+	void OnNewMainMenuStateChanged(ENMMState NewState, ENMMState PreviousState);
 
 	/** Is called when player pressed the button to start the game. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

@@ -29,7 +29,7 @@ public:
 	 * Is local for each player and not replicated.
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FNMMOnStateChanged, ENMMState, NewState);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FNMMOnStateChanged, ENMMState, NewState, ENMMState, PreviousState);
 
 	/** Called when the state of New Main Menu game feature was changed.
 	 * Is local and not replicated. */
@@ -86,3 +86,14 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
 };
+
+/** Helper macro to bind and call the function when the game state was changed. */
+#define BIND_ON_MENU_STATE_CHANGED(Obj, Function) \
+{ \
+	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get(); \
+	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(Obj, &Function); \
+	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None) \
+	{ \
+		Obj->Function(BaseSubsystem.GetCurrentMenuState(), ENMMState::None); \
+	} \
+}

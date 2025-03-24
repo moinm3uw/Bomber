@@ -171,14 +171,7 @@ void UNMMPlayerControllerComponent::BeginPlay()
 		SpotsSubsystem.OnActiveMenuSpotReady.AddUniqueDynamic(this, &ThisClass::OnActiveMenuSpotReady);
 	}
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	// Load save game data of the Main Menu
 	FAsyncLoadGameFromSlot AsyncLoadGameFromSlotDelegate;
@@ -253,7 +246,7 @@ void UNMMPlayerControllerComponent::OnGameStateChanged(ECurrentGameState Current
 }
 
 // Called wen the Main Menu state was changed
-void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	AMyPlayerController& MyPC = GetPlayerControllerChecked();
 

@@ -22,15 +22,9 @@ void UNewMainMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
-	else // Is none state
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
+
+	if (UNMMBaseSubsystem::Get().GetCurrentMenuState() == ENMMState::None)
 	{
 		// Hide this widget by default if is none state
 		SetVisibility(ESlateVisibility::Collapsed);
@@ -73,7 +67,7 @@ void UNewMainMenuWidget::NativeConstruct()
 	}
 }
 
-void UNewMainMenuWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNewMainMenuWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	// Show this widget in Idle Menu state
 	SetVisibility(NewState == ENMMState::Idle ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
@@ -96,7 +90,7 @@ void UNewMainMenuWidget::OnPlayButtonPressed()
 		// The spot is locked
 		return;
 	}
-	
+
 	if (!MainMenuSpot->IsSpotSkinAvailable())
 	{
 		// the spot's skin unavailable 

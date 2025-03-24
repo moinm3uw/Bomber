@@ -45,14 +45,7 @@ void UNMMCinematicStateWidget::NativeConstruct()
 	// Hide this widget by default
 	SetVisibility(ESlateVisibility::Collapsed);
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	if (SkipCinematicButton)
 	{
@@ -62,15 +55,19 @@ void UNMMCinematicStateWidget::NativeConstruct()
 }
 
 // Called when the Main Menu state was changed
-void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	const bool bIsCinematic = NewState == ENMMState::Cinematic;
 
-	// Hide all other widgets in Cinematic state
-	UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
+	if (bIsCinematic
+		|| PreviousState == ENMMState::Cinematic)
+	{
+		// Hide all other widgets in Cinematic state and display them back when left
+ 		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
+	}
 
 	// Show this widget in Cinematic state
-	SetVisibility(bIsCinematic ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	SetVisibility(bIsCinematic ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 
 	ResetWidget();
 }

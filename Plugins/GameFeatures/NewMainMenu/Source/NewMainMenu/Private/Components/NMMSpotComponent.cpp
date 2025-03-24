@@ -181,16 +181,9 @@ void UNMMSpotComponent::BeginPlay()
 	UpdateCinematicData();
 	LoadMasterSequencePlayer();
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
-
 	UNMMCameraSubsystem::Get().OnCameraRailTransitionStateChanged.AddUniqueDynamic(this, &ThisClass::OnCameraRailTransitionStateChanged);
+
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 }
@@ -391,7 +384,7 @@ void UNMMSpotComponent::OnGameStateChanged_Implementation(ECurrentGameState Curr
 }
 
 // Called wen the Main Menu state was changed
-void UNMMSpotComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMSpotComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	const bool bIsCurrentSpot = IsCurrentSpot();
 
