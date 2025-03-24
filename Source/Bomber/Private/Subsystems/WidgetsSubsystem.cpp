@@ -147,7 +147,7 @@ void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRest
 
 	for (UUserWidget* Widget : WidgetsToProcess)
 	{
-		if (Widget && Widget->IsVisible() != bMakeVisible)
+		if (Widget && Widget->GetVisibility() != DesiredVisibility)
 		{
 			Widget->SetVisibility(DesiredVisibility);
 

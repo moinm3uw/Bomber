@@ -21,7 +21,7 @@ void UPlayerNameWidget::SetVisibility(ESlateVisibility InVisibility)
 	if (NameplateMesh)
 	{
 		constexpr bool bPropagateToChildren = true;
-		const bool bMakeVisible = InVisibility == ESlateVisibility::Visible;
+		const bool bMakeVisible = InVisibility != ESlateVisibility::Collapsed && InVisibility != ESlateVisibility::Hidden;
 		NameplateMesh->SetVisibility(bMakeVisible, bPropagateToChildren);
 	}
 }
