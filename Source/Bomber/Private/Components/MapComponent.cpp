@@ -19,11 +19,16 @@
 #include "Engine/EngineTypes.h"
 #include "Engine/StreamableRenderAsset.h"
 #include "Net/UnrealNetwork.h"
+#include "Materials/MaterialInstanceDynamic.h"
 //---
 #if WITH_EDITOR
 #include "MyUnrealEdEngine.h"
 #endif
 //---
+#include "Components/MySkeletalMeshComponent.h"
+#include "DataAssets/BombDataAsset.h"
+#include "LevelActors/PlayerCharacter.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponent)
 
 // Returns the map component of the specified owner
@@ -115,12 +120,41 @@ void UMapComponent::SetMesh(UStreamableRenderAsset* NewMesh)
 }
 
 /** Set material to the mesh. */
-void UMapComponent::SetMeshMaterial(UMaterialInterface* NewMaterial)
+void UMapComponent::SetMeshMaterial(class UMaterialInterface* NewMaterial, class UMaterialInterface* BombMaterialToUpdate, const ULevelActorRow* LevelActorRow)
 {
-	if (!ensureMsgf(NewMaterial, TEXT("ASSERT: [%i] %hs:\n'Material' is not valid!"), __LINE__, __FUNCTION__)
+	if (!ensureMsgf(NewMaterial, TEXT("ASSERT: [%i] %hs:\n'NewMaterial' is not valid!"), __LINE__, __FUNCTION__)
 	    || !ensureMsgf(MeshComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MeshComponentInternal' is null!"), __LINE__, __FUNCTION__))
 	{
 		return;
+	}
+
+	APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+
+	if (!ensureMsgf(PlayerCharacter, TEXT("ASSERT: [%i] %hs:\n'PlayerCharacter' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	FCustomBombMeshData CustomBombMeshData;
+
+	class UMySkeletalMeshComponent* PlayerCharacterMesh = PlayerCharacter->GetMySkeletalMeshComponent();
+	if (LevelActorRow && PlayerCharacterMesh && BombMaterialToUpdate)
+	{
+		for (int32 Index = 0; Index < LevelActorRow->CustomBombMeshes.Num(); Index++)
+		{
+			if (Index == PlayerCharacterMesh->GetAppliedSkinIndex())
+			{
+				CustomBombMeshData = LevelActorRow->CustomBombMeshes[Index];
+				break;
+			}
+		}
+
+		UMaterialInstanceDynamic* DynamicMaterialInstance = UMaterialInstanceDynamic::Create(BombMaterialToUpdate, this);
+		DynamicMaterialInstance->SetVectorParameterValue(LevelActorRow->MaterialSlotColorParameterName, CustomBombMeshData.Color);
+		BombMaterialToUpdate = Cast<UMaterialInterface>(DynamicMaterialInstance);
+
+		int32 MaterialSlotIndex = LevelActorRow ? LevelActorRow->MaterailSlotIndex : 0;
+		MeshComponentInternal->SetMaterial(MaterialSlotIndex, BombMaterialToUpdate);
 	}
 
 	MeshComponentInternal->SetMaterial(0, NewMaterial);

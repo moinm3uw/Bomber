@@ -50,7 +50,7 @@ public:
 	/** Returns the bomb material by specified index.
 	 * @see UBombDataAsset::BombMaterialInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	class UMaterialInterface* GetBombMaterial(int32 Index) const { return BombMaterialsInternal.IsValidIndex(Index) ? BombMaterialsInternal[Index] : nullptr; }
+	class UMaterialInstance* GetBombMaterial(int32 Index) const { return BombMaterialsInternal.IsValidIndex(Index) ? BombMaterialsInternal[Index] : nullptr; }
 
 protected:
 	/** The lifetime of a bomb. */
@@ -63,5 +63,5 @@ protected:
 
 	/** All bomb materials. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Bomb Materials", ShowOnlyInnerProperties))
-	TArray<TObjectPtr<class UMaterialInterface>> BombMaterialsInternal;
+	TArray<TObjectPtr<class UMaterialInstance>> BombMaterialsInternal;
 };

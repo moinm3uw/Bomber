@@ -132,7 +132,7 @@ public:
 	/** Overrides default material of current mesh component.
 	 * @param NewMaterial - the material to be set on the mesh component. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetMeshMaterial(class UMaterialInterface* NewMaterial);
+	void SetMeshMaterial(class UMaterialInterface* NewMaterial, class UMaterialInterface* BombMaterialToUpdate, const ULevelActorRow* LevelActorRow);
 
 protected:
 	/** Mesh of an owner. */

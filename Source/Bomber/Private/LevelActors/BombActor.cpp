@@ -25,6 +25,10 @@
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
 //---
+#include "Components/MySkeletalMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BombActor)
 
 // Sets default values
@@ -257,6 +261,9 @@ void ABombActor::PlayExplosionsCue()
 void ABombActor::ApplyMaterial()
 {
 	TObjectPtr<class UMaterialInterface> NewBombMaterial = nullptr;
+	TObjectPtr<class UMaterialInterface> BombMaterialToUpdate = nullptr;
+	const UStaticMesh* BombMesh = MapComponentInternal->GetMesh<UStaticMesh>();
+	const ULevelActorRow* LevelActorRow = nullptr;
 
 	// If bot character, override material with the player type
 	if (BombPlacerInternal
@@ -277,10 +284,13 @@ void ABombActor::ApplyMaterial()
 	{
 		// Set material by bomb type (default)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		const UStaticMesh* BombMesh = MapComponentInternal->GetMesh<UStaticMesh>();
 		if (ensureMsgf(BombMesh, TEXT("ASSERT: [%i] %hs:\n'BombMesh' is not found"), __LINE__, __FUNCTION__))
 		{
 			NewBombMaterial = BombMesh->GetMaterial(0);
+
+			LevelActorRow = BombPlacerInternal ? UBombDataAsset::Get().GetRowByMesh(BombMesh) : nullptr;
+			int32 MaterialSlotIndex = LevelActorRow ? LevelActorRow->MaterailSlotIndex : 0;
+			BombMaterialToUpdate = BombMesh->GetMaterial(MaterialSlotIndex);
 		}
 	}
 
@@ -288,7 +298,7 @@ void ABombActor::ApplyMaterial()
 	if (NewBombMaterial)
 	{
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		MapComponentInternal->SetMeshMaterial(NewBombMaterial);
+		MapComponentInternal->SetMeshMaterial(NewBombMaterial, BombMaterialToUpdate, LevelActorRow);
 	}
 }
 

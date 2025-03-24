@@ -6,6 +6,7 @@
 //---
 #include "Bomber.h"
 #include "Engine/EngineTypes.h" // ECollisionResponse
+#include "Structures/CustomBombMeshData.h"
 //---
 #include "LevelActorDataAsset.generated.h"
 
@@ -25,6 +26,18 @@ public:
 	/** The static mesh, skeletal mesh or texture */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties, ExposeOnSpawn = "true"))
 	TObjectPtr<class UStreamableRenderAsset> Mesh = nullptr;
+
+	/** Index of applied slot */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	int32 MaterailSlotIndex = 0;
+
+	/** Name of material slot to adjust color */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	FName MaterialSlotColorParameterName = NAME_None;
+
+	/** List of the custom bomb meshes available for the skin */
+	UPROPERTY(EditDefaultsOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	TArray<FCustomBombMeshData> CustomBombMeshes;
 
 	/** Returns true if this row contains valid data. */
 	UFUNCTION(BlueprintPure, Category = "C++")

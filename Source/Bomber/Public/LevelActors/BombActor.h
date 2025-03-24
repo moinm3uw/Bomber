@@ -81,6 +81,9 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_BombPlacer", AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Bomb Placer"))
 	TObjectPtr<const APlayerCharacter> BombPlacerInternal = nullptr;
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Bomb Dymamic Material Instance"))
+	TObjectPtr<class UMaterialInstanceDynamic> BombMaterialInstanceDynamicInternal = nullptr;
+
 	/** Is server-only, immediately detonates the bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
 	void DetonateBomb();
