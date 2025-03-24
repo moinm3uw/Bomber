@@ -26,7 +26,6 @@
 #endif
 //---
 #include "Components/MySkeletalMeshComponent.h"
-#include "DataAssets/BombDataAsset.h"
 #include "LevelActors/PlayerCharacter.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponent)
