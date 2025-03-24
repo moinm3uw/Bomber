@@ -122,7 +122,7 @@ void ABombActor::TryDisplayExplosionCells()
 	Params.TextColor = FLinearColor::Yellow;
 	Params.TextSize += 50.f;
 	Params.TextHeight += 1.f;
-	UCellsUtilsLibrary::DisplayCells(this, FCells{LocalExplosionCellsInternal}, Params);
+	UCellsUtilsLibrary::DisplayCells(this, LocalExplosionCellsInternal, Params);
 #endif // !UE_BUILD_SHIPPING
 }
 
@@ -141,6 +141,9 @@ void ABombActor::DetonateBomb()
 		return;
 	}
 
+	// Make sure cells are up-to-date
+	UpdateExplosionCells();
+
 	// Start countdown to destroy the bomb
 	SetLifeSpan();
 
@@ -150,7 +153,7 @@ void ABombActor::DetonateBomb()
 	PlayExplosionsCue();
 
 	// Destroy all actors from array of cells
-	AGeneratedMap::Get().DestroyLevelActorsOnCells(FCells{LocalExplosionCellsInternal}, this);
+	AGeneratedMap::Get().DestroyLevelActorsOnCells(LocalExplosionCellsInternal, this);
 }
 
 // Calculates the explosion cells based on current fire radius
@@ -164,13 +167,15 @@ void ABombActor::UpdateExplosionCells()
 		return;
 	}
 
-	const bool bIsAlreadySetByDefault = !LocalExplosionCellsInternal.IsEmpty() && FireRadiusInternal <= 1;
+	const FCells NewExplosionCells = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadiusInternal);
+
+	const bool bIsAlreadySetByDefault = !LocalExplosionCellsInternal.IsEmpty() && FireRadiusInternal <= 1 && NewExplosionCells.Num() == LocalExplosionCellsInternal.Num();
 	if (bIsAlreadySetByDefault)
 	{
 		return;
 	}
 
-	LocalExplosionCellsInternal = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadiusInternal);
+	LocalExplosionCellsInternal = NewExplosionCells;
 
 	TryDisplayExplosionCells();
 }
@@ -387,6 +392,7 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 	else
 	{
 		// On client, play explosions cue locally
+		UpdateExplosionCells();
 		PlayExplosionsCue();
 	}
 
