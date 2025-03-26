@@ -173,17 +173,7 @@ void UMyGameUserSettings::TryUpdateCurrentResolution()
 	}
 
 	// Finally, try update the setting on UI
-	if (USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget())
-	{
-		static FGameplayTagContainer ResolutionSettingTag = FGameplayTagContainer::EmptyContainer;
-		if (ResolutionSettingTag.IsEmpty())
-		{
-			static const FSettingFunctionPicker SetResolutionFunction(GetClass(), GET_FUNCTION_NAME_CHECKED(ThisClass, SetResolutionByIndex));
-			ResolutionSettingTag.AddTag(SettingsWidget->GetTagByFunction(SetResolutionFunction));
-		}
-
-		SettingsWidget->UpdateSettings(ResolutionSettingTag);
-	}
+	UPDATE_SETTING_BY_FUNCTION(UMyBlueprintFunctionLibrary::GetSettingsWidget(), ThisClass, SetResolutionByIndex);
 }
 
 /*********************************************************************************************
@@ -235,17 +225,7 @@ void UMyGameUserSettings::TryUpdateCurrentFullscreenMode()
 	}
 
 	// Finally, try update the setting on UI
-	if (USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget())
-	{
-		static FGameplayTagContainer FullscreenSettingTag = FGameplayTagContainer::EmptyContainer;
-		if (FullscreenSettingTag.IsEmpty())
-		{
-			static const FSettingFunctionPicker SetFullscreenFunction(GetClass(), GET_FUNCTION_NAME_CHECKED(ThisClass, SetFullscreenEnabled));
-			FullscreenSettingTag.AddTag(SettingsWidget->GetTagByFunction(SetFullscreenFunction));
-		}
-
-		SettingsWidget->UpdateSettings(FullscreenSettingTag);
-	}
+	UPDATE_SETTING_BY_FUNCTION(UMyBlueprintFunctionLibrary::GetSettingsWidget(), ThisClass, SetFullscreenEnabled);
 }
 
 /*********************************************************************************************
