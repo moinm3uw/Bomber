@@ -3,30 +3,44 @@
 #include "Subsystems/GameDifficultySubsystem.h"
 //---
 #include "Bomber.h"
+#include "GameFramework/MyGameStateBase.h"
+#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Engine/Engine.h"
+#include "Net/UnrealNetwork.h"
+#include "Net/Core/PushModel/PushModel.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameDifficultySubsystem)
 
-// Returns this Subsystem, is checked and wil crash if can't be obtained
+// Default constructor
+UGameDifficultySubsystem::UGameDifficultySubsystem()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+
+	SetIsReplicatedByDefault(true);
+}
+
+// Returns this manager, is checked and wil crash if can't be obtained
 UGameDifficultySubsystem& UGameDifficultySubsystem::Get()
 {
 	UGameDifficultySubsystem* Subsystem = GetGameDifficultySubsystem();
-	checkf(Subsystem, TEXT("%s: 'Subsystem' is null"), *FString(__FUNCTION__));
+	checkf(Subsystem, TEXT("ERROR: [%i] %hs:\n'Subsystem' is null!"), __LINE__, __FUNCTION__);
 	return *Subsystem;
 }
 
-// Returns the pointer to this Subsystem
+// Returns the pointer to this manager
 UGameDifficultySubsystem* UGameDifficultySubsystem::GetGameDifficultySubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
 {
-	return GEngine ? GEngine->GetEngineSubsystem<UGameDifficultySubsystem>() : nullptr;
+	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState(OptionalWorldContext);
+	return MyGameState ? MyGameState->GetGameDifficultyManager() : nullptr;
 }
 
 // Returns current difficulty type, e.g: EGameDifficulty::Easy
 EGameDifficulty UGameDifficultySubsystem::GetDifficultyType() const
 {
 	// Map integer value (e.g EGameDifficulty::Easy as 0) to the bit enum (e.g EGameDifficulty::Easy as 1 << 0)
-	return TO_ENUM(EGameDifficulty, 1 << DifficultyLevelInternal);
+	return TO_ENUM(EGameDifficulty, 1 << GetDifficultyLevel());
 }
 
 // Sets new game difficulty by enum type
@@ -46,12 +60,18 @@ bool UGameDifficultySubsystem::HasDifficulty(int32 DifficultiesBitmask) const
 // Set new difficulty level. Higher value bigger difficulty
 void UGameDifficultySubsystem::SetDifficultyLevel(int32 InLevel)
 {
-	if (DifficultyLevelInternal == InLevel)
+	if (ReplicatedDifficultyLevelInternal == InLevel
+	    || !GetOwner()->HasAuthority())
 	{
 		return;
 	}
 
+	// Save to config (on host only)
 	DifficultyLevelInternal = InLevel;
+
+	// Apply new difficulty level, so it will be replicated to clients
+	ReplicatedDifficultyLevelInternal = InLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ReplicatedDifficultyLevelInternal, this);
 
 	ApplyGameDifficulty();
 }
@@ -61,6 +81,39 @@ void UGameDifficultySubsystem::ApplyGameDifficulty()
 {
 	if (OnGameDifficultyChanged.IsBound())
 	{
-		OnGameDifficultyChanged.Broadcast(DifficultyLevelInternal);
+		OnGameDifficultyChanged.Broadcast(ReplicatedDifficultyLevelInternal);
 	}
+}
+
+// Called when the game difficulty level is changed
+void UGameDifficultySubsystem::OnRep_ReplicatedDifficultyLevel()
+{
+	ApplyGameDifficulty();
+}
+
+/*********************************************************************************************
+ * Overrides
+ ********************************************************************************************* */
+
+// Called when game starts or when spawned
+void UGameDifficultySubsystem::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Apply difficulty level from config
+	if (ensureMsgf(DifficultyLevelInternal != INDEX_NONE, TEXT("ASSERT: [%i] %hs:\n'DifficultyLevelInternal' was not loaded from config yet!"), __LINE__, __FUNCTION__))
+	{
+		SetDifficultyLevel(DifficultyLevelInternal);
+	}
+}
+
+// Returns properties that are replicated for the lifetime of the actor channel
+void UGameDifficultySubsystem::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, ReplicatedDifficultyLevelInternal, Params);
 }

@@ -6,6 +6,7 @@
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
+#include "Subsystems/GameDifficultySubsystem.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -23,6 +24,8 @@ AMyGameStateBase::AMyGameStateBase()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+
+	GameDifficultyManagerInternal = CreateDefaultSubobject<UGameDifficultySubsystem>(TEXT("GameFeaturesManager"));
 }
 
 // Returns the current game state, it will crash if can't be obtained, should be used only when the game is running
