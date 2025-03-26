@@ -175,12 +175,12 @@ protected:
 public:
 	/** Returns the manager, which is responsible for the game difficulty settings and logic. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	class UGameDifficultySubsystem* GetGameDifficultyManager() const { return GameDifficultyManagerInternal; }
+	class UGameDifficultyManagerComponent* GetGameDifficultyManager() const { return GameDifficultyManagerInternal; }
 
 protected:
 	/** Manages the game difficulty settings and logic. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Game Difficulty Manager"))
-	TObjectPtr<class UGameDifficultySubsystem> GameDifficultyManagerInternal = nullptr;
+	TObjectPtr<class UGameDifficultyManagerComponent> GameDifficultyManagerInternal = nullptr;
 
 	/*********************************************************************************************
 	 * Overrides

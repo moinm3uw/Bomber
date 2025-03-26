@@ -4,7 +4,7 @@
 
 #include "Components/ActorComponent.h"
 //---
-#include "GameDifficultySubsystem.generated.h"
+#include "GameDifficultyManagerComponent.generated.h"
 
 /**
  * The type of the game difficulty. 
@@ -30,20 +30,20 @@ ENUM_CLASS_FLAGS(EGameDifficulty);
  * Contains difficulty settings that are tweaked by player in Settings menu during the game.
  */
 UCLASS(BlueprintType, Blueprintable, Config = "GameUserSettings", DefaultConfig)
-class BOMBER_API UGameDifficultySubsystem : public UActorComponent
+class BOMBER_API UGameDifficultyManagerComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
 	/** Default constructor. */
-	UGameDifficultySubsystem();
+	UGameDifficultyManagerComponent();
 
 	/** Returns this manager, is checked and wil crash if can't be obtained.*/
-	static UGameDifficultySubsystem& Get();
+	static UGameDifficultyManagerComponent& Get();
 
 	/** Returns the pointer to this manager. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
-	static UGameDifficultySubsystem* GetGameDifficultySubsystem(const UObject* OptionalWorldContext = nullptr);
+	static UGameDifficultyManagerComponent* GetGameDifficultyManager(const UObject* OptionalWorldContext = nullptr);
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameDifficultyChanged, int32, NewDifficultyLevel);
 

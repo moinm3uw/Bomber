@@ -6,7 +6,7 @@
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
-#include "Subsystems/GameDifficultySubsystem.h"
+#include "Components/GameDifficultyManagerComponent.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -25,7 +25,7 @@ AMyGameStateBase::AMyGameStateBase()
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-	GameDifficultyManagerInternal = CreateDefaultSubobject<UGameDifficultySubsystem>(TEXT("GameFeaturesManager"));
+	GameDifficultyManagerInternal = CreateDefaultSubobject<UGameDifficultyManagerComponent>(TEXT("GameFeaturesManager"));
 }
 
 // Returns the current game state, it will crash if can't be obtained, should be used only when the game is running

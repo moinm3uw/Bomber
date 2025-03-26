@@ -368,17 +368,17 @@
 				},
 				"Owner":
 				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultySubsystem'",
-					"FunctionName": "GetGameDifficultySubsystem"
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultyManagerComponent'",
+					"FunctionName": "GetGameDifficultyManager"
 				},
 				"Setter":
 				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultySubsystem'",
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultyManagerComponent'",
 					"FunctionName": "SetDifficultyLevel"
 				},
 				"Getter":
 				{
-					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultySubsystem'",
+					"FunctionClass": "/Script/CoreUObject.Class'/Script/Bomber.GameDifficultyManagerComponent'",
 					"FunctionName": "GetDifficultyLevel"
 				},
 				"Caption": "NSLOCTEXT(\"[F67605FD4FE1D83F0EC04D97554FA9A9]\", \"17E689074C021878363191A8850A44C3\", \"Difficulty\")",

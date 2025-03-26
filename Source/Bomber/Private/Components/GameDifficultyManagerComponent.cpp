@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
-#include "Subsystems/GameDifficultySubsystem.h"
+#include "Components/GameDifficultyManagerComponent.h"
 //---
 #include "Bomber.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -10,10 +10,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 //---
-#include UE_INLINE_GENERATED_CPP_BY_NAME(GameDifficultySubsystem)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(GameDifficultyManagerComponent)
 
 // Default constructor
-UGameDifficultySubsystem::UGameDifficultySubsystem()
+UGameDifficultyManagerComponent::UGameDifficultyManagerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
@@ -22,29 +22,29 @@ UGameDifficultySubsystem::UGameDifficultySubsystem()
 }
 
 // Returns this manager, is checked and wil crash if can't be obtained
-UGameDifficultySubsystem& UGameDifficultySubsystem::Get()
+UGameDifficultyManagerComponent& UGameDifficultyManagerComponent::Get()
 {
-	UGameDifficultySubsystem* Subsystem = GetGameDifficultySubsystem();
-	checkf(Subsystem, TEXT("ERROR: [%i] %hs:\n'Subsystem' is null!"), __LINE__, __FUNCTION__);
-	return *Subsystem;
+	UGameDifficultyManagerComponent* Manager = GetGameDifficultyManager();
+	checkf(Manager, TEXT("ERROR: [%i] %hs:\n'Manager' is null!"), __LINE__, __FUNCTION__);
+	return *Manager;
 }
 
 // Returns the pointer to this manager
-UGameDifficultySubsystem* UGameDifficultySubsystem::GetGameDifficultySubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UGameDifficultyManagerComponent* UGameDifficultyManagerComponent::GetGameDifficultyManager(const UObject* OptionalWorldContext/* = nullptr*/)
 {
 	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState(OptionalWorldContext);
 	return MyGameState ? MyGameState->GetGameDifficultyManager() : nullptr;
 }
 
 // Returns current difficulty type, e.g: EGameDifficulty::Easy
-EGameDifficulty UGameDifficultySubsystem::GetDifficultyType() const
+EGameDifficulty UGameDifficultyManagerComponent::GetDifficultyType() const
 {
 	// Map integer value (e.g EGameDifficulty::Easy as 0) to the bit enum (e.g EGameDifficulty::Easy as 1 << 0)
 	return TO_ENUM(EGameDifficulty, 1 << GetDifficultyLevel());
 }
 
 // Sets new game difficulty by enum type
-void UGameDifficultySubsystem::SetDifficultyType(EGameDifficulty InDifficultyType)
+void UGameDifficultyManagerComponent::SetDifficultyType(EGameDifficulty InDifficultyType)
 {
 	// Map bit enum (e.g EGameDifficulty::Easy as 1 << 0) to the integer value (e.g EGameDifficulty::Easy as 0)
 	const int32 NewLevel = FMath::FloorLog2(TO_FLAG(InDifficultyType));
@@ -52,13 +52,13 @@ void UGameDifficultySubsystem::SetDifficultyType(EGameDifficulty InDifficultyTyp
 }
 
 // Returns true if the game difficulty level is matched with one or more specified types
-bool UGameDifficultySubsystem::HasDifficulty(int32 DifficultiesBitmask) const
+bool UGameDifficultyManagerComponent::HasDifficulty(int32 DifficultiesBitmask) const
 {
 	return EnumHasAnyFlags(GetDifficultyType(), TO_ENUM(EGameDifficulty, DifficultiesBitmask));
 }
 
 // Set new difficulty level. Higher value bigger difficulty
-void UGameDifficultySubsystem::SetDifficultyLevel(int32 InLevel)
+void UGameDifficultyManagerComponent::SetDifficultyLevel(int32 InLevel)
 {
 	if (ReplicatedDifficultyLevelInternal == InLevel
 	    || !GetOwner()->HasAuthority())
@@ -77,7 +77,7 @@ void UGameDifficultySubsystem::SetDifficultyLevel(int32 InLevel)
 }
 
 // Applies current difficulty level to the game
-void UGameDifficultySubsystem::ApplyGameDifficulty()
+void UGameDifficultyManagerComponent::ApplyGameDifficulty()
 {
 	if (OnGameDifficultyChanged.IsBound())
 	{
@@ -86,7 +86,7 @@ void UGameDifficultySubsystem::ApplyGameDifficulty()
 }
 
 // Called when the game difficulty level is changed
-void UGameDifficultySubsystem::OnRep_ReplicatedDifficultyLevel()
+void UGameDifficultyManagerComponent::OnRep_ReplicatedDifficultyLevel()
 {
 	ApplyGameDifficulty();
 }
@@ -96,7 +96,7 @@ void UGameDifficultySubsystem::OnRep_ReplicatedDifficultyLevel()
  ********************************************************************************************* */
 
 // Called when game starts or when spawned
-void UGameDifficultySubsystem::BeginPlay()
+void UGameDifficultyManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -108,7 +108,7 @@ void UGameDifficultySubsystem::BeginPlay()
 }
 
 // Returns properties that are replicated for the lifetime of the actor channel
-void UGameDifficultySubsystem::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+void UGameDifficultyManagerComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
