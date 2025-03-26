@@ -3,6 +3,9 @@
 #pragma once
 
 #include "Engine/DeveloperSettings.h"
+//---
+#include "Structures/GameDifficultyData.h" // FDifficultyGameFeaturesData
+//---
 #include "ModularGameFeatureSettings.generated.h"
 
 /**
@@ -31,11 +34,19 @@ public:
 	 ********************************************************************************************* */
 public:
 	/** Returns all game features need to be loaded and activated on starting the game. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE TArray<FName>& GetModularGameFeatures() const { return ModularGameFeaturesInternal; }
+
+	/** Returns Game Features that are enabled by the game difficulty levels. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	const FORCEINLINE TArray<FDifficultyGameFeaturesData>& GetDifficultyGameFeatures() const { return DifficultyGameFeaturesInternal; }
 
 protected:
 	/** All game features need to be loaded and activated on starting the game, is config property. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Config, meta = (BlueprintProtected, DisplayName = "Modular Game Features", ShowOnlyInnerProperties))
 	TArray<FName> ModularGameFeaturesInternal;
+
+	/** Game Features that are enabled by the game difficulty levels, where multiple difficulties can be selected per each feature, is config property. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Config, meta = (BlueprintProtected, DisplayName = "Difficulty Game Features", ShowOnlyInnerProperties))
+	TArray<FDifficultyGameFeaturesData> DifficultyGameFeaturesInternal;
 };

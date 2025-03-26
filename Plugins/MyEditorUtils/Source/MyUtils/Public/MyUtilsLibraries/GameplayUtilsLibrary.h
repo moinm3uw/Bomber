@@ -53,4 +53,13 @@ public:
 	 * @return Returns false if Curve Table is finished or can not be evaluated (no row found, etc.). */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "CenterWorldTransform"))
 	static bool ApplyTransformFromCurveTable(AActor* InActor, const FTransform& CenterWorldTransform, class UCurveTable* CurveTable, float TotalSecondsSinceStart);
+
+	/*********************************************************************************************
+	 * Modular Game Features (MGF)
+	 ********************************************************************************************* */
+public:
+	/** Enables or disable all game features.
+	 * @see UGameStateDataAsset::GetGameFeaturesToEnable() */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	static void SetGameFeaturesEnabled(bool bEnable, const TArray<FName>& GameFeatures);
 };

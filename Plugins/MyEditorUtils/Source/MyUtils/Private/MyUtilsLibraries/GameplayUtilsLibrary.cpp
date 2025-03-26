@@ -2,6 +2,7 @@
 
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 //---
+#include "GameFeaturesSubsystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CurveTable.h"
@@ -174,4 +175,43 @@ bool UGameplayUtilsLibrary::ApplyTransformFromCurveTable(AActor* InActor, const 
 	InActor->SetActorTransform(WorldTransform);
 
 	return true;
+}
+
+/*********************************************************************************************
+ * Modular Game Features (MGF)
+ ********************************************************************************************* */
+
+void UGameplayUtilsLibrary::SetGameFeaturesEnabled(bool bEnable, const TArray<FName>& GameFeatures)
+{
+	if (GameFeatures.IsEmpty())
+	{
+		return;
+	}
+
+	UGameFeaturesSubsystem& GameFeaturesSubsystem = UGameFeaturesSubsystem::Get();
+	for (const FName GameFeatureName : GameFeatures)
+	{
+		if (GameFeatureName.IsNone())
+		{
+			continue;
+		}
+
+		FString GameFeatureURL;
+		GameFeaturesSubsystem.GetPluginURLByName(GameFeatureName.ToString(), /*out*/ GameFeatureURL);
+		if (!ensureMsgf(!GameFeatureURL.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'%s' game feature state can not be changed!"), __LINE__, __FUNCTION__, *GameFeatureName.ToString()))
+		{
+			continue;;
+		}
+
+		static const FGameFeaturePluginLoadComplete EmptyCallback{};
+		if (bEnable)
+		{
+			GameFeaturesSubsystem.LoadAndActivateGameFeaturePlugin(GameFeatureURL, EmptyCallback);
+		}
+		else
+		{
+			constexpr bool bKeepRegistered = true;
+			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, bKeepRegistered);
+		}
+	}
 }

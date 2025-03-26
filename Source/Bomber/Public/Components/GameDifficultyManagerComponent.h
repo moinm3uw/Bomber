@@ -6,25 +6,7 @@
 //---
 #include "GameDifficultyManagerComponent.generated.h"
 
-/**
- * The type of the game difficulty. 
- */
-UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
-enum class EGameDifficulty : uint8
-{
-	None = 0 UMETA(Hidden),
-	///< The easiest difficulty, is 0 as difficulty level
-	Easy = 1 << 0,
-	///< The normal difficulty, is 1 as difficulty level
-	Normal = 1 << 1,
-	///< The hardest difficulty, is 2 as difficulty level
-	Hard = 1 << 2,
-	///< Original game difficulty, where AI is hardcoded in controller, but very smart
-	Vanilla = 1 << 3 UMETA(Hidden),
-	Any = Easy | Normal | Hard | Vanilla
-};
-
-ENUM_CLASS_FLAGS(EGameDifficulty);
+enum class EGameDifficulty : uint8;
 
 /**
  * Contains difficulty settings that are tweaked by player in Settings menu during the game.
@@ -74,6 +56,10 @@ public:
 	 * Use SetDifficultyType() if is needed to difficulty by enum type instead of level. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetDifficultyLevel(int32 InLevel);
+
+	/** Applies the current difficulty by loading relevant features and unloading irrelevant ones. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void UpdateGameFeaturesByDifficulty();
 
 protected:
 	/** Applies current difficulty level to the game. */

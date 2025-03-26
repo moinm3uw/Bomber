@@ -3,7 +3,10 @@
 #include "Components/GameDifficultyManagerComponent.h"
 //---
 #include "Bomber.h"
+#include "DataAssets/ModularGameFeatureSettings.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/GameplayUtilsLibrary.h"
+#include "Structures/GameDifficultyData.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Engine/Engine.h"
@@ -76,9 +79,43 @@ void UGameDifficultyManagerComponent::SetDifficultyLevel(int32 InLevel)
 	ApplyGameDifficulty();
 }
 
+// Applies the current difficulty by loading relevant features and unloading irrelevant ones
+void UGameDifficultyManagerComponent::UpdateGameFeaturesByDifficulty()
+{
+	const TArray<FDifficultyGameFeaturesData>& DifficultyGameFeatures = UModularGameFeatureSettings::Get().GetDifficultyGameFeatures();
+	if (DifficultyGameFeatures.IsEmpty())
+	{
+		return;
+	}
+
+	TArray<FName> FeaturesToEnable, FeaturesToDisable;
+	for (const FDifficultyGameFeaturesData& It : DifficultyGameFeatures)
+	{
+		const EGameDifficulty CurrentDifficulty = GetDifficultyType();
+		const bool bShouldEnable = EnumHasAnyFlags(CurrentDifficulty, TO_ENUM(EGameDifficulty, It.GameDifficulties));
+
+		if (bShouldEnable)
+		{
+			FeaturesToEnable.AddUnique(It.ModularGameFeatureName);
+		}
+		else
+		{
+			FeaturesToDisable.AddUnique(It.ModularGameFeatureName);
+		}
+	}
+
+	// First disable irrelevant features
+	UGameplayUtilsLibrary::SetGameFeaturesEnabled(false, FeaturesToDisable);
+
+	// Then enable relevant features
+	UGameplayUtilsLibrary::SetGameFeaturesEnabled(true, FeaturesToEnable);
+}
+
 // Applies current difficulty level to the game
 void UGameDifficultyManagerComponent::ApplyGameDifficulty()
 {
+	UpdateGameFeaturesByDifficulty();
+
 	if (OnGameDifficultyChanged.IsBound())
 	{
 		OnGameDifficultyChanged.Broadcast(ReplicatedDifficultyLevelInternal);

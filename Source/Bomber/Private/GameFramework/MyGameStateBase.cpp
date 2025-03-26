@@ -3,17 +3,18 @@
 #include "GameFramework/MyGameStateBase.h"
 //---
 #include "GeneratedMap.h"
+#include "Components/GameDifficultyManagerComponent.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
+#include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
-#include "Components/GameDifficultyManagerComponent.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
-#include "GameFeaturesSubsystem.h"
 #include "TimerManager.h"
 #include "Components/GameFrameworkComponentManager.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameStateBase)
@@ -300,7 +301,7 @@ void AMyGameStateBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetGameFeaturesEnabled(true);
+	UGameplayUtilsLibrary::SetGameFeaturesEnabled(true, UModularGameFeatureSettings::Get().GetModularGameFeatures());
 
 	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
 }
@@ -310,39 +311,7 @@ void AMyGameStateBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	SetGameFeaturesEnabled(false);
-}
-
-// Enables or disable all game features
-void AMyGameStateBase::SetGameFeaturesEnabled(bool bEnable)
-{
-	UGameFeaturesSubsystem& GameFeaturesSubsystem = UGameFeaturesSubsystem::Get();
-	const TArray<FName>& GameFeaturesToEnable = UModularGameFeatureSettings::Get().GetModularGameFeatures();
-	for (const FName GameFeatureName : GameFeaturesToEnable)
-	{
-		if (GameFeatureName.IsNone())
-		{
-			continue;
-		}
-
-		FString GameFeatureURL;
-		GameFeaturesSubsystem.GetPluginURLByName(GameFeatureName.ToString(), /*out*/ GameFeatureURL);
-		if (!ensureMsgf(!GameFeatureURL.IsEmpty(), TEXT("ASSERT: Can't load '%s' game feature"), *GameFeatureName.ToString()))
-		{
-			continue;
-		}
-
-		static const FGameFeaturePluginLoadComplete EmptyCallback{};
-		if (bEnable)
-		{
-			GameFeaturesSubsystem.LoadAndActivateGameFeaturePlugin(GameFeatureURL, EmptyCallback);
-		}
-		else
-		{
-			constexpr bool bKeepRegistered = true;
-			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, bKeepRegistered);
-		}
-	}
+	UGameplayUtilsLibrary::SetGameFeaturesEnabled(false, UModularGameFeatureSettings::Get().GetModularGameFeatures());
 }
 
 // Called when the local player character is spawned, possessed, and replicated

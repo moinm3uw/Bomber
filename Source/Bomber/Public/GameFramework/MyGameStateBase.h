@@ -198,11 +198,6 @@ protected:
 	/** Overridable function called whenever this actor is being removed from a level. */
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** Enables or disable all game features.
-	 * @see UGameStateDataAsset::GetGameFeaturesToEnable() */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void SetGameFeaturesEnabled(bool bEnable);
-
 	/** Called when the local player character is spawned, possessed, and replicated. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
