@@ -5,6 +5,7 @@
 #include "AdvancedSteamFriendsLibrary.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
+#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -53,7 +54,9 @@ void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType Playe
 	}
 
 	const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
-	if (ensureMsgf(MyPlayerState, TEXT("ASSERT: [%i] %hs:\n'MyPlayerState' is null despite it just changed player type!"), __LINE__, __FUNCTION__))
+	ensureMsgf(MyPlayerState, TEXT("ASSERT: [%i] %hs:\n'MyPlayerState' is null despite it just changed player type!"), __LINE__, __FUNCTION__);
+	if (MyPlayerState
+	    && !UUtilsLibrary::IsEditor())
 	{
 		// Try to obtain online avatar, if not found - human default will be used
 		EBlueprintAsyncResultSwitch Result;
