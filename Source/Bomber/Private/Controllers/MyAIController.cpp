@@ -67,6 +67,14 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 #endif
 }
 
+// Returns true if AI is enabled (move input is not ignored and cheat is not enabled)
+bool AMyAIController::IsAIEnabled() const
+{
+	return OwnerInternal
+	       && !OwnerInternal->IsMoveInputIgnored()
+	       && UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread();
+}
+
 /* ---------------------------------------------------
  *					Protected functions
  * --------------------------------------------------- */
@@ -192,10 +200,9 @@ void AMyAIController::Reset()
 // The main AI logic
 void AMyAIController::UpdateAI()
 {
-	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
-	if (!OwnerInternal
-	    || !IsValid(MapComponent)
-	    || !UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread()) // AI is disabled
+	const UMapComponent* MapComponent = OwnerInternal ? UMapComponent::GetMapComponent(OwnerInternal) : nullptr;
+	if (!MapComponent
+	    || !IsAIEnabled())
 	{
 		return;
 	}
@@ -348,9 +355,10 @@ void AMyAIController::UpdateAI()
 
 	// ----- Part 2: Deciding whether to put the bomb -----
 
-	if (bIsDangerous == false          // is not dangerous situation
-	    && bIsFilteringFailed == false // filtering was not failed
-	    && bIsItemInDirect == false)   // was not found direct items
+	if (bCanSpawnBombs         // false meaning manually disabled 
+	    && !bIsDangerous       // is not dangerous situation
+	    && !bIsFilteringFailed // filtering was not failed
+	    && !bIsItemInDirect)   // was not found direct items
 	{
 		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, OwnerInternal->GetPowerups().FireN, TO_FLAG(EAT::Box | EAT::Player));
 		BoxesAndPlayers.Remove(MapComponent->GetCell());
