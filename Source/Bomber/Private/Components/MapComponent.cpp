@@ -39,6 +39,8 @@ UMapComponent::UMapComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
+
+	SetIsReplicatedByDefault(true);
 }
 
 /*********************************************************************************************
@@ -81,6 +83,22 @@ void UMapComponent::TryDisplayOwnedCell(bool bClearPrevious/* = false*/)
  * Mesh
  ********************************************************************************************* */
 
+// Sets the mesh component of the owner actor
+void UMapComponent::SetMeshComponent(UMeshComponent* NewMeshComponent)
+{
+	if (!ensureMsgf(NewMeshComponent, TEXT("ASSERT: [%i] %hs:\n'NewMeshComponent' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	if (IsValid(MeshComponentInternal))
+	{
+		MeshComponentInternal->DestroyComponent();
+	}
+
+	MeshComponentInternal = NewMeshComponent;
+}
+
 // Returns current mesh asset
 class UStreamableRenderAsset* UMapComponent::GetMesh() const
 {
@@ -90,32 +108,26 @@ class UStreamableRenderAsset* UMapComponent::GetMesh() const
 // Returns the row of the current mes
 const ULevelActorRow* UMapComponent::GetMeshRow() const
 {
-	const UStreamableRenderAsset* Mesh = GetMesh();
-	return Mesh ? GetActorDataAssetChecked().GetRowByMesh(Mesh) : nullptr;
+	// Return the mesh directly from the Mesh Component: optional ReplicatedMeshDataInternal is not used here
+	const ULevelActorDataAsset* ActorDataAsset = GetActorDataAsset();
+	return ActorDataAsset ? ActorDataAsset->GetRowByMesh(GetMesh()) : nullptr;
 }
 
 // Applies given mesh on owner actor, or resets the mesh if null is passed
-void UMapComponent::SetMesh(UStreamableRenderAsset* NewMesh)
+void UMapComponent::SetLocalMesh(UStreamableRenderAsset* NewMesh)
 {
-	if (GetMesh() == NewMesh                                                // is already set
-	    || GetActorDataAssetChecked().GetActorType() == EActorType::Player) // ACharacter has own mesh component, no need to manage it
-	{
-		return;
-	}
-
 	const AActor* Owner = GetOwner();
 	checkf(Owner, TEXT("ERROR: [%i] %hs:\n'Owner' is null!"), __LINE__, __FUNCTION__);
 
-	const UStreamableRenderAsset* PreviousMesh = GetMesh();
+	const ULevelActorRow* PreviousRow = GetMeshRow();
 	UGameplayUtilsLibrary::SetMesh(MeshComponentInternal, NewMesh);
 
-	const ULevelActorRow* PreviousRow = GetActorDataAssetChecked().GetRowByMesh(PreviousMesh);
-	const ULevelActorRow* NewRow = NewMesh ? GetActorDataAssetChecked().GetRowByMesh(NewMesh) : nullptr;
+	const ULevelActorRow* NewRow = GetMeshRow();
 	OnActorTypeChanged.Broadcast(this, NewRow, PreviousRow);
 }
 
 /** Set material to the mesh. */
-void UMapComponent::SetMeshMaterial(UMaterialInterface* NewMaterial)
+void UMapComponent::SetLocalMeshMaterial(UMaterialInterface* NewMaterial)
 {
 	if (!ensureMsgf(NewMaterial, TEXT("ASSERT: [%i] %hs:\n'Material' is not valid!"), __LINE__, __FUNCTION__)
 	    || !ensureMsgf(MeshComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MeshComponentInternal' is null!"), __LINE__, __FUNCTION__))
@@ -124,6 +136,50 @@ void UMapComponent::SetMeshMaterial(UMaterialInterface* NewMaterial)
 	}
 
 	MeshComponentInternal->SetMaterial(0, NewMaterial);
+}
+
+// Is replicated alternative method to assign specific mesh and material to the owner
+void UMapComponent::SetReplicatedMeshData(const FBmrMeshData& MeshData)
+{
+	if (!ensureMsgf(MeshComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MeshComponentInternal' is not valid!"), __LINE__, __FUNCTION__)
+	    || !MeshData.IsValid())
+	{
+		return;
+	}
+
+	const FBmrMeshData& CurrentMeshData = GetReplicatedMeshData();
+	if (CurrentMeshData == MeshData)
+	{
+		// Is the same mesh data
+		return;
+	}
+
+	ReplicatedMeshDataInternal = MeshData;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ReplicatedMeshDataInternal, this);
+
+	// Apply the mesh locally first
+	SetLocalMesh(MeshData.Row->Mesh);
+
+	// Replicate to all others
+	if (!GetOwner()->HasAuthority())
+	{
+		ServerSetMeshData(MeshData);
+	}
+}
+
+// Server RPC to set and apply how a level actor has to look like
+void UMapComponent::ServerSetMeshData_Implementation(const FBmrMeshData& MeshData)
+{
+	SetReplicatedMeshData(MeshData);
+}
+
+// Is called on client to apply replicated mesh data
+void UMapComponent::OnRep_MeshData()
+{
+	if (ReplicatedMeshDataInternal.Row)
+	{
+		SetLocalMesh(ReplicatedMeshDataInternal.Row->Mesh);
+	}
 }
 
 /*********************************************************************************************
@@ -166,7 +222,8 @@ const ULevelActorDataAsset& UMapComponent::GetActorDataAssetChecked() const
 // Get the owner's data asset
 EActorType UMapComponent::GetActorType() const
 {
-	return GetActorDataAssetChecked().GetActorType();
+	const ULevelActorDataAsset* ActorDataAsset = GetActorDataAsset();
+	return ActorDataAsset ? ActorDataAsset->GetActorType() : EActorType::None;
 }
 
 /*********************************************************************************************
@@ -226,12 +283,7 @@ void UMapComponent::OnRegister()
 	}
 
 	// Initialize mesh component
-	if (ActorDataAssetInternal->GetActorType() == EAT::Player)
-	{
-		// The character class already has own initialized skeletal component
-		MeshComponentInternal = Owner->FindComponentByClass<UMeshComponent>();
-	}
-	else
+	if (!MeshComponentInternal)
 	{
 		MeshComponentInternal = NewObject<UStaticMeshComponent>(Owner);
 		MeshComponentInternal->AttachToComponent(Owner->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
@@ -295,6 +347,17 @@ void UMapComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 	Super::OnComponentDestroyed(bDestroyingHierarchy);
 }
 
+// Returns properties that are replicated for the lifetime of the actor channel
+void UMapComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, ReplicatedMeshDataInternal, Params);
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
@@ -307,12 +370,12 @@ bool UMapComponent::OnAdded_Implementation()
 
 	TRACE_CPUPROFILER_EVENT_SCOPE(UMapComponent::OnAdded);
 
-	// Set the default mesh (if any custom is not set yet), any system can override it later
+	// Set the default mesh (if any custom or replicated is not set yet), any system can override it later
 	if (!GetMesh())
 	{
-		const ULevelActorRow* FoundRow = GetActorDataAssetChecked().GetRowByLevelType(UMyBlueprintFunctionLibrary::GetLevelType());
+		const ULevelActorRow* FoundRow = ReplicatedMeshDataInternal.Row ? ReplicatedMeshDataInternal.Row.Get() : GetActorDataAssetChecked().GetRowByLevelType(UMyBlueprintFunctionLibrary::GetLevelType());
 		ensureMsgf(FoundRow && FoundRow->Mesh, TEXT("ASSERT: [%i] %hs:\n'FoundRow' is not valid, can not set the default mesh!"), __LINE__, __FUNCTION__);
-		SetMesh(FoundRow->Mesh);
+		SetLocalMesh(FoundRow->Mesh);
 	}
 
 	TryDisplayOwnedCell();
@@ -371,7 +434,7 @@ void UMapComponent::OnPostRemoved_Implementation(UObject* DestroyCauser/* = null
 		UCellsUtilsLibrary::ClearDisplayedCells(GetOwner());
 	}
 
-	SetMesh(nullptr);
+	SetLocalMesh(nullptr);
 
 	SetCell(FCell::InvalidCell);
 }

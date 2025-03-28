@@ -200,6 +200,7 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	SkeletalMeshComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	// Enable all lighting channels, so it's clearly visible in the dark
 	SkeletalMeshComponent->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
+	MapComponentInternal->SetMeshComponent(SkeletalMeshComponent);
 
 	// Initialize the nameplate mesh component
 	NameplateMeshInternal = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NameplateMeshComponent"));
@@ -270,14 +271,14 @@ int32 APlayerCharacter::GetPlayerId() const
 // Returns level type associated with player, e.g: Water level type for Roger character
 ELevelType APlayerCharacter::GetPlayerType() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
 	return PlayerRow ? PlayerRow->LevelType : ELT::None;
 }
 
 // Returns the Player Tag associated with player
 const FGameplayTag& APlayerCharacter::GetPlayerTag() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
 	return PlayerRow ? PlayerRow->PlayerTag : FGameplayTag::EmptyTag;
 }
 
@@ -337,7 +338,6 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Params.bIsPushBased = true;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PowerupsInternal, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PlayerMeshDataInternal, Params);
 }
 
 // Is overriden to handle the client login when is set new player state
@@ -376,7 +376,8 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
-	if (!PlayerMeshDataInternal.IsValid())
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	if (!MapComponentInternal->GetReplicatedMeshData().IsValid())
 	{
 		SetDefaultPlayerMeshData();
 	}
@@ -710,14 +711,6 @@ void APlayerCharacter::UpdateLocation()
 	}
 }
 
-// Called when this Pawn is possessed. Only called on the server (or in standalone)
-void APlayerCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-
-	ApplyCustomPlayerMeshData();
-}
-
 /*********************************************************************************************
  * Nickname
  ********************************************************************************************* */
@@ -781,66 +774,12 @@ void APlayerCharacter::ApplyPlayerId(int32 CurrentPlayerId/* = INDEX_NONE*/)
 // Returns the Skeletal Mesh of bombers
 UMySkeletalMeshComponent* APlayerCharacter::GetMySkeletalMeshComponent() const
 {
-	return Cast<UMySkeletalMeshComponent>(GetMesh());
+	return MapComponentInternal ? MapComponentInternal->GetMeshComponent<UMySkeletalMeshComponent>() : nullptr;
 }
 
 UMySkeletalMeshComponent& APlayerCharacter::GetMeshChecked() const
 {
 	return *CastChecked<UMySkeletalMeshComponent>(GetMesh());
-}
-
-// Set and apply how a player has to look like
-void APlayerCharacter::SetCustomPlayerMeshData(const FCustomPlayerMeshData& CustomPlayerMeshData)
-{
-	const UMySkeletalMeshComponent* MySkeletalMeshComp = Cast<UMySkeletalMeshComponent>(GetMesh());
-	if (!ensureMsgf(MySkeletalMeshComp, TEXT("ASSERT: [%i] %hs:\n'MySkeletalMeshComp' is not valid!"), __LINE__, __FUNCTION__)
-	    || !CustomPlayerMeshData.IsValid())
-	{
-		return;
-	}
-
-	const FCustomPlayerMeshData& LocalMeshData = MySkeletalMeshComp->GetCustomPlayerMeshData();
-	if (LocalMeshData == CustomPlayerMeshData)
-	{
-		// Is the same mesh data
-		return;
-	}
-
-	PlayerMeshDataInternal = CustomPlayerMeshData;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PlayerMeshDataInternal, this);
-
-	ApplyCustomPlayerMeshData();
-
-	if (!HasAuthority())
-	{
-		ServerSetCustomPlayerMeshData(CustomPlayerMeshData);
-	}
-}
-
-// Set and apply how a player has to look lik
-void APlayerCharacter::ServerSetCustomPlayerMeshData_Implementation(const FCustomPlayerMeshData& CustomPlayerMeshData)
-{
-	SetCustomPlayerMeshData(CustomPlayerMeshData);
-}
-
-// Set and apply new skeletal mesh from current data
-void APlayerCharacter::ApplyCustomPlayerMeshData()
-{
-	UMySkeletalMeshComponent* MySkeletalMeshComp = Cast<UMySkeletalMeshComponent>(GetMesh());
-	if (!ensureMsgf(MySkeletalMeshComp, TEXT("ASSERT: [%i] %hs:\n'MySkeletalMeshComp' is not valid!"), __LINE__, __FUNCTION__)
-	    || !PlayerMeshDataInternal.IsValid())
-	{
-		return;
-	}
-
-	const FCustomPlayerMeshData PrevMeshCopy = MySkeletalMeshComp->GetCustomPlayerMeshData();
-
-	MySkeletalMeshComp->InitMySkeletalMesh(PlayerMeshDataInternal);
-
-	if (PrevMeshCopy != PlayerMeshDataInternal)
-	{
-		OnPlayerTypeChanged.Broadcast(PlayerMeshDataInternal.PlayerRow->PlayerTag);
-	}
 }
 
 // Set and apply default skeletal mesh for this player
@@ -878,16 +817,12 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin/* = false*
 	}
 
 	const int32 SkinsNum = Row->GetSkinTexturesNum();
-	FCustomPlayerMeshData CustomPlayerMeshData = FCustomPlayerMeshData::Empty;
-	CustomPlayerMeshData.PlayerRow = Row;
-	CustomPlayerMeshData.SkinIndex = PlayerId % SkinsNum;
-	SetCustomPlayerMeshData(CustomPlayerMeshData);
-}
+	FBmrMeshData MeshData = FBmrMeshData::Empty;
+	MeshData.Row = Row;
+	MeshData.SkinIndex = PlayerId % SkinsNum;
 
-// Respond on changes in player mesh data to reset to set the mesh on client
-void APlayerCharacter::OnRep_PlayerMeshData()
-{
-	ApplyCustomPlayerMeshData();
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponentInternal->SetReplicatedMeshData(MeshData);
 }
 
 /*********************************************************************************************

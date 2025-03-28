@@ -247,6 +247,16 @@ void AGeneratedMap::SpawnActorsByPattern(EActorType ActorsType, const TArray<FIn
 	SpawnActorsByTypes(CellsToSpawn);
 }
 
+// Spawns level actors with the specified mesh data on the Generated Map
+void AGeneratedMap::SpawnActorWithMesh(EActorType ActorType, const FCell& Cell, const FBmrMeshData& MeshData)
+{
+	if (ensureMsgf(MeshData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'MeshData' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		const auto& OnSpawned = [MeshData](UMapComponent& MapComponent) { MapComponent.SetReplicatedMeshData(MeshData); };
+		SpawnActorByType(ActorType, Cell, OnSpawned);
+	}
+}
+
 // Adding and attaching the specified Map Component to the Level
 void AGeneratedMap::AddToGrid(UMapComponent* AddedComponent)
 {

@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "NMMUtils.h"
+#include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
@@ -75,15 +76,17 @@ UMySkeletalMeshComponent& UNMMSpotComponent::GetMeshChecked() const
 // Sets the look of this spot to the in-game player character
 void UNMMSpotComponent::ApplyMeshOnPlayer()
 {
-	APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	if (!ensureMsgf(PlayerCharacter, TEXT("ASSERT: [%i] %hs:\n'PlayerCharacter' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
 	// Update the chosen player mesh on the level
-	const FCustomPlayerMeshData& PlayerMeshData = GetMeshChecked().GetCustomPlayerMeshData();
-	PlayerCharacter->SetCustomPlayerMeshData(PlayerMeshData);
+	const FBmrMeshData& PlayerMeshData = GetMeshChecked().GetMeshData();
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(PlayerCharacter);
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->SetReplicatedMeshData(PlayerMeshData);
 }
 
 /*********************************************************************************************

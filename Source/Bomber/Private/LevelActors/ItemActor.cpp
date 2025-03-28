@@ -96,7 +96,7 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	// Override mesh
 	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
 	{
-		MapComponent->SetMesh(FoundItemRow->Mesh);
+		MapComponent->SetLocalMesh(FoundItemRow->Mesh);
 	}
 }
 

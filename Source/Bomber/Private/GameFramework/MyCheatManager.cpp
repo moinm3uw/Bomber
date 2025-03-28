@@ -9,6 +9,7 @@
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyDebugCameraController.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/PlayerState.h"
@@ -285,15 +286,10 @@ void UMyCheatManager::SpawnActorByType(EActorType ActorType, int32 ColumnX, int3
 	GeneratedMap.DestroyLevelActorsOnCells({Cell});
 
 	// Spawn new actor on the cell
-	const TFunction<void(UMapComponent&)>& OnSpawned = [RowIndex](UMapComponent& MapComponent)
-	{
-		const ULevelActorRow* Row = MapComponent.GetActorDataAssetChecked().GetRowByIndex(RowIndex);
-		if (ensureMsgf(Row, TEXT("ASSERT: [%i] %hs:\n'Row' was not found by '%i' index!"), __LINE__, __FUNCTION__, RowIndex))
-		{
-			MapComponent.SetMesh(Row->Mesh);
-		}
-	};
-	GeneratedMap.SpawnActorByType(ActorType, Cell, OnSpawned);
+	const ULevelActorDataAsset* DataAsset = UDataAssetsContainer::Get().GetDataAssetByActorType(ActorType);
+	checkf(DataAsset, TEXT("ERROR: [%i] %hs:\n'DataAsset' is null!"), __LINE__, __FUNCTION__);
+	const ULevelActorRow* Row = DataAsset->GetRowByIndex(RowIndex);
+	GeneratedMap.SpawnActorWithMesh(ActorType, Cell, {Row});
 }
 
 /*********************************************************************************************

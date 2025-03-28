@@ -108,6 +108,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void SpawnActorsByPattern(EActorType ActorsType, const TArray<FIntPoint>& Positions);
 
+	/** Spawns level actors with the specified mesh data on the Generated Map.
+	 * @param ActorType The type of actors to spawn.
+	 * @param Cell The cell to spawn the actor.
+	 * @param MeshData The mesh data to apply to the spawned actor. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "Cell,MeshData"))
+	void SpawnActorWithMesh(EActorType ActorType, const FCell& Cell, const struct FBmrMeshData& MeshData);
+
 	/** Adding and attaching the specified Map Component to the Level.
 	 * @param AddedComponent The Map Component of the generated or dragged level actor. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")

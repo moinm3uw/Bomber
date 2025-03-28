@@ -2,37 +2,34 @@
 
 #pragma once
 
-#include "CustomPlayerMeshData.generated.h"
+#include "BmrMeshData.generated.h"
 
 /**
- * Is runtime representation of the read-only Player Row.
+ * Is runtime representation of the read-only Level Actor Row (Player, Bomb etc)
  */
-USTRUCT(BlueprintType, meta = (HasNativeMake = "/Script/Bomber.PlayerMeshDataUtils.MakeCustomPlayerMeshData"))
-struct BOMBER_API FCustomPlayerMeshData
+USTRUCT(BlueprintType)
+struct BOMBER_API FBmrMeshData
 {
 	GENERATED_BODY()
 
 	/** Empty data. */
-	static const FCustomPlayerMeshData Empty;
+	static const FBmrMeshData Empty;
 
 	/** Default constructor. */
-	FCustomPlayerMeshData() = default;
-
-	/** Constructor that initializes the player data by specified tag. */
-	FCustomPlayerMeshData(const struct FPlayerTag& PlayerTag, int32 InSkinIndex);
+	FBmrMeshData() = default;
 
 	/** Constructor that initializes the data directly. */
-	FCustomPlayerMeshData(const class UPlayerRow& InPlayerRow, int32 InSkinIndex);
+	FBmrMeshData(const class ULevelActorRow* InRow, int32 InSkinIndex = 0);
 
 	/** The row that is used to visualize the bomber character. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = "C++")
-	TObjectPtr<const class UPlayerRow> PlayerRow = nullptr;
+	TObjectPtr<const class ULevelActorRow> Row = nullptr;
 
 	/** Returns true is data is valid. */
-	FORCEINLINE bool IsValid() const { return PlayerRow != nullptr; }
+	FORCEINLINE bool IsValid() const { return Row != nullptr; }
 
 	/** Equality operator to compare the mesh data. */
-	FORCEINLINE bool operator==(const FCustomPlayerMeshData& Other) const { return PlayerRow == Other.PlayerRow && SkinIndex == Other.SkinIndex; }
+	FORCEINLINE bool operator==(const FBmrMeshData& Other) const { return Row == Other.Row && SkinIndex == Other.SkinIndex; }
 
 	/*********************************************************************************************
 	 * Skins

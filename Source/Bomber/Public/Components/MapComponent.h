@@ -4,6 +4,7 @@
 
 #include "Components/ActorComponent.h"
 //---
+#include "Structures/BmrMeshData.h"
 #include "Structures/Cell.h"
 //---
 #include "MapComponent.generated.h"
@@ -99,11 +100,20 @@ protected:
 
 	/*********************************************************************************************
 	 * Mesh
+	 * Is responsible for visual representation of the owner actor.
 	 ********************************************************************************************* */
 public:
 	/** Returns a mesh component of own level actor.  */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE class UMeshComponent* GetMeshComponent() const { return MeshComponentInternal; }
+
+	template <typename T>
+	FORCEINLINE T* GetMeshComponent() const { return Cast<T>(GetMeshComponent()); }
+
+	/** Sets the mesh component of the owner actor.
+	 * @param NewMeshComponent - the mesh component to be set on the owner. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetMeshComponent(class UMeshComponent* NewMeshComponent);
 
 	/** Returns current mesh asset. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -127,17 +137,42 @@ public:
 	 * Is useful for rows that have more than one mesh per row, like items.
 	 * @param NewMesh - the mesh to be set on the owner, might be null to reset the mesh, but if provided, then it's required to match with any row from the Data Asset. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetMesh(class UStreamableRenderAsset* NewMesh);
+	void SetLocalMesh(class UStreamableRenderAsset* NewMesh);
 
 	/** Overrides default material of current mesh component.
 	 * @param NewMaterial - the material to be set on the mesh component. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetMeshMaterial(class UMaterialInterface* NewMaterial);
+	void SetLocalMeshMaterial(class UMaterialInterface* NewMaterial);
+
+	/** Returns optional data of the mesh component, which is replicated to clients.
+	 * Might be None, since clients are allowed to set mesh and material locally.
+	 * @warning prefer to use other getters to get mesh and material directly. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const FORCEINLINE FBmrMeshData& GetReplicatedMeshData() const { return ReplicatedMeshDataInternal; }
+
+	/** Is replicated alternative method to assign specific mesh and material to the owner.
+	 * Can be called on both server and clients, so it will replicate to all others.
+	 * Is optional to call, since clients are allowed to set mesh and material locally. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "MeshData"))
+	void SetReplicatedMeshData(const FBmrMeshData& MeshData);
 
 protected:
 	/** Mesh of an owner. */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
 	TObjectPtr<class UMeshComponent> MeshComponentInternal = nullptr;
+
+	/** Is optional to set, since clients are allowed to set mesh and material locally.
+	 * If set, then it will be replicated to clients. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_MeshData", AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Data"))
+	FBmrMeshData ReplicatedMeshDataInternal = FBmrMeshData::Empty;
+
+	/** Server RPC to set and apply how a level actor has to look like. */
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "C++", meta = (BlueprintProtected, AutoCreateRefTerm = "MeshData"))
+	void ServerSetMeshData(const FBmrMeshData& MeshData);
+
+	/** Is called on client to apply replicated mesh data. */
+	UFUNCTION()
+	void OnRep_MeshData();
 
 	/*********************************************************************************************
 	 * Collision
@@ -170,7 +205,7 @@ public:
 
 	const ULevelActorDataAsset& GetActorDataAssetChecked() const;
 
-	/** Returns the type of the owne: Player, Bomb, etc. */
+	/** Returns the type of the owner: Player, Bomb, etc. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	EActorType GetActorType() const;
 
@@ -189,6 +224,9 @@ protected:
 
 	/** Called when a component is destroyed for removing the owner from the Generated Map. */
 	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+
+	/** Returns properties that are replicated for the lifetime of the actor channel. */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/*********************************************************************************************
 	 * Events

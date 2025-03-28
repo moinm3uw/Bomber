@@ -8,23 +8,9 @@
 //---
 #include "Bomber.h"
 #include "Structures/PlayerTag.h"
-#include "Structures/CustomPlayerMeshData.h"
+#include "Structures/BmrMeshData.h"
 //---
 #include "MySkeletalMeshComponent.generated.h"
-
-/**
- * 	The static functions library of Custom Player Mesh Data.
- */
-UCLASS(Blueprintable, BlueprintType)
-class BOMBER_API UPlayerMeshDataUtils final : public UBlueprintFunctionLibrary
-{
-	GENERATED_BODY()
-
-public:
-	/** Creates 'Make Cell' node with Cell  as an input parameter. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InPlayerTag", NativeMakeFunc, Keywords = "construct build"))
-	static FORCEINLINE FCustomPlayerMeshData MakeCustomPlayerMeshData(const FPlayerTag& InPlayerTag, int32 InSkinIndex) { return {InPlayerTag, InSkinIndex}; }
-};
 
 class UMySkeletalMeshComponent;
 
@@ -108,17 +94,21 @@ public:
 	/** Disables tick and visibility if inactive and vice versa. */
 	virtual void SetActive(bool bNewActive, bool bReset = false) override;
 
+	/** Is overridden to properly apply the new mesh data.
+	 * @warning Owner must implement the Map Component, otherwise call InitMySkeletalMesh directly. */
+	virtual void SetSkeletalMesh(USkeletalMesh* NewMesh, bool bReinitPose = true) override;
+
 	/** Returns how this mesh looks like for now.
 	 * @see UMySkeletalMeshComponent::PlayerMeshDataInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	const FORCEINLINE FCustomPlayerMeshData& GetCustomPlayerMeshData() const { return PlayerMeshDataInternal; }
+	const FORCEINLINE FBmrMeshData& GetMeshData() const { return PlayerMeshDataInternal; }
 
 	/**
 	 * Init this component by specified player data.
-	 * @param CustomPlayerMeshData Data to init.
+	 * @param MeshData Data to init.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "CustomPlayerMeshData"))
-	void InitMySkeletalMesh(const FCustomPlayerMeshData& CustomPlayerMeshData);
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "MeshData"))
+	void InitMySkeletalMesh(const FBmrMeshData& MeshData);
 
 	/** Creates dynamic material instance for each skin if is not done before. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
@@ -150,9 +140,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void AttachProps();
 
+	/** Destroyed all currently equipped props. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void DetachProps();
+
 	/** Returns true when is needed to attach or detach props. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	bool ArePropsWantToUpdate() const;
+
+	/** Completely clears component.
+	 * Components stays valid and active after this call, but all props are detached and mesh data is reset. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void Cleanup();
 
 protected:
 	/* ---------------------------------------------------
@@ -161,7 +160,7 @@ protected:
 
 	/** Determines how this mesh looks like for now. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Player Mesh Data"))
-	FCustomPlayerMeshData PlayerMeshDataInternal = FCustomPlayerMeshData::Empty;
+	FBmrMeshData PlayerMeshDataInternal = FBmrMeshData::Empty;
 
 	/** Current level type of attached meshes. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Attached Meshes Type"))

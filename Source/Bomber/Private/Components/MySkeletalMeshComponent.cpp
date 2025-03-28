@@ -2,6 +2,7 @@
 
 #include "Components/MySkeletalMeshComponent.h"
 //---
+#include "Components/MapComponent.h"
 #include "DataAssets/PlayerDataAsset.h"
 //---
 #include "Animation/AnimSequence.h"
@@ -12,18 +13,6 @@
 #include "Materials/MaterialInstanceDynamic.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MySkeletalMeshComponent)
-
-// Constructor that initializes the player data by specified tag
-FCustomPlayerMeshData::FCustomPlayerMeshData(const FPlayerTag& PlayerTag, int32 InSkinIndex)
-{
-	PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(PlayerTag);
-	SkinIndex = InSkinIndex;
-}
-
-// Constructor that initializes the data directly
-FCustomPlayerMeshData::FCustomPlayerMeshData(const UPlayerRow& InPlayerRow, int32 InSkinIndex)
-	: PlayerRow(&InPlayerRow)
-	, SkinIndex(InSkinIndex) {}
 
 // Default constructor, overrides in object initializer default mesh by bomber mesh
 AMySkeletalMeshActor::AMySkeletalMeshActor(const FObjectInitializer& ObjectInitializer)
@@ -64,7 +53,8 @@ void AMySkeletalMeshActor::InitMySkeletalMesh(const FPlayerTag& InPlayerTag, int
 	PlayerTagInternal = InPlayerTag;
 	SkinIndexInternal = InSkinIndex;
 
-	const FCustomPlayerMeshData PlayerMeshData(InPlayerTag, InSkinIndex);
+	const UPlayerRow* PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(InPlayerTag);
+	const FBmrMeshData PlayerMeshData(PlayerRow, InSkinIndex);
 	GetMeshChecked().InitMySkeletalMesh(PlayerMeshData);
 }
 
@@ -167,10 +157,29 @@ void UMySkeletalMeshComponent::SetActive(bool bNewActive, bool bReset/*= false*/
 	}
 }
 
-// Init this component by specified player data
-void UMySkeletalMeshComponent::InitMySkeletalMesh(const FCustomPlayerMeshData& CustomPlayerMeshData)
+// Is overridden to properly apply the new mesh data
+void UMySkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* NewMesh, bool bReinitPose)
 {
-	if (!CustomPlayerMeshData.PlayerRow)
+	Super::SetSkeletalMesh(NewMesh, bReinitPose);
+
+	if (!NewMesh)
+	{
+		Cleanup();
+		return;
+	}
+
+	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(GetOwner());
+	const FBmrMeshData& NewMeshData = MapComponent ? MapComponent->GetReplicatedMeshData() : FBmrMeshData::Empty;
+	if (NewMeshData != PlayerMeshDataInternal)
+	{
+		InitMySkeletalMesh(NewMeshData);
+	}
+}
+
+// Init this component by specified player data
+void UMySkeletalMeshComponent::InitMySkeletalMesh(const FBmrMeshData& MeshData)
+{
+	if (!MeshData.Row)
 	{
 		return;
 	}
@@ -181,38 +190,40 @@ void UMySkeletalMeshComponent::InitMySkeletalMesh(const FCustomPlayerMeshData& C
 		RegisterComponent();
 	}
 
-	PlayerMeshDataInternal = CustomPlayerMeshData;
+	// Set the new mesh data first, so it will not recusively call this function
+	PlayerMeshDataInternal = MeshData;
 
-	USkeletalMesh* NewSkeletalMesh = Cast<USkeletalMesh>(CustomPlayerMeshData.PlayerRow->Mesh);
+	USkeletalMesh* NewSkeletalMesh = Cast<USkeletalMesh>(MeshData.Row->Mesh);
 	SetSkeletalMesh(NewSkeletalMesh, true);
 
 	UpdateSkinTextures();
 
 	AttachProps();
 
-	ApplySkinByIndex(CustomPlayerMeshData.SkinIndex);
+	ApplySkinByIndex(MeshData.SkinIndex);
 }
 
 // Creates dynamic material instance for each skin if is not done before
 void UMySkeletalMeshComponent::UpdateSkinTextures()
 {
-	if (ensureMsgf(PlayerMeshDataInternal.PlayerRow, TEXT("ASSERT: [%i] %hs:\n'PlayerRow' is null!"), __LINE__, __FUNCTION__))
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row.Get());
+	if (ensureMsgf(PlayerRow, TEXT("ASSERT: [%i] %hs:\n'PlayerRow' is null!"), __LINE__, __FUNCTION__))
 	{
-		const_cast<UPlayerRow*>(PlayerMeshDataInternal.PlayerRow.Get())->UpdateSkinTextures();
+		const_cast<UPlayerRow*>(PlayerRow)->UpdateSkinTextures();
 	}
 }
 
 // Returns level type to which this mesh is associated with
 ELevelType UMySkeletalMeshComponent::GetAssociatedLevelType() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	return PlayerRow ? PlayerRow->LevelType : ELevelType::None;
 }
 
 // Returns the Player Tag to which this mesh is associated with
 const FPlayerTag& UMySkeletalMeshComponent::GetPlayerTag() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	return PlayerRow ? PlayerRow->PlayerTag : FPlayerTag::None;
 }
 
@@ -232,7 +243,7 @@ void UMySkeletalMeshComponent::GetAttachedPropsByClass(TArray<UMeshComponent*>& 
 // Attach all FAttachedMeshes to specified parent mesh
 void UMySkeletalMeshComponent::AttachProps()
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	if (!PlayerRow
 	    || !ArePropsWantToUpdate())
 	{
@@ -242,15 +253,7 @@ void UMySkeletalMeshComponent::AttachProps()
 	AttachedMeshesTypeInternal = PlayerRow->LevelType;
 
 	// Destroy previous meshes
-	for (int32 Index = AttachedMeshesInternal.Num() - 1; Index >= 0; --Index)
-	{
-		UMeshComponent* MeshComponentIt = AttachedMeshesInternal.IsValidIndex(Index) ? AttachedMeshesInternal[Index] : nullptr;
-		if (MeshComponentIt)
-		{
-			AttachedMeshesInternal.RemoveAt(Index);
-			MeshComponentIt->DestroyComponent();
-		}
-	}
+	DetachProps();
 
 	// Spawn new components and attach meshes
 	const TArray<FAttachedMesh>& PlayerProps = PlayerRow->PlayerProps;
@@ -307,10 +310,24 @@ void UMySkeletalMeshComponent::AttachProps()
 	}
 }
 
+// Destroyed all currently equipped props
+void UMySkeletalMeshComponent::DetachProps()
+{
+	for (int32 Index = AttachedMeshesInternal.Num() - 1; Index >= 0; --Index)
+	{
+		UMeshComponent* MeshComponentIt = AttachedMeshesInternal.IsValidIndex(Index) ? AttachedMeshesInternal[Index] : nullptr;
+		if (MeshComponentIt)
+		{
+			AttachedMeshesInternal.RemoveAt(Index);
+			MeshComponentIt->DestroyComponent();
+		}
+	}
+}
+
 // Returns true when is needed to attach or detach props
 bool UMySkeletalMeshComponent::ArePropsWantToUpdate() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	if (!PlayerRow)
 	{
 		return false;
@@ -350,6 +367,21 @@ bool UMySkeletalMeshComponent::ArePropsWantToUpdate() const
 	return false;
 }
 
+// Completely clears component
+void UMySkeletalMeshComponent::Cleanup()
+{
+	if (!PlayerMeshDataInternal.IsValid())
+	{
+		// Is already cleaned up
+		return;
+	}
+
+	DetachProps();
+
+	PlayerMeshDataInternal = FBmrMeshData::Empty;
+	SetSkeletalMesh(nullptr);
+}
+
 /*********************************************************************************************
  * Skins
  ********************************************************************************************* */
@@ -357,7 +389,7 @@ bool UMySkeletalMeshComponent::ArePropsWantToUpdate() const
 // Returns the total number of skins for current mesh (player row)
 int32 UMySkeletalMeshComponent::GetSkinTexturesNum() const
 {
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	return PlayerRow ? PlayerRow->GetSkinTexturesNum() : 0;
 }
 
@@ -406,12 +438,12 @@ void UMySkeletalMeshComponent::SetSkinAvailable(bool bMakeAvailable, int32 SkinI
 // Set and apply new skin for current mesh, by index from player row
 void UMySkeletalMeshComponent::ApplySkinByIndex(int32 SkinIndex)
 {
-	if (!ensureMsgf(PlayerMeshDataInternal.PlayerRow, TEXT("ASSERT: [%i] %hs:\n'PlayerMeshDataInternal.PlayerRow' is not valid!"), __LINE__, __FUNCTION__))
+	if (!ensureMsgf(PlayerMeshDataInternal.Row, TEXT("ASSERT: [%i] %hs:\n'PlayerMeshDataInternal.PlayerRow' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
-	const UPlayerRow* PlayerRow = PlayerMeshDataInternal.PlayerRow;
+	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	UMaterialInstanceDynamic* MaterialInstanceDynamic = PlayerRow->GetMaterialInstanceDynamic(SkinIndex);
 	if (!ensureMsgf(MaterialInstanceDynamic, TEXT("ASSERT: ApplySkinByIndex: 'MaterialInstanceDynamic' is not valid for index %i"), SkinIndex))
 	{
