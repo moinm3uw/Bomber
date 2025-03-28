@@ -46,4 +46,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static UMapComponent* GetLevelActorByIndex(int32 Index,
 		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+
+	/** Takes level actors and returns only matching with specified actor types.
+	 * Could be useful to extract only needed actors.
+	 * @param InActors Actors to filter.
+	 * @param ActorsTypesBitmask Bitmask of actors types to filter.
+	 * @return actors of specified types. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static TSet<UMapComponent*> FilterLevelActors(
+		const TSet<UMapComponent*>& InActors,
+		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 };

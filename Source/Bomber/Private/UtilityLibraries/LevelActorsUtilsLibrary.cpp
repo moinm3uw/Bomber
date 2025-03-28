@@ -121,3 +121,18 @@ UMapComponent* ULevelActorsUtilsLibrary::GetLevelActorByIndex(int32 Index, int32
 
 	return nullptr;
 }
+
+// Takes level actors and returns only matching with specified actor types
+FMapComponents ULevelActorsUtilsLibrary::FilterLevelActors(const FMapComponents& InActors, int32 ActorsTypesBitmask)
+{
+	FMapComponents FilteredActors;
+	for (UMapComponent* It : InActors)
+	{
+		if (It
+		    && EnumHasAnyFlags(It->GetActorType(), TO_ENUM(EActorType, ActorsTypesBitmask)))
+		{
+			FilteredActors.Add(It);
+		}
+	}
+	return FilteredActors;
+}
