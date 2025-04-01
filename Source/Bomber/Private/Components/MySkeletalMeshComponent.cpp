@@ -4,6 +4,7 @@
 //---
 #include "Components/MapComponent.h"
 #include "DataAssets/PlayerDataAsset.h"
+#include "MyUtilsLibraries/UtilsLibrary.h"
 //---
 #include "Animation/AnimSequence.h"
 #include "Components/GameFrameworkComponentManager.h"
@@ -63,7 +64,8 @@ void AMySkeletalMeshActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	if (IS_TRANSIENT(this))
+	const bool bIsBlueprintViewport = UUtilsLibrary::IsEditor() && FTransientChecker::IsTransientLevel(this);
+	if (!bIsBlueprintViewport && IS_TRANSIENT(this))
 	{
 		return;
 	}

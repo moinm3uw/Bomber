@@ -14,9 +14,14 @@ DEFINE_LOG_CATEGORY(LogBomber);
 
 bool FTransientChecker::IsTransient(const UObject* Obj)
 {
-	static const FString TransientLevelName = TEXT("Transient");
 	return !IsValid(Obj)
 	       || !(Obj)->IsValidLowLevelFast()
 	       || (Obj)->HasAllFlags(RF_ClassDefaultObject)
-	       || UGameplayStatics::GetCurrentLevelName(Obj) == TransientLevelName;
+	       || IsTransientLevel(Obj);
+}
+
+bool FTransientChecker::IsTransientLevel(const UObject* Obj)
+{
+	static const FString TransientLevelName = TEXT("Transient");
+	return UGameplayStatics::GetCurrentLevelName(Obj) == TransientLevelName;
 }

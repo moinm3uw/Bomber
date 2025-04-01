@@ -10,6 +10,7 @@ namespace FTransientChecker
 {
 /** Returns true is specified object is pending kill, CDO or exists on the Transient level. */
 BOMBER_API bool IsTransient(const UObject* Obj);
+BOMBER_API bool IsTransientLevel(const UObject* Obj);
 }
 
 /**
