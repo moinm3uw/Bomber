@@ -517,15 +517,26 @@ void AMyPlayerController::SpawnPlayerCameraManager()
 }
 
 // Is overriden to return correct camera location and rotation for the player
-void AMyPlayerController::GetPlayerViewPoint(FVector& Location, FRotator& Rotation) const
+void AMyPlayerController::GetPlayerViewPoint(FVector& OutLocation, FRotator& OutRotation) const
 {
-	Super::GetPlayerViewPoint(Location, Rotation);
+	Super::GetPlayerViewPoint(OutLocation, OutRotation);
+
+	const AActor* ViewTarget = PlayerCameraManager ? PlayerCameraManager->GetViewTarget() : nullptr;
+	if (!ViewTarget
+	    || ViewTarget == this)
+	{
+		// Camera is not possessed yet, likely game is loading
+		// Controller does not have own camera: proper view target is level or pawn
+		// Output some far location, so player will not see the level until any camera is possessed
+		static const FVector StartupBlackViewLocation(1000000.f);
+		OutLocation = StartupBlackViewLocation;
+	}
 
 #if !UE_BUILD_SHIPPING
 	if (bIsDebugCameraEnabledInternal)
 	{
 		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D 
-		Rotation.Roll = 0.f;
+		OutRotation.Roll = 0.f;
 	}
 #endif // !UE_BUILD_SHIPPING
 }
