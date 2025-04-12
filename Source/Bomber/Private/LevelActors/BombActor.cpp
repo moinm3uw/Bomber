@@ -413,21 +413,17 @@ void ABombActor::OnPlayerCellChanged_Implementation(UMapComponent* PlayerMapComp
 	checkf(PlayerMapComponent && MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerMapComponent || MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	const APlayerCharacter& PlayerCharacter = *CastChecked<APlayerCharacter>(PlayerMapComponent->GetOwner());
 
-	if (NewCell == MapComponentInternal->GetCell())
-	{
-		return;
-	}
-
 	const UBoxComponent* BoxCollisionComponent = MapComponentInternal ? MapComponentInternal->GetBoxCollisionComponent() : nullptr;
 	checkf(BoxCollisionComponent, TEXT("ERROR: [%i] %hs:\n'BoxCollisionComponent' is null!"), __LINE__, __FUNCTION__);
 	FCollisionResponseContainer CollisionResponses = BoxCollisionComponent->GetCollisionResponseToChannels();
 
-	// Player left the bomb, block collision (all other channels and players will stay as they are)
-	GetCollisionResponseToPlayerByID(/*InOut*/CollisionResponses, PlayerCharacter.GetPlayerId(), ECR_Block);
-	MapComponentInternal->SetCollisionResponses(CollisionResponses);
+	// true: player left the bomb, block collision (all other channels and players will stay as they are)
+	// false: client player with high ping might be teleported back into blocked bomb, so release collision
+	const bool bIsPlayerLeft = NewCell != MapComponentInternal->GetCell();
 
-	// Stop listening the character which left the bomb (however, still continue to listen other characters)
-	PlayerMapComponent->OnCellChanged.RemoveAll(this);
+	const ECollisionResponse NewResponse = bIsPlayerLeft ? ECR_Block : ECR_Overlap;
+	GetCollisionResponseToPlayerByID(/*InOut*/CollisionResponses, PlayerCharacter.GetPlayerId(), NewResponse);
+	MapComponentInternal->SetCollisionResponses(CollisionResponses);
 }
 
 /*********************************************************************************************
