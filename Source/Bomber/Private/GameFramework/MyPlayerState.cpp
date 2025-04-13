@@ -202,14 +202,17 @@ void AMyPlayerState::SetDefaultPlayerName()
 			NewName = UKismetSystemLibrary::GetPlatformUserName();
 
 			// Then, try to obtain player name from online subsystem
-			FString OnlinePlayerName;
-			const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
-			if (LocalID.IsValid())
+			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 			{
-				UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/OnlinePlayerName);
-				if (!OnlinePlayerName.IsEmpty())
+				FString OnlinePlayerName;
+				const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
+				if (LocalID.IsValid())
 				{
-					NewName = *OnlinePlayerName;
+					UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/OnlinePlayerName);
+					if (!OnlinePlayerName.IsEmpty())
+					{
+						NewName = OnlinePlayerName;
+					}
 				}
 			}
 			break;

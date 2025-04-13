@@ -69,14 +69,14 @@ public:
 	void SetAvatar(UTexture2D* NewAvatar) { UE_MVVM_SET_PROPERTY_VALUE(Avatar, NewAvatar); }
 	UTexture2D* GetAvatar() const { return Avatar; }
 
+	/** Assigns current avatar based on player type. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void UpdateAvatar();
+
 protected:
 	/** Character's avatar, is always valid: default human, bot, or player's online avatar. */
 	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
 	TObjectPtr<UTexture2D> Avatar = nullptr;
-
-	/** Called when changed character Bot status is changed, applies both bot and human visibility. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPlayerTypeChanged(EPlayerType PlayerType);
 
 	/*********************************************************************************************
 	 * Events
@@ -92,6 +92,10 @@ protected:
 	/** Called when any player state is initialized and its assigned character is ready. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPlayerStateReady(class AMyPlayerState* PlayerState, int32 CharacterID);
+
+	/** Called when changed character Bot status is changed, applies both bot and human visibility. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPlayerTypeChanged(EPlayerType PlayerType);
 };
 
 /*********************************************************************************************

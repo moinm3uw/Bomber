@@ -5,7 +5,6 @@
 #include "AdvancedSteamFriendsLibrary.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
-#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -42,9 +41,16 @@ void UMVVM_MyCharacterBase::OnCharacterDeadChanged_Implementation(bool bIsCharac
  * Avatar (Human / Bot / Online)
  ********************************************************************************************* */
 
-void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType PlayerType)
+// Assigns current avatar based on player type
+void UMVVM_MyCharacterBase::UpdateAvatar()
 {
+	const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
+	const EPlayerType PlayerType = MyPlayerState ? MyPlayerState->GetPlayerType() : EPlayerType::None;
 	UTexture2D* NewAvatar = UUIDataAsset::Get().GetDefaultAvatar(PlayerType);
+	if (!ensureMsgf(NewAvatar, TEXT("ASSERT: [%i] %hs:\n'NewAvatar' is null, can not obtain any!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
 
 	if (PlayerType == EPlayerType::Bot)
 	{
@@ -53,10 +59,7 @@ void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType Playe
 		return;
 	}
 
-	const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
-	ensureMsgf(MyPlayerState, TEXT("ASSERT: [%i] %hs:\n'MyPlayerState' is null despite it just changed player type!"), __LINE__, __FUNCTION__);
-	if (MyPlayerState
-	    && !UUtilsLibrary::IsEditor())
+	if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 	{
 		// Try to obtain online avatar, if not found - human default will be used
 		EBlueprintAsyncResultSwitch Result;
@@ -117,4 +120,10 @@ void UMVVM_MyCharacterBase::OnPlayerStateReady_Implementation(AMyPlayerState* Pl
 
 	PlayerState->OnPlayerTypeChanged.AddUniqueDynamic(this, &ThisClass::OnPlayerTypeChanged);
 	OnPlayerTypeChanged(PlayerState->GetPlayerType());
+}
+
+// Called when changed character Bot status is changed, applies both bot and human visibility
+void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType PlayerType)
+{
+	UpdateAvatar();
 }
