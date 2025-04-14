@@ -582,6 +582,12 @@ void AMyPlayerState::OnDeactivated()
 // Register a player with the online subsystem
 void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
+	if (!GetUniqueId().IsValid())
+	{
+		// Network id is not valid: player likely has left the session
+		return;
+	}
+
 	Super::RegisterPlayerWithSession(bWasFromInvite);
 
 	SetIsHuman();
@@ -603,6 +609,12 @@ void AMyPlayerState::UnregisterPlayerWithSession()
 
 	// Reset player name to default
 	SetDefaultPlayerName();
+
+	// Reset network id, bots should have it empty
+	if (GetUniqueId().IsValid())
+	{
+		SetUniqueId(FUniqueNetIdRepl());
+	}
 }
 
 // Is overridden to handle own OnRep functions for engine properties
