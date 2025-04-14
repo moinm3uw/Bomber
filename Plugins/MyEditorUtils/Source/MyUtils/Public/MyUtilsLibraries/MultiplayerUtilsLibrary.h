@@ -47,3 +47,23 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static float GetPingMs();
 };
+
+/**
+ * Overrides the replication condition of an inherited property, including private ones.
+ *
+ * Useful when reusing actors like APlayerState, where certain engine properties are marked 
+ * as COND_InitialOnly and do not replicate again after initial connection. This macro allows 
+ * changing their replication condition (e.g., to COND_None) so they replicate normally.
+ *
+ * Example: Enable APlayerState::bIsABot replication, which is originally COND_InitialOnly:
+ *     DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
+ *
+ * @param SuperClass     The class where the property is originally declared (e.g., APlayerState).
+ * @param PropertyName   The name of the property to override.
+ * @param NewCondition   The new replication condition to apply (e.g., COND_None).
+ */
+#define DOREPLIFETIME_OVERRIDE_CONDITION(SuperClass, PropertyName, NewCondition) \
+{ \
+	static const FName PropertyName##_PrivateName = TEXT(#PropertyName); \
+	ResetReplicatedLifetimeProperty(StaticClass(), SuperClass::StaticClass(), PropertyName##_PrivateName, NewCondition, OutLifetimeProps); \
+}

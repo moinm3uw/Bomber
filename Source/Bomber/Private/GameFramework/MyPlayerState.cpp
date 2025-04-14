@@ -11,6 +11,7 @@
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -553,10 +554,11 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, bIsCharacterDeadInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, OpponentsKilledNumInternal, Params);
 
-	// APlayerState::bIsABot private property has replication condition as 'Initial'
-	// Reset to default condition, so the same player state can change its type without respawn
-	static const FName bIsABot_PrivateProperty = TEXT("bIsABot");
-	ResetReplicatedLifetimeProperty(StaticClass(), Super::StaticClass(), bIsABot_PrivateProperty, COND_None, OutLifetimeProps);
+	// Override APlayerState's COND_InitialOnly properties to allow updates on reused instances without requiring respawn
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, PlayerId, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsInactive, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, UniqueId, COND_None);
 }
 
 // Called when the game starts

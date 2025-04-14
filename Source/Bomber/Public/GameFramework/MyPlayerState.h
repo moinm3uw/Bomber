@@ -13,6 +13,7 @@ enum class EPlayerType : uint8;
 /**
  * Holds Player's data like nickname.
  * It's replicated to all clients and persists between matches.
+ * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused like character.
  */
 UCLASS(Config = "GameUserSettings", DefaultConfig)
 class BOMBER_API AMyPlayerState final : public APlayerState
