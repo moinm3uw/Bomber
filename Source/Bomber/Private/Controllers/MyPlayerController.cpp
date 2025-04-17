@@ -222,6 +222,24 @@ void AMyPlayerController::InitPlayerState()
 	PlayerState->SetOwner(this);
 }
 
+// Is overridden to prevent destroyed possessed pawn, which is expected to be reused
+void AMyPlayerController::PawnLeavingGame()
+{
+	// Don't call super to avoid destroying the pawn
+
+	if (PlayerState)
+	{
+		// First, notify the player state (as it might still need valid pawn)
+		PlayerState->UnregisterPlayerWithSession();
+	}
+
+	if (APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>())
+	{
+		// Finally, notify the player character
+		PlayerCharacter->OnPostLogout(this);
+	}
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */

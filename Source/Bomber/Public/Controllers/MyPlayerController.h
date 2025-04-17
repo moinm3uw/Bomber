@@ -86,6 +86,9 @@ protected:
 	/** Is overridden to spawn player state or reuse existing one. */
 	virtual void InitPlayerState() override;
 
+	/** Is overridden to prevent destroyed possessed pawn, which is expected to be reused. */
+	virtual void PawnLeavingGame() override;
+
 	/*********************************************************************************************
 	 * Events
 	 ********************************************************************************************* */

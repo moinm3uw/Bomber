@@ -79,11 +79,6 @@ void AMyGameModeBase::Logout(AController* Exiting)
 	if (MyPC && MyPC->HasClientLoadedCurrentWorld())
 	{
 		PlayerControllersInternal.RemoveSwap(MyPC);
-
-		if (APlayerState* PlayerState = MyPC->GetPlayerState<APlayerState>())
-		{
-			PlayerState->UnregisterPlayerWithSession();
-		}
 	}
 
 	Super::Logout(Exiting);

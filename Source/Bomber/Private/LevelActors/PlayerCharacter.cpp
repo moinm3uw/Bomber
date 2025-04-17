@@ -300,7 +300,7 @@ void APlayerCharacter::BeginPlay()
 	}
 
 	// Attempt to posses player or AI on very first spawn
-	TryPossessController();
+	TryPossessController(EPlayerType::Any);
 
 	if (HasAuthority())
 	{
@@ -408,7 +408,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	}
 #endif	// WITH_EDITOR [IsEditorNotPieWorld]
 
-	TryPossessController();
+	TryPossessController(EPlayerType::Any);
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
@@ -447,17 +447,24 @@ void APlayerCharacter::OnGameStateChanged_Implementation(ECurrentGameState Curre
 	}
 }
 
-// Is called on game mode post login to handle character logic when new player is connected
+// Is called on server when ANY human player joined the session
 void APlayerCharacter::OnPostLogin_Implementation(AGameModeBase* GameMode, APlayerController* NewPlayer)
 {
-	constexpr bool bForcePlayerController = true;
-	TryPossessController(bForcePlayerController);
+	TryPossessController(EPlayerType::Human);
 
+	// If successfully replaced the bot by human, update the mesh
 	if (GetController() == NewPlayer)
 	{
-		// New player joined, set default player mesh
 		SetDefaultPlayerMeshData();
 	}
+}
+
+// Is called on server when human player, previously possessed by this character, left the session
+void APlayerCharacter::OnPostLogout_Implementation(APlayerController* ExitingPlayer)
+{
+	// Player is leaving, possess the bot and update the mesh
+	TryPossessController(EPlayerType::Bot);
+	SetDefaultPlayerMeshData();
 }
 
 // Is called when the player was destroyed
@@ -610,11 +617,12 @@ bool APlayerCharacter::IsPlayerControlled() const
 }
 
 // Possess a player or AI controller in dependence of current Character ID
-void APlayerCharacter::TryPossessController(bool bForcePlayerController/* = false*/)
+void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 {
 	if (!HasAuthority()
-	    || !IsActorInitialized() // Engine doesn't allow posses before BeginPlay\PostInitializeComponents
-	    || UUtilsLibrary::IsEditorNotPieWorld())
+	    || !IsActorInitialized() // Engine doesn't allow possess before BeginPlay\PostInitializeComponents
+	    || UUtilsLibrary::IsEditorNotPieWorld()
+	    || !ensureMsgf(PlayerType != EPlayerType::None, TEXT("ASSERT: [%i] %hs:\n'PlayerType' is None, can't possess!"), __LINE__, __FUNCTION__))
 	{
 		// Should not possess in PIE
 		return;
@@ -628,29 +636,39 @@ void APlayerCharacter::TryPossessController(bool bForcePlayerController/* = fals
 		return;
 	}
 
-	AController* ControllerToPossess = nullptr;
-
-	if (IsPlayerControlled()
-	    || bForcePlayerController)
+	if (PlayerType == EPlayerType::Any)
 	{
-		AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetMyPlayerController(PlayerId);
-		if (MyPC
-		    && !MyPC->bCinematicMode) // Don't possess player if it's the Render Movie
-		{
-			ControllerToPossess = MyPC;
-		}
+		PlayerType = IsPlayerControlled() ? EPlayerType::Human : EPlayerType::Bot;
 	}
-	// Possess AI
-	else
+
+	AController* ControllerToPossess = nullptr;
+	switch (PlayerType)
 	{
-		if (!AIControllerInternal                             // Is not spawned yet
-		    || !AIControllerInternal->IsA(AIControllerClass)) // Spawned, but wrong AI controller assigned
+		default: checkNoEntry(); // Fallthrough
+
+		case EPlayerType::Human:
 		{
-			// Spawn AI controller
-			AIControllerInternal = GetWorld()->SpawnActor<AAIController>(AIControllerClass, GetActorTransform());
+			AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetMyPlayerController(PlayerId);
+			if (MyPC
+			    && !MyPC->bCinematicMode) // Don't possess player if it's the Render Movie
+			{
+				ControllerToPossess = MyPC;
+			}
+			break;
 		}
 
-		ControllerToPossess = AIControllerInternal;
+		case EPlayerType::Bot:
+		{
+			if (!AIControllerInternal                             // Is not spawned yet
+			    || !AIControllerInternal->IsA(AIControllerClass)) // Spawned, but wrong AI controller assigned
+			{
+				// Spawn AI controller
+				AIControllerInternal = GetWorld()->SpawnActor<AAIController>(AIControllerClass, GetActorTransform());
+			}
+
+			ControllerToPossess = AIControllerInternal;
+		}
+		break;
 	}
 
 	if (!ControllerToPossess

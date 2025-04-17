@@ -11,6 +11,7 @@
 enum class ELevelType : uint8;
 enum class ECurrentGameState : uint8;
 enum class EItemType : uint8;
+enum class EPlayerType : uint8;
 
 /**
  * Numbers of power-ups that affect the abilities of a player during gameplay.
@@ -135,6 +136,15 @@ protected:
 	/*********************************************************************************************
 	 * Events
 	 ********************************************************************************************* */
+public:
+	/** Is called on server when ANY human player joined the session. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPostLogin(class AGameModeBase* GameMode, class APlayerController* NewPlayer);
+
+	/** Is called on server when human player, previously possessed by this character, left the session. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPostLogout(class APlayerController* ExitingPlayer);
+
 protected:
 	/** Called when this level actor is reconstructed or added on the Generated Map.
 	 * Is used by Level Actors instead of the BeginPlay(). */
@@ -151,10 +161,6 @@ protected:
 	/** Listen to manage the tick. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
-
-	/** Is called on game mode post login to handle character logic when new player is connected. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPostLogin(class AGameModeBase* GameMode, class APlayerController* NewPlayer);
 
 	/** Called right before owner actor going to remove from the Generated Map, on both server and clients.
 	 * Is used for handling the in-game dying logic before this character is removed from the level. */
@@ -195,9 +201,9 @@ public:
 	virtual bool IsPlayerControlled() const override;
 
 	/** Possess a player or AI controller in dependence of current Character ID.
-	 * @param bForcePlayerController If true, will force the player controller to possess this character. */
+	 * @param PlayerType the type of player to possess: human or bot; or 'Any' to automatically detect.*/
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void TryPossessController(bool bForcePlayerController = false);
+	void TryPossessController(EPlayerType PlayerType);
 
 	/** Move the player character. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, AutoCreateRefTerm = "ActionValue"))

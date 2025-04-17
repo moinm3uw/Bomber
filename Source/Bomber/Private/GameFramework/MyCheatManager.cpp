@@ -176,7 +176,7 @@ void UMyCheatManager::SetAutoCopilot()
 
 	// Toggle the Copilot mode
 	PlayerState->SetIsABot(!PlayerState->IsABot());
-	LocalPlayer->TryPossessController();
+	LocalPlayer->TryPossessController(EPlayerType::Any);
 }
 
 /*********************************************************************************************
