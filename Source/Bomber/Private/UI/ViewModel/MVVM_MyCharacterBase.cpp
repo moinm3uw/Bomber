@@ -62,11 +62,10 @@ void UMVVM_MyCharacterBase::UpdateAvatar()
 	if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 	{
 		// Try to obtain online avatar, if not found - human default will be used
-		EBlueprintAsyncResultSwitch Result;
-		FBPUniqueNetId PlayerID;
-		PlayerID.SetUniqueNetId(MyPlayerState->GetUniqueId().GetV1());
-		UTexture2D* OnlineAvatar = PlayerID.IsValid() ? UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(PlayerID, /*out*/Result) : nullptr;
-		if (OnlineAvatar)
+		EBlueprintAsyncResultSwitch Result = EBlueprintAsyncResultSwitch::OnFailure;
+		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/Result);
+		if (OnlineAvatar
+		    && Result == EBlueprintAsyncResultSwitch::OnSuccess)
 		{
 			// Online avatar is found
 			NewAvatar = OnlineAvatar;

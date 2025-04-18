@@ -215,15 +215,11 @@ void AMyPlayerState::SetDefaultPlayerName()
 			// Then, try to obtain player name from online subsystem
 			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 			{
-				FString OnlinePlayerName;
-				const FBPUniqueNetId LocalID = UAdvancedSteamFriendsLibrary::GetLocalSteamIDFromSteam();
-				if (LocalID.IsValid())
+				FString OnlinePlayerName = TEXT("");
+				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/OnlinePlayerName);
+				if (!OnlinePlayerName.IsEmpty())
 				{
-					UAdvancedIdentityLibrary::GetPlayerNickname(this, LocalID, /*out*/OnlinePlayerName);
-					if (!OnlinePlayerName.IsEmpty())
-					{
-						NewName = OnlinePlayerName;
-					}
+					NewName = OnlinePlayerName;
 				}
 			}
 			break;
