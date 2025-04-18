@@ -180,8 +180,6 @@ void AMyPlayerState::SetSavedPlayerName(FName NewName)
 	SavedPlayerNameInternal = NewName;
 
 	SetPlayerName(SavedPlayerNameInternal.ToString());
-
-	SaveConfig();
 }
 
 // Attempts to assign default nickname
@@ -192,7 +190,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 		return;
 	}
 
-	FString NewName;
+	FString NewName = TEXT("");
 	const EPlayerType PlayerType = GetPlayerType();
 	switch (PlayerType)
 	{
@@ -209,8 +207,11 @@ void AMyPlayerState::SetDefaultPlayerName()
 
 		case EPlayerType::Human:
 		{
-			// First, try to obtain player name from the OS
-			NewName = UKismetSystemLibrary::GetPlatformUserName();
+			if (IsPlayerStateLocallyControlled())
+			{
+				// First, try to obtain player name from the OS
+				NewName = UKismetSystemLibrary::GetPlatformUserName();
+			}
 
 			// Then, try to obtain player name from online subsystem
 			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
@@ -229,12 +230,15 @@ void AMyPlayerState::SetDefaultPlayerName()
 			break;
 	}
 
-	SetPlayerName(NewName);
-
 	// New default name is set, so save it to config (if local)
 	if (IsPlayerStateLocallyControlled())
 	{
 		SetSavedPlayerName(*NewName);
+	}
+	else
+	{
+		// Set name directly (without config)
+		SetPlayerName(NewName);
 	}
 }
 
@@ -247,14 +251,15 @@ void AMyPlayerState::SetPlayerName(const FString& NewPlayerName)
 		return;
 	}
 
-	if (HasAuthority())
+	// First, apply new nickname locally
+	Super::SetPlayerName(NewPlayerName);
+	ApplyPlayerName();
+
+	if (!HasAuthority()
+	    && IsPlayerStateLocallyControlled())
 	{
-		Super::SetPlayerName(NewPlayerName);
-	}
-	else
-	{
+		// Let server know about new nickname, so it replicates to all clients
 		ServerSetPlayerName(*NewPlayerName);
-		ApplyPlayerName(); // apply locally
 	}
 }
 
@@ -514,7 +519,9 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 		SetPlayerName(SavedPlayerNameInternal.ToString());
 		if (SavedPlayerNameInternal.IsNone())
 		{
+			// Game is firstly launched, update config with default name
 			SetDefaultPlayerName();
+			SaveConfig();
 		}
 	}
 }
