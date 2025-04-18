@@ -35,6 +35,11 @@ AMyPlayerState::AMyPlayerState()
 // Returns true if this Player State is controlled by a locally controlled player
 bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 {
+	if (GetPlayerType() != EPlayerType::Human)
+	{
+		return false;
+	}
+
 	const APlayerController* PC = GetPlayerController();
 	return PC && PC->IsLocalPlayerController();
 }
@@ -166,12 +171,17 @@ FName AMyPlayerState::GetPendingPlayerName() const
 // Sets saved human name to config property
 void AMyPlayerState::SetSavedPlayerName(FName NewName)
 {
-	if (SavedPlayerNameInternal != NewName)
+	if (SavedPlayerNameInternal == NewName
+	    || !IsPlayerStateLocallyControlled())
 	{
-		SavedPlayerNameInternal = NewName;
-
-		SetPlayerName(SavedPlayerNameInternal.ToString());
+		return;
 	}
+
+	SavedPlayerNameInternal = NewName;
+
+	SetPlayerName(SavedPlayerNameInternal.ToString());
+
+	SaveConfig();
 }
 
 // Attempts to assign default nickname
@@ -224,6 +234,12 @@ void AMyPlayerState::SetDefaultPlayerName()
 	}
 
 	SetPlayerName(NewName);
+
+	// New default name is set, so save it to config (if local)
+	if (IsPlayerStateLocallyControlled())
+	{
+		SetSavedPlayerName(*NewName);
+	}
 }
 
 // Overrides base method to additionally set player name on server and broadcast it
