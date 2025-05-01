@@ -35,11 +35,6 @@ AMyPlayerState::AMyPlayerState()
 // Returns true if this Player State is controlled by a locally controlled player
 bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 {
-	if (GetPlayerType() != EPlayerType::Human)
-	{
-		return false;
-	}
-
 	const APlayerController* PC = GetPlayerController();
 	return PC && PC->IsLocalPlayerController();
 }
