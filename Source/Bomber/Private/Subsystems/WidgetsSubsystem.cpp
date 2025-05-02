@@ -96,6 +96,8 @@ void UWidgetsSubsystem::InitWidgets()
 
 	MultiplayerWidgetInternal = CreateManageableWidget(UIDataAsset.GetMultiplayerWidgetData());
 
+	PowerupsWidgetInternal = CreateManageableWidget(UIDataAsset.GetPowerupsWidgetData());
+
 	static constexpr int32 MaxPlayersNum = 4;
 	NicknameWidgetsInternal.Reserve(MaxPlayersNum);
 	for (int32 Index = 0; Index < MaxPlayersNum; ++Index)
@@ -152,7 +154,7 @@ void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRest
 			Widget->SetVisibility(DesiredVisibility);
 
 			if (!bMakeVisible
-				&& bCanRestoreVisibilityLater)
+			    && bCanRestoreVisibilityLater)
 			{
 				AllHiddenWidgetsInternal.Add(Widget);
 			}

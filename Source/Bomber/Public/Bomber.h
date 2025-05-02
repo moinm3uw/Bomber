@@ -106,26 +106,6 @@ enum class EPathType : uint8
 };
 
 /**
- * Types of items.
- */
-UENUM(BlueprintType)
-enum class EItemType : uint8
-{
-	///< The type was not selected
-	None,
-	///< Increases speed
-	Skate,
-	///< increases the amount of bombs
-	Bomb,
-	///< Increases the range of explosion
-	Fire
-};
-
-using EIT = EItemType;
-#define EIT_FIRST_FLAG TO_FLAG(EIT::Skate)
-#define EIT_LAST_FLAG TO_FLAG(EIT::Fire)
-
-/**
  * The replicated states of the game. It shares the state between all the players at the same time.
  * Can be tracked both on host and client by binding with BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
  */

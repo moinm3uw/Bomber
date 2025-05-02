@@ -63,7 +63,7 @@ void UMVVM_MyGameViewModel::OnInGameTimerSecRemainChanged_Implementation(float N
  ********************************************************************************************* */
 
 // Called when power-ups were updated on local character
-void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FPowerUp& NewPowerUps)
+void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FPowerUp& NewPowerUps, const FPowerUp& PrevPowerUps)
 {
 	SetPowerUpSkateN(FText::AsNumber(NewPowerUps.SkateN));
 	SetPowerUpBombN(FText::AsNumber(NewPowerUps.BombN));
@@ -137,7 +137,7 @@ void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacte
 {
 	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
 	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-	OnPowerUpsChanged(PlayerCharacter->GetPowerups());
+	OnPowerUpsChanged(PlayerCharacter->GetPowerups(), /*PrevPowerups*/{1});
 
 	AMyPlayerState* PlayerState = PlayerCharacter->GetPlayerState<AMyPlayerState>();
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);

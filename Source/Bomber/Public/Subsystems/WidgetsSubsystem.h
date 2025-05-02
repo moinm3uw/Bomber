@@ -115,7 +115,11 @@ public:
 
 	/** Returns the multiplayer widget object. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE class UUserWidget* GetMultiplayerWidget() const { return MultiplayerWidgetInternal; }
+	FORCEINLINE UUserWidget* GetMultiplayerWidget() const { return MultiplayerWidgetInternal; }
+
+	/** Returns the Powerups widget object, which displays currently picked up power-ups. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE UUserWidget* GetPowerupsWidget() const { return PowerupsWidgetInternal; }
 
 	/** Returns the nickname widget by a player index. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -132,7 +136,11 @@ protected:
 
 	/** The multiplayer widget, which displays all players's avatars and nicknames. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Multiplayer Widget"))
-	TObjectPtr<class UUserWidget> MultiplayerWidgetInternal = nullptr;
+	TObjectPtr<UUserWidget> MultiplayerWidgetInternal = nullptr;
+
+	/** The Powerups widget, which displays currently picked up power-ups. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups Widget"))
+	TObjectPtr<UUserWidget> PowerupsWidgetInternal = nullptr;
 
 	/** All nickname widget objects for each player. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "3D Nickname Widgets"))

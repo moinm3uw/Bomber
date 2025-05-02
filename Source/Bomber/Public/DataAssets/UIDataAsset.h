@@ -48,6 +48,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FManageableWidgetData& GetMultiplayerWidgetData() const { return MultiplayerWidgetDataInternal; }
 
+	/** Returns data for the Powerups widget, which displays currently picked up power-ups.
+	 * @see UUIDataAsset::PowerupsWidgetDataInternal. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const FORCEINLINE FManageableWidgetData& GetPowerupsWidgetData() const { return PowerupsWidgetDataInternal; }
+
 	/** Returns the localized texts about specified end game to display on UI.
 	 * @see UUIDataAsset::EndGameTexts. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -78,6 +83,10 @@ protected:
 	/** Data for the Multiplayer Widget. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Multiplayer Widget"))
 	FManageableWidgetData MultiplayerWidgetDataInternal;
+
+	/** Data for the Powerups Widget, which displays currently picked up power-ups. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Powerups Widget"))
+	FManageableWidgetData PowerupsWidgetDataInternal;
 
 	/** Contains the localized texts about specified end game to display on UI. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "End-Game Names"))

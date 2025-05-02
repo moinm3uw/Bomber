@@ -4,7 +4,7 @@
 
 #include "GameFramework/Actor.h"
 //---
-#include "Bomber.h"
+#include "Structures/PowerUp.h"
 //---
 #include "ItemActor.generated.h"
 

@@ -28,6 +28,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/CurveTable.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -39,105 +40,71 @@
  * Powerups
  ********************************************************************************************* */
 
-// Default amount on picked up items
-const FPowerUp FPowerUp::DefaultData = FPowerUp();
-
-// Operator to set all values at once from one int32
-FPowerUp& FPowerUp::operator=(int32 NewValue)
-{
-	SkateN = NewValue;
-	BombN = NewValue;
-	BombNCurrent = NewValue;
-	FireN = NewValue;
-	return *this;
-}
-
-bool FPowerUp::operator==(int32 OtherValue) const
-{
-	return SkateN == OtherValue
-	       && BombN == OtherValue
-	       && BombNCurrent == OtherValue
-	       && FireN == OtherValue;
-}
-
 // Set powerups levels all at once, can be called only on the server
-void APlayerCharacter::SetPowerups(int32 NewLevel)
+void APlayerCharacter::SetPowerups(const FPowerUp& NewPowerups)
+{
+	if (!HasAuthority()
+	    || NewPowerups == PowerupsInternal)
+	{
+		return;
+	}
+
+	const FPowerUp PrevPowerups = PowerupsInternal;
+	PowerupsInternal = NewPowerups;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
+
+	ApplyPowerups(PrevPowerups);
+}
+
+// Sets the powerup level to the specified one, can be called only on the server
+void APlayerCharacter::SetPowerupLevel(int32 NewLevel, EItemType ItemType)
+{
+	if (!HasAuthority()
+	    || PowerupsInternal.GetLevel(ItemType) == NewLevel)
+	{
+		return;
+	}
+
+	const FPowerUp PrevPowerups = PowerupsInternal;
+
+	const bool bIsSet = PowerupsInternal.SetLevel(NewLevel, ItemType);
+	if (bIsSet)
+	{
+		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
+
+		ApplyPowerups(PrevPowerups);
+	}
+}
+
+// Resets powerups levels to the default ones, can be called only on the server
+void APlayerCharacter::SetDefaultPowerups()
 {
 	if (!HasAuthority())
 	{
 		return;
 	}
 
-	// Clamp by min and max values
-	static constexpr int32 MinItemsNum = 1;
-	const int32 MaxItemsNum = UItemDataAsset::Get().GetMaxAllowedItemsNum();
-	const int32 NewLevelClamped = FMath::Clamp(NewLevel, MinItemsNum, MaxItemsNum);
+	FPowerUp DefaultPowerups{1};
 
-	if (PowerupsInternal == NewLevelClamped)
+	// Attempt to get defaults from the Curve Table by current Player Tag
+	const UCurveTable* DefaultPowerupsCurveTable = UItemDataAsset::Get().GetDefaultPowerupsCurveTable();
+	ensureMsgf(DefaultPowerupsCurveTable, TEXT("ASSERT: [%i] %hs:\n'DefaultPowerupsCurveTable' is not set, 1 will be used as default!"), __LINE__, __FUNCTION__);
+	const FRealCurve* DefaultItemLevelsCurve = DefaultPowerupsCurveTable ? DefaultPowerupsCurveTable->FindCurve(GetPlayerTag().GetTagName(), __FUNCTION__) : nullptr;
+	if (DefaultItemLevelsCurve) // Is null for some characters, which are not set in the table (like bots)
 	{
-		return;
+		// Go through each powerup type and set its level from the curve table
+		for (const EItemType ItemIt : TEnumRange<EItemType>())
+		{
+			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(ItemIt)));
+			DefaultPowerups.SetLevel(ItemLevel, ItemIt);
+		}
 	}
 
-	PowerupsInternal = NewLevelClamped;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
-
-	ApplyPowerups();
-}
-
-// Adds +1 level to the powerup type, can be called only on the server
-void APlayerCharacter::IncrementPowerup(EItemType ItemType)
-{
-	if (!HasAuthority()
-	    || ItemType == EItemType::None)
-	{
-		return;
-	}
-
-	auto IncrementIfAllowed = [](int32& NumRef, int32 ClampMax = INDEX_NONE)
-	{
-		const int32 MaxAllowedItemsNum = UItemDataAsset::Get().GetMaxAllowedItemsNum();
-		const int32 NewNum = FMath::Clamp(NumRef + 1, 0, ClampMax == INDEX_NONE ? MaxAllowedItemsNum : ClampMax);
-		if (NumRef != NewNum)
-		{
-			NumRef = NewNum;
-			return true;
-		}
-		return false;
-	};
-
-	bool bIsPickedUp = false;
-	switch (ItemType)
-	{
-		case EItemType::Skate:
-		{
-			bIsPickedUp = IncrementIfAllowed(PowerupsInternal.SkateN);
-			break;
-		}
-		case EItemType::Bomb:
-		{
-			bIsPickedUp = IncrementIfAllowed(PowerupsInternal.BombN);
-			bIsPickedUp |= IncrementIfAllowed(PowerupsInternal.BombNCurrent, PowerupsInternal.BombN);
-			break;
-		}
-		case EItemType::Fire:
-		{
-			bIsPickedUp = IncrementIfAllowed(PowerupsInternal.FireN);
-			break;
-		}
-		default:
-			break;
-	}
-
-	if (bIsPickedUp)
-	{
-		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
-
-		ApplyPowerups();
-	}
+	SetPowerups(DefaultPowerups);
 }
 
 // Apply effect of picked up powerups, can be called both on server and clients
-void APlayerCharacter::ApplyPowerups()
+void APlayerCharacter::ApplyPowerups(const FPowerUp& PrevPowerups)
 {
 	// Apply speed
 	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
@@ -154,14 +121,14 @@ void APlayerCharacter::ApplyPowerups()
 	// Notify listeners
 	if (OnPowerUpsChanged.IsBound())
 	{
-		OnPowerUpsChanged.Broadcast(PowerupsInternal);
+		OnPowerUpsChanged.Broadcast(PowerupsInternal, PrevPowerups);
 	}
 }
 
 // Is called on clients to apply powerups
-void APlayerCharacter::OnRep_Powerups()
+void APlayerCharacter::OnRep_Powerups(const FPowerUp& PrevPowerups)
 {
-	ApplyPowerups();
+	ApplyPowerups(PrevPowerups);
 }
 
 /** ---------------------------------------------------
@@ -276,10 +243,10 @@ ELevelType APlayerCharacter::GetPlayerType() const
 }
 
 // Returns the Player Tag associated with player
-const FGameplayTag& APlayerCharacter::GetPlayerTag() const
+const FPlayerTag& APlayerCharacter::GetPlayerTag() const
 {
 	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
-	return PlayerRow ? PlayerRow->PlayerTag : FGameplayTag::EmptyTag;
+	return PlayerRow ? PlayerRow->PlayerTag : FPlayerTag::None;
 }
 
 /*********************************************************************************************
@@ -371,6 +338,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 	MapComponent->OnCellChanged.AddUniqueDynamic(this, &ThisClass::OnCellChanged);
+	MapComponent->OnActorTypeChanged.AddUniqueDynamic(this, &ThisClass::OnActorTypeChanged);
 
 	OnActorBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnPlayerBeginOverlap);
 
@@ -412,9 +380,16 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
-	SetPowerups(FPowerUp::DefaultLevel);
+	SetDefaultPowerups();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
+}
+
+// Is called when the Row from current Data Asset is changed for owner on the level, on both server and clients
+void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow)
+{
+	// Update powerup attributes based on changed player type
+	SetDefaultPowerups();
 }
 
 // Triggers when this player character starts something overlap.
@@ -422,7 +397,9 @@ void APlayerCharacter::OnPlayerBeginOverlap_Implementation(AActor* OverlappedAct
 {
 	if (const AItemActor* OverlappedItem = Cast<AItemActor>(OtherActor))
 	{
-		IncrementPowerup(OverlappedItem->GetItemType());
+		const EItemType ItemType = OverlappedItem->GetItemType();
+		const int32 CurrentItemLevel = PowerupsInternal.GetLevel(ItemType);
+		SetPowerupLevel(CurrentItemLevel + 1, ItemType);
 	}
 }
 
@@ -507,6 +484,7 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
 	MapComponent->OnCellChanged.RemoveAll(this);
+	MapComponent->OnActorTypeChanged.RemoveAll(this);
 
 	OnActorBeginOverlap.RemoveAll(this);
 
@@ -519,7 +497,7 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 		Controller->SetIgnoreMoveInput(true);
 	}
 
-	SetPowerups(FPowerUp::DefaultLevel);
+	SetDefaultPowerups();
 }
 
 // Is called for everytime when character changed its cell on the Generated Map
@@ -903,10 +881,12 @@ void APlayerCharacter::SetCurrentBombNum(int32 NewBombNum)
 		return;
 	}
 
+	const FPowerUp PrevPowerups = PowerupsInternal;
+
 	PowerupsInternal.BombNCurrent = NewBombNum;
 	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
 
-	ApplyPowerups();
+	ApplyPowerups(PrevPowerups);
 }
 
 // Event triggered when the bomb has been explicitly destroyed.

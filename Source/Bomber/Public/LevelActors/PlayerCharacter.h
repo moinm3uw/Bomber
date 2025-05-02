@@ -4,50 +4,13 @@
 
 #include "GameFramework/Character.h"
 //---
-#include "Structures/PlayerTag.h"
+#include "Structures/PowerUp.h"
 //---
 #include "PlayerCharacter.generated.h"
 
 enum class ELevelType : uint8;
 enum class ECurrentGameState : uint8;
-enum class EItemType : uint8;
 enum class EPlayerType : uint8;
-
-/**
- * Numbers of power-ups that affect the abilities of a player during gameplay.
- * @todo JanSeliv UGi56jhn Use GAS attributes for picked up items
- */
-USTRUCT(BlueprintType, DisplayName = "Power-Ups")
-struct BOMBER_API FPowerUp
-{
-	GENERATED_BODY()
-
-	/** Default amount on picked up items. */
-	static const FPowerUp DefaultData;
-	static constexpr int32 DefaultLevel = 1;
-
-	/** The number of items, that increases the movement speed of the character */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "C++")
-	int32 SkateN = DefaultLevel;
-
-	/** Maximum number of bombs that can be put at one time */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "C++")
-	int32 BombN = DefaultLevel;
-
-	/** Current amount of bombs available.
-	 * Decreases with every bomb spawn and increases with every bomb explosion.
-	 * Is always less or equal to BombN. */
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly, Transient, Category = "C++")
-	int32 BombNCurrent = DefaultLevel;
-
-	/** The number of items, that increases the bomb blast radius */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "C++")
-	int32 FireN = DefaultLevel;
-
-	/** Operators to set all values at once from one integer. */
-	FPowerUp& operator=(int32 NewValue);
-	bool operator==(int32 OtherValue) const;
-};
 
 /**
  * Players and AI, whose goal is to remain the last survivor for the win.
@@ -61,38 +24,47 @@ class BOMBER_API APlayerCharacter final : public ACharacter
 
 	/*********************************************************************************************
 	 * Powerups
+	 * @todo JanSeliv UGi56jhn Replace all powerup-related logic by GAS attributes (delegates, setters, getters, etc.)
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPowerUpsChanged, const struct FPowerUp&, AllPowerUps);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPowerUpsChanged, const struct FPowerUp&, NewPowerUps, const FPowerUp&, PrevPowerUps);
 
-	/** Called when this character picked up any power-up or they were reset. */
+	/** Called when this character picked up any power-up or they were reset.*/
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPowerUpsChanged OnPowerUpsChanged;
 
 	/** Returns current powerup levels */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FPowerUp& GetPowerups() const { return PowerupsInternal; }
 
 	/** Set powerups levels all at once, can be called only on the server. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetPowerups(int32 NewLevel);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "NewPowerups"))
+	void SetPowerups(const FPowerUp& NewPowerups);
 
-	/** Adds +1 level to the powerup type, can be called only on the server. */
+	/** Sets the powerup level to the specified one, can be called only on the server. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void IncrementPowerup(EItemType ItemType);
+	void SetPowerupLevel(int32 NewLevel, EItemType ItemType);
 
-	/** Apply effect of picked up powerups, can be called both on server and clients. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void ApplyPowerups();
+	/** Resets powerups levels to the default ones, can be called only on the server.
+	 * Gathers all default levels from the Curve Table by current player type, where:
+	 * - Columns (Item Type): Skate, Bomb, Fire
+	 * - Rows (Player Tag): 'Player.Bastet' etc */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void SetDefaultPowerups();
+
+	/** Apply effect of picked up powerups, can be called both on server and clients.
+	 * @param PrevPowerups - previous powerups levels before applying new ones (assuming new ones are already set). */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "PrevPowerups"))
+	void ApplyPowerups(const FPowerUp& PrevPowerups);
 
 protected:
 	/** Count of items that affect on a player during gameplay. Can be overriden by the Cheat Manager. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_Powerups", Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups", ShowOnlyInnerProperties))
-	FPowerUp PowerupsInternal = FPowerUp::DefaultData;
+	FPowerUp PowerupsInternal;
 
 	/** Is called on clients to apply powerups for this character. */
 	UFUNCTION()
-	void OnRep_Powerups();
+	void OnRep_Powerups(const FPowerUp& PrevPowerups);
 
 	/** ---------------------------------------------------
 	 *		Public functions
@@ -107,7 +79,7 @@ public:
 
 	/** Returns the Player Tag associated with player. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	const FGameplayTag& GetPlayerTag() const;
+	const struct FPlayerTag& GetPlayerTag() const;
 
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
@@ -150,6 +122,10 @@ protected:
 	 * Is used by Level Actors instead of the BeginPlay(). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnAddedToLevel(UMapComponent* MapComponent);
+
+	/** Is called when the Row from current Data Asset is changed for owner on the level, on both server and clients. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnActorTypeChanged(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow);
 
 	/**
 	 * Triggers when this player character starts something overlap.
