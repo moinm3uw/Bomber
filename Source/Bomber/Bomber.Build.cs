@@ -33,6 +33,7 @@ public class Bomber : ModuleRules
 				"CoreUObject", "Engine", "Slate", "SlateCore" // Core
 				, "NetCore" // Network: FFastArraySerializer, PushModel, Iris
 				, "InputCore" // FKey
+				, "AdvancedWidgets" // Widgets (URadialSlider etc)
 				, "RHI", "ApplicationCore" // Resolutions
 				, "AIModule" // AI
 				, "Niagara" // VFX

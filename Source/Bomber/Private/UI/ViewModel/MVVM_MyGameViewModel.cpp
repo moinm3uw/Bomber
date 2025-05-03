@@ -58,24 +58,6 @@ void UMVVM_MyGameViewModel::OnInGameTimerSecRemainChanged_Implementation(float N
 }
 
 /*********************************************************************************************
- * PowerUps
- ********************************************************************************************* */
-
-// Called when power-ups were updated on local character
-void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps)
-{
-	SetPowerUpSkateN(FText::AsNumber(NewPowerUps.Get(EIT::Skate)));
-	SetPowerUpBombN(FText::AsNumber(NewPowerUps.Get(EIT::Bomb)));
-	SetPowerUpFireN(FText::AsNumber(NewPowerUps.Get(EIT::Fire)));
-
-	// Display powerups in percentage
-	SetPowerUpBombPercent(NewPowerUps.Get(EIT::Bomb).GetMaxLevelPercent());
-	SetPowerUpBombCurrentPercent(NewPowerUps.Get(EIT::Bomb).GetCurrentLevelPercent());
-	SetPowerUpSkatePercent(NewPowerUps.Get(EIT::Skate).GetMaxLevelPercent());
-	SetPowerUpFirePercent(NewPowerUps.Get(EIT::Fire).GetMaxLevelPercent());
-}
-
-/*********************************************************************************************
  * Mouse Visibility
  ********************************************************************************************* */
 
@@ -131,16 +113,6 @@ void UMVVM_MyGameViewModel::OnGameStateCreated_Implementation(AGameStateBase* Ga
 // Called when the local player character is spawned, possessed, and replicated
 void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacter* PlayerCharacter, int32 CharacterID)
 {
-	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
-	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-
-	const FBmrPowerUpsContainer PrevPowerups{1, *PlayerCharacter};
-	FBmrPowerUpsContainer CurrentPowerUps = PrevPowerups;
-	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Fire), EIT::Fire);
-	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Bomb), EIT::Bomb);
-	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Skate), EIT::Skate);
-	OnPowerUpsChanged(CurrentPowerUps, PrevPowerups);
-
 	AMyPlayerState* PlayerState = PlayerCharacter->GetPlayerState<AMyPlayerState>();
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);
 	PlayerState->OnEndGameStateChanged.AddUniqueDynamic(this, &ThisClass::OnEndGameStateChanged);
