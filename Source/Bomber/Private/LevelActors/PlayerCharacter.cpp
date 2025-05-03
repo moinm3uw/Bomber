@@ -78,6 +78,11 @@ void APlayerCharacter::SetDefaultPowerups()
 			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
 		}
 	}
+	else
+	{
+		// If the curve table is not set for the character (like bot), reset all powerups to first level by default 
+		SetPowerups(1);
+	}
 }
 
 // Apply effect of picked up powerups, can be called both on server and clients
