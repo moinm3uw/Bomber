@@ -41,38 +41,17 @@
  ********************************************************************************************* */
 
 // Set powerups levels all at once, can be called only on the server
-void APlayerCharacter::SetPowerups(const FPowerUp& NewPowerups)
+void APlayerCharacter::SetPowerups(int32 NewLevel)
 {
-	if (!HasAuthority()
-	    || NewPowerups == PowerupsInternal)
+	if (!HasAuthority())
 	{
 		return;
 	}
 
-	const FPowerUp PrevPowerups = PowerupsInternal;
-	PowerupsInternal = NewPowerups;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
-
-	ApplyPowerups(PrevPowerups);
-}
-
-// Sets the powerup level to the specified one, can be called only on the server
-void APlayerCharacter::SetPowerupLevel(int32 NewLevel, EItemType ItemType)
-{
-	if (!HasAuthority()
-	    || PowerupsInternal.GetLevel(ItemType) == NewLevel)
+	// Go through each powerup type and set its new level
+	for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
 	{
-		return;
-	}
-
-	const FPowerUp PrevPowerups = PowerupsInternal;
-
-	const bool bIsSet = PowerupsInternal.SetLevel(NewLevel, ItemType);
-	if (bIsSet)
-	{
-		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
-
-		ApplyPowerups(PrevPowerups);
+		PowerupsInternal.SetLevel(NewLevel, ItemTypeIt);
 	}
 }
 
@@ -84,34 +63,32 @@ void APlayerCharacter::SetDefaultPowerups()
 		return;
 	}
 
-	FPowerUp DefaultPowerups{1};
+	const FBmrPowerUpsContainer PrevPowerups = PowerupsInternal;
 
 	// Attempt to get defaults from the Curve Table by current Player Tag
 	const UCurveTable* DefaultPowerupsCurveTable = UItemDataAsset::Get().GetDefaultPowerupsCurveTable();
 	ensureMsgf(DefaultPowerupsCurveTable, TEXT("ASSERT: [%i] %hs:\n'DefaultPowerupsCurveTable' is not set, 1 will be used as default!"), __LINE__, __FUNCTION__);
-	const FRealCurve* DefaultItemLevelsCurve = DefaultPowerupsCurveTable ? DefaultPowerupsCurveTable->FindCurve(GetPlayerTag().GetTagName(), __FUNCTION__) : nullptr;
-	if (DefaultItemLevelsCurve) // Is null for some characters, which are not set in the table (like bots)
+	const FRealCurve* DefaultItemLevelsCurve = DefaultPowerupsCurveTable ? DefaultPowerupsCurveTable->FindCurve(GetPlayerTag().GetTagName(), __FUNCTION__, /*bWarnIfNotFound*/false) : nullptr;
+	if (DefaultItemLevelsCurve)
 	{
 		// Go through each powerup type and set its level from the curve table
-		for (const EItemType ItemIt : TEnumRange<EItemType>())
+		for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
 		{
-			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(ItemIt)));
-			DefaultPowerups.SetLevel(ItemLevel, ItemIt);
+			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(ItemTypeIt)));
+			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
 		}
 	}
-
-	SetPowerups(DefaultPowerups);
 }
 
 // Apply effect of picked up powerups, can be called both on server and clients
-void APlayerCharacter::ApplyPowerups(const FPowerUp& PrevPowerups)
+void APlayerCharacter::ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups)
 {
 	// Apply speed
 	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
 	{
 		static constexpr float SpeedMultiplier = 100.F;
 		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = PowerupsInternal.SkateN * SpeedMultiplier + SkateAdditiveStrength;
+		const int32 SkateN = PowerupsInternal.Get(EIT::Skate) * SpeedMultiplier + SkateAdditiveStrength;
 		MovementComponent->MaxWalkSpeed = SkateN;
 	}
 
@@ -126,7 +103,7 @@ void APlayerCharacter::ApplyPowerups(const FPowerUp& PrevPowerups)
 }
 
 // Is called on clients to apply powerups
-void APlayerCharacter::OnRep_Powerups(const FPowerUp& PrevPowerups)
+void APlayerCharacter::OnRep_Powerups(const FBmrPowerUpsContainer& PrevPowerups)
 {
 	ApplyPowerups(PrevPowerups);
 }
@@ -156,6 +133,9 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// Initialize MapComponent
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
+
+	// Initialize default powerup attributes
+	PowerupsInternal = FBmrPowerUpsContainer(1, *this);
 
 	// Initialize skeletal mesh
 	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
@@ -395,11 +375,10 @@ void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapCompo
 // Triggers when this player character starts something overlap.
 void APlayerCharacter::OnPlayerBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if (const AItemActor* OverlappedItem = Cast<AItemActor>(OtherActor))
+	const AItemActor* OverlappedItem = Cast<AItemActor>(OtherActor);
+	if (OverlappedItem)
 	{
-		const EItemType ItemType = OverlappedItem->GetItemType();
-		const int32 CurrentItemLevel = PowerupsInternal.GetLevel(ItemType);
-		SetPowerupLevel(CurrentItemLevel + 1, ItemType);
+		PowerupsInternal.AddLevel(1, OverlappedItem->GetItemType());
 	}
 }
 
@@ -837,10 +816,10 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 
 	if (!bForce)
 	{
-		if (UUtilsLibrary::IsEditorNotPieWorld()      // Should not spawn bomb in PIE
-		    || PowerupsInternal.FireN <= 0            // Null length of explosion
-		    || PowerupsInternal.BombNCurrent <= 0     // No more bombs
-		    || OwnedController->IsMoveInputIgnored()) // controller is blocked
+		if (UUtilsLibrary::IsEditorNotPieWorld()        // Should not spawn bomb in PIE
+		    || PowerupsInternal.Get(EIT::Fire).IsZero() // Null length of explosion
+		    || PowerupsInternal.Get(EIT::Bomb).IsZero() // No more bombs
+		    || OwnedController->IsMoveInputIgnored())   // controller is blocked
 		{
 			return;
 		}
@@ -857,8 +836,7 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 			return;
 		}
 
-		const int32 DecrementedCurrentNum = PlayerCharacter->GetPowerups().BombNCurrent - 1;
-		PlayerCharacter->SetCurrentBombNum(DecrementedCurrentNum);
+		PlayerCharacter->PowerupsInternal.AddCurrentLevel(-1, EIT::Bomb);
 
 		// Init Bomb
 		ABombActor& BombActor = *CastChecked<ABombActor>(MapComponent.GetOwner());
@@ -870,23 +848,6 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 
 	// Spawn bomb
 	AGeneratedMap::Get().SpawnActorByType(EAT::Bomb, MapComponentInternal->GetCell(), OnBombSpawned);
-}
-
-// Changes the amount of currently available bombs for this player, can be called only on the server
-void APlayerCharacter::SetCurrentBombNum(int32 NewBombNum)
-{
-	if (!HasAuthority()
-	    || NewBombNum == PowerupsInternal.BombNCurrent)
-	{
-		return;
-	}
-
-	const FPowerUp PrevPowerups = PowerupsInternal;
-
-	PowerupsInternal.BombNCurrent = NewBombNum;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PowerupsInternal, this);
-
-	ApplyPowerups(PrevPowerups);
 }
 
 // Event triggered when the bomb has been explicitly destroyed.
@@ -901,9 +862,6 @@ void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponen
 	// Stop listening this bomb
 	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
 
-	if (PowerupsInternal.BombNCurrent < PowerupsInternal.BombN)
-	{
-		const int32 IncrementedCurrentNum = PowerupsInternal.BombNCurrent + 1;
-		SetCurrentBombNum(IncrementedCurrentNum);
-	}
+	// Increment current bomb count back
+	PowerupsInternal.AddCurrentLevel(1, EIT::Bomb);
 }

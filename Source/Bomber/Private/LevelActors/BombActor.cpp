@@ -62,7 +62,7 @@ void ABombActor::InitBomb(const APlayerCharacter* BombPlacer/* = nullptr*/)
 		// Set bomb placer, so others can track who spawned the bomb, e.g: to record the score 
 		SetBombPlacer(BombPlacer);
 
-		InFireRadius = BombPlacer->GetPowerups().FireN;
+		InFireRadius = BombPlacer->GetPowerUp(EIT::Fire);
 
 		// Override default mesh with one with the player type (each character has own bomb)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);

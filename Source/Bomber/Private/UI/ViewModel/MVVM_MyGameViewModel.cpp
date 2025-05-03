@@ -3,7 +3,6 @@
 #include "UI/ViewModel/MVVM_MyGameViewModel.h"
 //---
 #include "Components/MouseActivityComponent.h"
-#include "DataAssets/ItemDataAsset.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
@@ -63,20 +62,17 @@ void UMVVM_MyGameViewModel::OnInGameTimerSecRemainChanged_Implementation(float N
  ********************************************************************************************* */
 
 // Called when power-ups were updated on local character
-void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FPowerUp& NewPowerUps, const FPowerUp& PrevPowerUps)
+void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps)
 {
-	SetPowerUpSkateN(FText::AsNumber(NewPowerUps.SkateN));
-	SetPowerUpBombN(FText::AsNumber(NewPowerUps.BombN));
-	SetPowerUpFireN(FText::AsNumber(NewPowerUps.FireN));
-
-	constexpr float MinPowerUps = 1.f;
-	const float MaxPowerUps = FMath::Max(static_cast<float>(UItemDataAsset::Get().GetMaxAllowedItemsNum()), MinPowerUps);
+	SetPowerUpSkateN(FText::AsNumber(NewPowerUps.Get(EIT::Skate)));
+	SetPowerUpBombN(FText::AsNumber(NewPowerUps.Get(EIT::Bomb)));
+	SetPowerUpFireN(FText::AsNumber(NewPowerUps.Get(EIT::Fire)));
 
 	// Display powerups in percentage
-	SetPowerUpBombPercent(static_cast<float>(NewPowerUps.BombN) / MaxPowerUps);
-	SetPowerUpBombCurrentPercent(static_cast<float>(NewPowerUps.BombNCurrent) / MaxPowerUps);
-	SetPowerUpSkatePercent(static_cast<float>(NewPowerUps.SkateN) / MaxPowerUps);
-	SetPowerUpFirePercent(static_cast<float>(NewPowerUps.FireN) / MaxPowerUps);
+	SetPowerUpBombPercent(NewPowerUps.Get(EIT::Bomb).GetMaxLevelPercent());
+	SetPowerUpBombCurrentPercent(NewPowerUps.Get(EIT::Bomb).GetCurrentLevelPercent());
+	SetPowerUpSkatePercent(NewPowerUps.Get(EIT::Skate).GetMaxLevelPercent());
+	SetPowerUpFirePercent(NewPowerUps.Get(EIT::Fire).GetMaxLevelPercent());
 }
 
 /*********************************************************************************************
@@ -137,7 +133,13 @@ void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacte
 {
 	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
 	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-	OnPowerUpsChanged(PlayerCharacter->GetPowerups(), /*PrevPowerups*/{1});
+
+	const FBmrPowerUpsContainer PrevPowerups{1, *PlayerCharacter};
+	FBmrPowerUpsContainer CurrentPowerUps = PrevPowerups;
+	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Fire), EIT::Fire);
+	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Bomb), EIT::Bomb);
+	CurrentPowerUps.SetLevel(PlayerCharacter->GetPowerUp(EItemType::Skate), EIT::Skate);
+	OnPowerUpsChanged(CurrentPowerUps, PrevPowerups);
 
 	AMyPlayerState* PlayerState = PlayerCharacter->GetPlayerState<AMyPlayerState>();
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);

@@ -4,7 +4,7 @@
 
 #include "DataAssets/LevelActorDataAsset.h"
 //---
-#include "Structures/PowerUp.h"
+#include "Structures/BmrPowerUp.h"
 //---
 #include "ItemDataAsset.generated.h"
 

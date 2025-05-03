@@ -155,7 +155,7 @@ protected:
 
 	/** Called when power-ups were updated on local character. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPowerUpsChanged(const struct FPowerUp& NewPowerUps, const FPowerUp& PrevPowerUps);
+	void OnPowerUpsChanged(const struct FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps);
 
 	/*********************************************************************************************
 	 * Mouse Visibility

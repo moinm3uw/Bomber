@@ -4,7 +4,7 @@
 
 #include "GameFramework/Character.h"
 //---
-#include "Structures/PowerUp.h"
+#include "Structures/BmrPowerUp.h"
 //---
 #include "PlayerCharacter.generated.h"
 
@@ -27,7 +27,7 @@ class BOMBER_API APlayerCharacter final : public ACharacter
 	 * @todo JanSeliv UGi56jhn Replace all powerup-related logic by GAS attributes (delegates, setters, getters, etc.)
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPowerUpsChanged, const struct FPowerUp&, NewPowerUps, const FPowerUp&, PrevPowerUps);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPowerUpsChanged, const struct FBmrPowerUpsContainer&, NewPowerUps, const FBmrPowerUpsContainer&, PrevPowerUps);
 
 	/** Called when this character picked up any power-up or they were reset.*/
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
@@ -35,15 +35,11 @@ public:
 
 	/** Returns current powerup levels */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE FPowerUp& GetPowerups() const { return PowerupsInternal; }
+	const FORCEINLINE FBmrPowerUp& GetPowerUp(EItemType ItemType) const { return PowerupsInternal.Get(ItemType); }
 
 	/** Set powerups levels all at once, can be called only on the server. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "NewPowerups"))
-	void SetPowerups(const FPowerUp& NewPowerups);
-
-	/** Sets the powerup level to the specified one, can be called only on the server. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetPowerupLevel(int32 NewLevel, EItemType ItemType);
+	void SetPowerups(int32 NewLevel);
 
 	/** Resets powerups levels to the default ones, can be called only on the server.
 	 * Gathers all default levels from the Curve Table by current player type, where:
@@ -55,16 +51,18 @@ public:
 	/** Apply effect of picked up powerups, can be called both on server and clients.
 	 * @param PrevPowerups - previous powerups levels before applying new ones (assuming new ones are already set). */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "PrevPowerups"))
-	void ApplyPowerups(const FPowerUp& PrevPowerups);
+	void ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups);
 
 protected:
+	friend FBmrPowerUpsContainer;
+
 	/** Count of items that affect on a player during gameplay. Can be overriden by the Cheat Manager. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_Powerups", Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups", ShowOnlyInnerProperties))
-	FPowerUp PowerupsInternal;
+	FBmrPowerUpsContainer PowerupsInternal;
 
 	/** Is called on clients to apply powerups for this character. */
 	UFUNCTION()
-	void OnRep_Powerups(const FPowerUp& PrevPowerups);
+	void OnRep_Powerups(const FBmrPowerUpsContainer& PrevPowerups);
 
 	/** ---------------------------------------------------
 	 *		Public functions
@@ -257,10 +255,6 @@ public:
 	 * @param bForce If true, will force spawning bomb without any checks, might be useful for testing or modding. */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "C++")
 	void ServerSpawnBomb(bool bForce = false);
-
-	/** Changes the amount of currently available bombs for this player, can be called only on the server. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetCurrentBombNum(int32 NewBombNum);
 
 protected:
 	/** Event triggered when the bomb has been explicitly destroyed. */
