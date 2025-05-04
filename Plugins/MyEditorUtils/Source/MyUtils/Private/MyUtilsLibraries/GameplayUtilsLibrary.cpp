@@ -2,6 +2,8 @@
 
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 //---
+#include "MyUtilsLibraries/UtilsLibrary.h"
+//---
 #include "GameFeaturesSubsystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -210,8 +212,7 @@ void UGameplayUtilsLibrary::SetGameFeaturesEnabled(bool bEnable, const TArray<FN
 		}
 		else
 		{
-			constexpr bool bKeepRegistered = true;
-			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, bKeepRegistered);
+			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, UUtilsLibrary::IsEditor());
 		}
 	}
 }
