@@ -447,8 +447,9 @@ void UMySkeletalMeshComponent::ApplySkinByIndex(int32 SkinIndex)
 
 	const UPlayerRow* PlayerRow = Cast<UPlayerRow>(PlayerMeshDataInternal.Row);
 	UMaterialInstanceDynamic* MaterialInstanceDynamic = PlayerRow->GetMaterialInstanceDynamic(SkinIndex);
-	if (!ensureMsgf(MaterialInstanceDynamic, TEXT("ASSERT: ApplySkinByIndex: 'MaterialInstanceDynamic' is not valid for index %i"), SkinIndex))
+	if (!MaterialInstanceDynamic)
 	{
+		// Skin is not found for given index, likely out of range
 		return;
 	}
 
