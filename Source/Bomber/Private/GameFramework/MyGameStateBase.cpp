@@ -164,7 +164,7 @@ void AMyGameStateBase::OnRep_CurrentGameState()
 // Sets the left second of the 'Three-two-one-GO' timer
 void AMyGameStateBase::SetStartingTimerSecondsRemain(float NewStartingTimerSecRemain)
 {
-	StartingTimerSecRemainInternal = NewStartingTimerSecRemain;
+	StartingTimerSecRemainInternal = FMath::Max(NewStartingTimerSecRemain, 0.f);
 
 	if (OnStartingTimerSecRemainChanged.IsBound())
 	{
@@ -204,6 +204,7 @@ void AMyGameStateBase::OnStartingTimerTick()
 
 	if (IsStartingTimerElapsed())
 	{
+		StopStartingCountdown();
 		SetGameState(ECurrentGameState::InGame);
 	}
 }
@@ -216,7 +217,7 @@ void AMyGameStateBase::OnStartingTimerTick()
 // Sets the left second to the end of the match
 void AMyGameStateBase::SetInGameTimerSecondsRemain(float NewInGameTimerSecRemain)
 {
-	InGameTimerSecRemainInternal = NewInGameTimerSecRemain;
+	InGameTimerSecRemainInternal = FMath::Max(NewInGameTimerSecRemain, 0.f);
 
 	if (OnInGameTimerSecRemainChanged.IsBound())
 	{
@@ -268,6 +269,7 @@ void AMyGameStateBase::OnInGameTimerTick()
 
 	if (IsInGameTimerElapsed())
 	{
+		StopInGameCountdown();
 		SetGameState(ECurrentGameState::EndGame);
 	}
 }
