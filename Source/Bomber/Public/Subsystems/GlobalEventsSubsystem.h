@@ -19,7 +19,7 @@ class BOMBER_API UGlobalEventsSubsystem : public UWorldSubsystem
 
 public:
 	/** Returns this Subsystem, is checked and will crash if can't be obtained.*/
-	static UGlobalEventsSubsystem& Get();
+	static UGlobalEventsSubsystem& Get(const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the pointer to this Subsystem. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))

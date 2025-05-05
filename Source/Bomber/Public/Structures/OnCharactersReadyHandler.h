@@ -77,9 +77,10 @@ private:
 /** Internal macro for binding and calling delegate methods. */
 #define INTERNAL_BIND_CHARACTER_READY(Delegate, Obj, Function, Arg, ID) \
 { \
-    UGlobalEventsSubsystem::Get().Delegate.AddUniqueDynamic(Obj, &Function); \
+	UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
+	EventsSubsystem.Delegate.AddUniqueDynamic(Obj, &Function); \
     auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(ID); \
-    if (UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.IsCharacterReady(Arg)) \
+    if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg)) \
     { \
         Obj->Function(Arg, ID); \
     } \

@@ -9,9 +9,9 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GlobalEventsSubsystem)
 
 // Returns this Subsystem, is checked and will crash if can't be obtained
-UGlobalEventsSubsystem& UGlobalEventsSubsystem::Get()
+UGlobalEventsSubsystem& UGlobalEventsSubsystem::Get(const UObject* OptionalWorldContext/* = nullptr*/)
 {
-	UGlobalEventsSubsystem* Subsystem = GetGlobalEventsSubsystem();
+	UGlobalEventsSubsystem* Subsystem = GetGlobalEventsSubsystem(OptionalWorldContext);
 	checkf(Subsystem, TEXT("%s: 'Subsystem' is null"), *FString(__FUNCTION__));
 	return *Subsystem;
 }
