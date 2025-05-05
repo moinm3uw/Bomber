@@ -157,7 +157,7 @@ void AMyPlayerController::InitInputSystem()
 	Super::InitInputSystem();
 
 	// Handle UI inputs
-	UWidgetsSubsystem& WidgetsSubsystem = UWidgetsSubsystem::Get(GetLocalPlayer());
+	UWidgetsSubsystem& WidgetsSubsystem = UWidgetsSubsystem::Get(this);
 	WidgetsSubsystem.OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
 	if (WidgetsSubsystem.AreWidgetInitialized())
 	{

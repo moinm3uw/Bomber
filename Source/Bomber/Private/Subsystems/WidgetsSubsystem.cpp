@@ -21,7 +21,11 @@ UWidgetsSubsystem* UWidgetsSubsystem::GetWidgetsSubsystem(const UObject* Optiona
 	const ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(OptionalWorldContext);
 	if (!LocalPlayer)
 	{
-		const AMyPlayerController* PC = UMyBlueprintFunctionLibrary::GetLocalPlayerController(OptionalWorldContext);
+		const AMyPlayerController* PC = Cast<AMyPlayerController>(OptionalWorldContext);
+		if (!PC)
+		{
+			PC = UMyBlueprintFunctionLibrary::GetLocalPlayerController(OptionalWorldContext);
+		}
 		LocalPlayer = PC ? PC->GetLocalPlayer() : nullptr;
 	}
 	return LocalPlayer ? LocalPlayer->GetSubsystem<UWidgetsSubsystem>() : nullptr;
@@ -50,13 +54,14 @@ UUserWidget* UWidgetsSubsystem::CreateManageableWidget(const FManageableWidgetDa
 // Removes given widget from the list and destroys it
 void UWidgetsSubsystem::DestroyManageableWidget(UUserWidget* Widget)
 {
-	if (!Widget
-	    || !AllManageableWidgetsInternal.Contains(Widget))
+	if (!IsValid(Widget))
 	{
 		return;
 	}
 
 	AllManageableWidgetsInternal.RemoveSwap(Widget);
+	AllHiddenWidgetsInternal.RemoveSwap(Widget);
+
 	FWidgetUtilsLibrary::DestroyWidget(*Widget);
 }
 
@@ -119,7 +124,7 @@ void UWidgetsSubsystem::CleanupWidgets()
 {
 	for (int32 Idx = AllManageableWidgetsInternal.Num() - 1; Idx >= 0; --Idx)
 	{
-		UUserWidget* It = AllManageableWidgetsInternal.IsValidIndex(Idx) ? AllManageableWidgetsInternal[Idx] : nullptr;
+		UUserWidget* It = AllManageableWidgetsInternal.IsValidIndex(Idx) ? AllManageableWidgetsInternal[Idx].Get() : nullptr;
 		if (It)
 		{
 			DestroyManageableWidget(It);
@@ -127,7 +132,14 @@ void UWidgetsSubsystem::CleanupWidgets()
 	}
 
 	AllManageableWidgetsInternal.Empty();
+	AllHiddenWidgetsInternal.Empty();
 	NicknameWidgetsInternal.Empty();
+
+	HUDWidgetInternal = nullptr;
+	FPSCounterWidgetInternal = nullptr;
+	SettingsWidgetInternal = nullptr;
+	MultiplayerWidgetInternal = nullptr;
+	PowerupsWidgetInternal = nullptr;
 
 	bAreWidgetInitializedInternal = false;
 }
@@ -140,14 +152,14 @@ void UWidgetsSubsystem::CleanupWidgets()
 void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater/* = true*/)
 {
 	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
-	const TArray<TObjectPtr<UUserWidget>>& WidgetsToProcess = bMakeVisible ? AllHiddenWidgetsInternal : AllManageableWidgetsInternal;
+	const TArray<TSoftObjectPtr<UUserWidget>>& WidgetsToProcess = bMakeVisible ? AllHiddenWidgetsInternal : AllManageableWidgetsInternal;
 
 	if (!bMakeVisible)
 	{
 		AllHiddenWidgetsInternal.Empty();
 	}
 
-	for (UUserWidget* Widget : WidgetsToProcess)
+	for (const TSoftObjectPtr<UUserWidget>& Widget : WidgetsToProcess)
 	{
 		if (Widget && Widget->GetVisibility() != DesiredVisibility)
 		{

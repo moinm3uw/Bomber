@@ -46,9 +46,10 @@ public:
 	void DestroyManageableWidget(UUserWidget* Widget);
 
 protected:
-	/** Contains all widgets that are managed by this subsystem. */
+	/** Contains all widgets that are managed by this subsystem.
+	 * Is Soft to allow garbage collection. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "All Managable Widgets"))
-	TArray<TObjectPtr<UUserWidget>> AllManageableWidgetsInternal;
+	TArray<TSoftObjectPtr<UUserWidget>> AllManageableWidgetsInternal;
 
 	/*********************************************************************************************
 	 * Core Widgets Initialization
@@ -97,9 +98,10 @@ public:
 	FORCEINLINE bool AreAllWidgetsHidden() const { return !AllHiddenWidgetsInternal.IsEmpty(); }
 
 protected:
-	/** Contains widgets that globally were requested to hide, but were visible before, so their visibility will be restored when needed. */
+	/** Contains widgets that globally were requested to hide, but were visible before, so their visibility will be restored when needed.
+	 * Is Soft to allow garbage collection. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "All Hidden Widgets"))
-	TArray<TObjectPtr<UUserWidget>> AllHiddenWidgetsInternal;
+	TArray<TSoftObjectPtr<UUserWidget>> AllHiddenWidgetsInternal;
 
 	/*********************************************************************************************
 	 * Cached Widgets
