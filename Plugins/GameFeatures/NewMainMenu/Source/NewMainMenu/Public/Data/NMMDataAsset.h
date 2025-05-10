@@ -48,11 +48,11 @@ protected:
 
 	/** Data for the Main Menu widget. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (BlueprintProtected, DisplayName = "Main Menu Widget"))
-	FManageableWidgetData MainMenuWidgetDataInternal;
+	FManageableWidgetData MainMenuWidgetDataInternal = FManageableWidgetData::Empty;
 
 	/** Data for the In Cinematic State widget. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (BlueprintProtected, DisplayName = "In Cinematic State Widget"))
-	FManageableWidgetData InCinematicStateWidgetDataInternal;
+	FManageableWidgetData InCinematicStateWidgetDataInternal = FManageableWidgetData::Empty;
 
 	/*********************************************************************************************
 	 * Camera

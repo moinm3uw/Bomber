@@ -248,8 +248,7 @@ void AMyPlayerController::PawnLeavingGame()
 void AMyPlayerController::OnWidgetsInitialized_Implementation()
 {
 	// Listens to handle input on opening and closing the Settings widget
-	USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget();
-	if (ensureMsgf(SettingsWidget, TEXT("ASSERT: 'SettingsWidget' is not valid")))
+	if (USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget())
 	{
 		SettingsWidget->OnToggledSettings.AddUniqueDynamic(this, &ThisClass::OnToggledSettings);
 	}

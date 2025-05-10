@@ -4,6 +4,8 @@
 
 #include "Subsystems/LocalPlayerSubsystem.h"
 //---
+#include "GameplayTagContainer.h"
+//---
 #include "WidgetsSubsystem.generated.h"
 
 class UUserWidget;
@@ -38,18 +40,33 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
 	UUserWidget* CreateManageableWidget(const FManageableWidgetData& WidgetData, const UObject* OptionalWorldContext = nullptr);
 
+	/** Is alternative to CreateManageableWidget, but with templated cast and crashes if widget class is not valid.
+	 * E.g: UMyUserWidget* NewWidget = CreateManageableWidgetChecked<UMyUserWidget>(WidgetData); */
 	template <typename T = UUserWidget>
-	FORCEINLINE T* CreateManageableWidgetChecked(const FManageableWidgetData& WidgetData) { return CastChecked<T>(CreateManageableWidget(WidgetData)); }
+	FORCEINLINE T& CreateManageableWidgetChecked(const FManageableWidgetData& WidgetData) { return *CastChecked<T>(CreateManageableWidget(WidgetData)); }
+
+	/** Returns the widget instance by its tag. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	UUserWidget* GetWidgetByTag(FGameplayTag WidgetTag) const;
+
+	/** Is alternative to GetManageableWidgetByTag, but with templated cast.
+	 * E.g: const UMyUserWidget* FoundWidget = GetManageableWidgetByTagChecked<UMyUserWidget>(WidgetTag); */
+	template <typename T = UUserWidget>
+	FORCEINLINE T* GetWidgetByTag(FGameplayTag WidgetTag) const { return Cast<T>(GetWidgetByTag(WidgetTag)); }
 
 	/** Removes given widget from the list and destroys it. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void DestroyManageableWidget(UUserWidget* Widget);
 
+	/** Removes given widget from the list and destroys it by its tag. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void DestroyManageableWidgetByTag(FGameplayTag WidgetTag);
+
 protected:
 	/** Contains all widgets that are managed by this subsystem.
 	 * Is Soft to allow garbage collection. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "All Managable Widgets"))
-	TArray<TSoftObjectPtr<UUserWidget>> AllManageableWidgetsInternal;
+	TMap<FGameplayTag, TSoftObjectPtr<UUserWidget>> AllManageableWidgetsInternal;
 
 	/*********************************************************************************************
 	 * Core Widgets Initialization
@@ -104,46 +121,14 @@ protected:
 	TArray<TSoftObjectPtr<UUserWidget>> AllHiddenWidgetsInternal;
 
 	/*********************************************************************************************
-	 * Cached Widgets
+	 * Nickname Widgets
 	 ********************************************************************************************* */
 public:
-	/** Returns the current in-game widget object. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE class UHUDWidget* GetHUDWidget() const { return HUDWidgetInternal; }
-
-	/** Returns the current settings widget object. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE class USettingsWidget* GetSettingsWidget() const { return SettingsWidgetInternal; }
-
-	/** Returns the multiplayer widget object. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE UUserWidget* GetMultiplayerWidget() const { return MultiplayerWidgetInternal; }
-
-	/** Returns the Powerups widget object, which displays currently picked up power-ups. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE UUserWidget* GetPowerupsWidget() const { return PowerupsWidgetInternal; }
-
 	/** Returns the nickname widget by a player index. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE class UPlayerNameWidget* GetNicknameWidget(int32 Index) const { return NicknameWidgetsInternal.IsValidIndex(Index) ? NicknameWidgetsInternal[Index] : nullptr; }
 
 protected:
-	/** The current in-game widget object. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "HUD Widget"))
-	TObjectPtr<class UHUDWidget> HUDWidgetInternal = nullptr;
-
-	/** The current settings widget object. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Settings Widget"))
-	TObjectPtr<class USettingsWidget> SettingsWidgetInternal = nullptr;
-
-	/** The multiplayer widget, which displays all players's avatars and nicknames. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Multiplayer Widget"))
-	TObjectPtr<UUserWidget> MultiplayerWidgetInternal = nullptr;
-
-	/** The Powerups widget, which displays currently picked up power-ups. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups Widget"))
-	TObjectPtr<UUserWidget> PowerupsWidgetInternal = nullptr;
-
 	/** All nickname widget objects for each player. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "3D Nickname Widgets"))
 	TArray<TObjectPtr<class UPlayerNameWidget>> NicknameWidgetsInternal;
@@ -152,10 +137,6 @@ protected:
 	 * FPS Counter
 	 ********************************************************************************************* */
 public:
-	/** Returns the current FPS counter widget object. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE UUserWidget* GetFPSCounterWidget() const { return FPSCounterWidgetInternal; }
-
 	/** Set true to show the FPS counter widget on the HUD. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetFPSCounterEnabled(bool bEnable);
@@ -165,10 +146,6 @@ public:
 	FORCEINLINE bool IsFPSCounterEnabled() const { return bIsFPSCounterEnabledInternal; }
 
 protected:
-	/** The current FPS counter widget object. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "FPS Counter Widget"))
-	TObjectPtr<UUserWidget> FPSCounterWidgetInternal = nullptr;
-
 	/** If true, shows FPS counter widget on the HUD, is config property. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Is FPS Counter Enabled"))
 	bool bIsFPSCounterEnabledInternal;

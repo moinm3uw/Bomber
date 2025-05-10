@@ -9,13 +9,32 @@
 #include "Widgets/NewMainMenuWidget.h"
 #include "Widgets/NMMCinematicStateWidget.h"
 //---
+#include "NativeGameplayTags.h"
+//---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMHUDComponent)
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_WIDGET_NEWMAINMENU_MENU, TEXT("UI.Widget.NewMainMenu.Menu"));
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_WIDGET_NEWMAINMENU_CINEMATIC, TEXT("UI.Widget.NewMainMenu.Cinematic"));
 
 // Default constructor
 UNMMHUDComponent::UNMMHUDComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
+}
+
+// Returns the Main Menu widget
+UNewMainMenuWidget* UNMMHUDComponent::GetMainMenuWidget() const
+{
+	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
+	return WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag<UNewMainMenuWidget>(TAG_UI_WIDGET_NEWMAINMENU_MENU) : nullptr;
+}
+
+// Returns the In Cinematic State widget
+UNMMCinematicStateWidget* UNMMHUDComponent::GetInCinematicStateWidget() const
+{
+	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
+	return WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag<UNMMCinematicStateWidget>(TAG_UI_WIDGET_NEWMAINMENU_CINEMATIC) : nullptr;
 }
 
 // Called when a component is registered, after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
@@ -34,12 +53,9 @@ void UNMMHUDComponent::OnUnregister()
 
 	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem())
 	{
-		WidgetsSubsystem->DestroyManageableWidget(MainMenuWidgetInternal);
-		WidgetsSubsystem->DestroyManageableWidget(InCinematicStateWidgetInternal);
+		WidgetsSubsystem->DestroyManageableWidgetByTag(TAG_UI_WIDGET_NEWMAINMENU_MENU);
+		WidgetsSubsystem->DestroyManageableWidgetByTag(TAG_UI_WIDGET_NEWMAINMENU_CINEMATIC);
 	}
-
-	MainMenuWidgetInternal = nullptr;
-	InCinematicStateWidgetInternal = nullptr;
 
 	Super::OnUnregister();
 }
@@ -47,8 +63,6 @@ void UNMMHUDComponent::OnUnregister()
 // Called when the local player character is spawned, possessed, and replicated
 void UNMMHUDComponent::OnLocalCharacterReady_Implementation(class APlayerCharacter* Character, int32 CharacterID)
 {
-	// Create widgets now as fast as possible, later we will register them in Widgets Subsystem
-	UWidgetsSubsystem& WidgetsSubsystem = UWidgetsSubsystem::Get();
-	MainMenuWidgetInternal = WidgetsSubsystem.CreateManageableWidgetChecked<UNewMainMenuWidget>(UNMMDataAsset::Get().GetMainMenuWidgetData());
-	InCinematicStateWidgetInternal = WidgetsSubsystem.CreateManageableWidgetChecked<UNMMCinematicStateWidget>(UNMMDataAsset::Get().GetInCinematicStateWidgetData());
+	UWidgetsSubsystem::Get().CreateManageableWidgetChecked(UNMMDataAsset::Get().GetMainMenuWidgetData());
+	UWidgetsSubsystem::Get().CreateManageableWidgetChecked(UNMMDataAsset::Get().GetInCinematicStateWidgetData());
 }
