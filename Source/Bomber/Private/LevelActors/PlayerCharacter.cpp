@@ -159,7 +159,7 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	NameplateMeshInternal->SetupAttachment(RootComponent);
 	static const FVector NameplateRelativeLocation(0.f, 0.f, 210.f);
 	NameplateMeshInternal->SetRelativeLocation_Direct(NameplateRelativeLocation);
-	static const FVector NameplateRelativeScale(1.75f, 1.f, 1.f);
+	static const FVector NameplateRelativeScale(2.25f, 1.f, 1.f);
 	NameplateMeshInternal->SetRelativeScale3D_Direct(NameplateRelativeScale);
 	NameplateMeshInternal->SetUsingAbsoluteRotation(true);
 	NameplateMeshInternal->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
