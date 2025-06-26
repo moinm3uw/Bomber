@@ -14,10 +14,6 @@ class BOMBER_API UPlayerNameWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
-protected:
-	/** Is overridden to hide dependent 3D widget components along with this widget. */
-	virtual void SetVisibility(ESlateVisibility InVisibility) override;
-
 	/*********************************************************************************************
 	 * Player Name
 	 ********************************************************************************************* */
@@ -35,6 +31,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
 	TObjectPtr<class UTextBlock> PlayerNameTextWidget = nullptr;
 
+	/** Background image for nameplate styling */
+UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
+	TObjectPtr<class UImage> BackgroundImageWidget = nullptr;
+
 	/*********************************************************************************************
 	 * Player ID
 	 ********************************************************************************************* */
@@ -48,8 +48,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetAssociatedPlayerId(int32 NewPlayerId);
 
+	/** Sets the background material for the nameplate */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetBackgroundMaterial(int32 PlayerId);
+
 protected:
 	/** ID of the player character owner with which this widget is associated. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, DisplayName = "Associated Player ID"))
 	int32 AssociatedPlayerIdInternal = INDEX_NONE;
+
+	/*********************************************************************************************
+	 * Overrides
+	 ********************************************************************************************* */
+public:
+	/** Called by both the game and the editor.  Allows users to run initial setup for their widgets to better preview. */
+	virtual void NativePreConstruct() override;
 };

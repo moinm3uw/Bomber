@@ -150,14 +150,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnCellChanged(class UMapComponent* MapComponent, const struct FCell& NewCell, const struct FCell& PreviousCell);
 
-	/** Is called when the player character is fully initialized. */
+	/** Is called when the player state is fully initialized. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnCharacterReady(APlayerCharacter* Character, int32 CharacterID);
-
-	/** Is called when all game widgets are initialized to handle UI-related logic.
-	 * Is not called on remote clients. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnWidgetsInitialized();
+	void OnPlayerStateReady(class AMyPlayerState* InPlayerState, int32 CharacterID);
 
 	/*********************************************************************************************
 	 * Protected functions
@@ -196,27 +191,14 @@ protected:
 	 * Nickname
 	 ********************************************************************************************* */
 public:
-	/** Updates new player name on a 3D widget component. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetNicknameOnNameplate(FName NewName);
-
-	/** Returns the static mesh nameplate (background material of the player name). */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE class UStaticMeshComponent* GetNameplateMesh() const { return NameplateMeshInternal; }
-
 	/** Returns the 3D widget component that displays the player name above the character. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE class UWidgetComponent* GetPlayerName3DWidgetComponent() const { return PlayerName3DWidgetComponentInternal; }
+	FORCEINLINE class UBmrPlayerNameWidgetComponent* GetPlayerName3DWidgetComponent() const { return PlayerName3DWidgetComponentInternal; }
 
 protected:
-	/** The static mesh nameplate (background material of the player name).
-	 * @todo JanSeliv whnin60J Get rid of `Nameplate Mesh` from Player Character: use Image background image in PlayerName3DWidget instead. */
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Nameplate Mesh Component"))
-	TObjectPtr<class UStaticMeshComponent> NameplateMeshInternal = nullptr;
-
 	/** 3D widget component that displays the player name above the character. */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Player Name 3D Widget Component"))
-	TObjectPtr<class UWidgetComponent> PlayerName3DWidgetComponentInternal = nullptr;
+	TObjectPtr<class UBmrPlayerNameWidgetComponent> PlayerName3DWidgetComponentInternal = nullptr;
 
 	/*********************************************************************************************
 	 * Player ID
@@ -225,11 +207,6 @@ public:
 	/** Returns own character ID, e.g: 0, 1, 2, 3 */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	int32 GetPlayerId() const;
-
-protected:
-	/** Applies the playerID-dependent logic for this character. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void ApplyPlayerId(int32 CurrentPlayerId = -1);
 
 	/*********************************************************************************************
 	 * Player Mesh

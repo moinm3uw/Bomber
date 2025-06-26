@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "GeneratedMap.h"
+#include "Components/BmrPlayerNameWidgetComponent.h"
 #include "Components/MapComponent.h"
 #include "Components/MySkeletalMeshComponent.h"
 #include "Controllers/MyAIController.h"
@@ -18,7 +19,6 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
-#include "UI/Widgets/PlayerNameWidget.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -154,33 +154,9 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	SkeletalMeshComponent->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
 	MapComponentInternal->SetMeshComponent(SkeletalMeshComponent);
 
-	// Initialize the nameplate mesh component
-	NameplateMeshInternal = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NameplateMeshComponent"));
-	NameplateMeshInternal->SetupAttachment(RootComponent);
-	static const FVector NameplateRelativeLocation(0.f, 0.f, 210.f);
-	NameplateMeshInternal->SetRelativeLocation_Direct(NameplateRelativeLocation);
-	static const FVector NameplateRelativeScale(2.25f, 1.f, 1.f);
-	NameplateMeshInternal->SetRelativeScale3D_Direct(NameplateRelativeScale);
-	NameplateMeshInternal->SetUsingAbsoluteRotation(true);
-	NameplateMeshInternal->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	UStaticMesh* PlaneMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
-	checkf(PlaneMesh, TEXT("ERROR: [%i] %hs:\n'PlaneMesh' failed to load!"), __LINE__, __FUNCTION__);
-	NameplateMeshInternal->SetStaticMesh(PlaneMesh);
-	NameplateMeshInternal->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 	// Initialize 3D widget component for the player name
-	PlayerName3DWidgetComponentInternal = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerName3DWidgetComponent"));
-	PlayerName3DWidgetComponentInternal->SetupAttachment(NameplateMeshInternal);
-	static const FVector WidgetRelativeLocation(0.f, 0.f, 10.f);
-	PlayerName3DWidgetComponentInternal->SetRelativeLocation_Direct(WidgetRelativeLocation);
-	static const FRotator WidgetRelativeRotation(90.f, -90.f, 180.f);
-	PlayerName3DWidgetComponentInternal->SetRelativeRotation_Direct(WidgetRelativeRotation);
-	PlayerName3DWidgetComponentInternal->SetGenerateOverlapEvents(false);
-	static const FVector2D DrawSize(180.f, 50.f);
-	PlayerName3DWidgetComponentInternal->SetDrawSize(DrawSize);
-	static const FVector2D Pivot(0.5f, 0.4f);
-	PlayerName3DWidgetComponentInternal->SetPivot(Pivot);
-	PlayerName3DWidgetComponentInternal->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PlayerName3DWidgetComponentInternal = CreateDefaultSubobject<UBmrPlayerNameWidgetComponent>(TEXT("PlayerName3DWidgetComponent"));
+	PlayerName3DWidgetComponentInternal->SetupAttachment(RootComponent);
 
 	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
 	{
@@ -206,18 +182,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player2, ECR_Overlap);
 		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
 	}
-}
-
-// Returns unique net id number based on online subsystem, e.g: 253, 254, 255
-int32 APlayerCharacter::GetPlayerId() const
-{
-	if (const AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
-	{
-		return MyPlayerState->GetPlayerId();
-	}
-
-	// Player state is not initialized yet, return it directly from the order on the level
-	return ULevelActorsUtilsLibrary::GetIndexByLevelActor(MapComponentInternal);
 }
 
 // Returns level type associated with player, e.g: Water level type for Roger character
@@ -260,7 +224,7 @@ void APlayerCharacter::BeginPlay()
 		FGameModeEvents::GameModePostLoginEvent.AddUObject(this, &ThisClass::OnPostLogin);
 	}
 
-	BIND_ON_CHARACTER_READY(this, ThisClass::OnCharacterReady, GetPlayerId());
+	BIND_ON_PLAYER_STATE_READY(this, ThisClass::OnPlayerStateReady, GetPlayerId());
 }
 
 // Called when an instance of this class is placed (in editor) or spawned
@@ -297,19 +261,10 @@ void APlayerCharacter::OnPlayerStateChanged(APlayerState* NewPlayerState, APlaye
 {
 	Super::OnPlayerStateChanged(NewPlayerState, OldPlayerState);
 
-	AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(NewPlayerState);
-	if (!MyPlayerState)
+	if (AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(NewPlayerState))
 	{
-		return;
+		MyPlayerState->OnPlayerStateInit();
 	}
-
-	MyPlayerState->OnPlayerStateInit();
-
-	MyPlayerState->OnPlayerNameChanged.AddUniqueDynamic(this, &ThisClass::SetNicknameOnNameplate);
-	SetNicknameOnNameplate(*MyPlayerState->GetPlayerName());
-
-	MyPlayerState->OnPlayerIdChanged.AddUniqueDynamic(this, &ThisClass::ApplyPlayerId);
-	ApplyPlayerId();
 }
 
 /*********************************************************************************************
@@ -335,7 +290,13 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 		SetDefaultPlayerMeshData();
 	}
 
-	ApplyPlayerId();
+	if (AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
+	{
+		checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
+		PlayerName3DWidgetComponentInternal->Init(MyPlayerState);
+	}
+
+	UpdateCollisionObjectType();
 
 	// Spawn or destroy controller of specific ai with enabled visualization
 #if WITH_EDITOR // [IsEditorNotPieWorld]
@@ -495,33 +456,17 @@ void APlayerCharacter::OnCellChanged_Implementation(UMapComponent* MapComponent,
 	}
 }
 
-// Is called when the player character is fully initialized
-void APlayerCharacter::OnCharacterReady_Implementation(APlayerCharacter* Character, int32 CharacterID)
+// Is called when the player state is fully initialized
+void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlayerState, int32 CharacterID)
 {
-	if (Character != this)
+	if (GetPlayerId() != CharacterID)
 	{
 		// Is not this character
 		return;
 	}
 
-	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem()) // Is null on remote clients 
-	{
-		WidgetsSubsystem->OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
-		if (WidgetsSubsystem->AreWidgetInitialized())
-		{
-			OnWidgetsInitialized();
-		}
-	}
-}
-
-// Is called when all game widgets are initialized to handle UI-related logic
-void APlayerCharacter::OnWidgetsInitialized_Implementation()
-{
-	// Set current nickname on the nameplate
-	if (const AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
-	{
-		SetNicknameOnNameplate(*MyPlayerState->GetPlayerName());
-	}
+	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	PlayerName3DWidgetComponentInternal->Init(InPlayerState);
 }
 
 /*********************************************************************************************
@@ -692,59 +637,19 @@ void APlayerCharacter::UpdateLocation()
 }
 
 /*********************************************************************************************
- * Nickname
- ********************************************************************************************* */
-
-// Update player name on a 3D widget component
-void APlayerCharacter::SetNicknameOnNameplate(FName NewName)
-{
-	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
-	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem ? WidgetsSubsystem->GetNicknameWidget(GetPlayerId()) : nullptr;
-	if (!PlayerNameWidget)
-	{
-		// Widget is not created yet, might be called before UI Subsystem is initialized
-		return;
-	}
-
-	PlayerNameWidget->SetPlayerName(FText::FromName(NewName));
-	PlayerNameWidget->SetAssociatedPlayerId(GetPlayerId());
-
-	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	const UUserWidget* LastWidget = PlayerName3DWidgetComponentInternal->GetWidget();
-	if (LastWidget != PlayerNameWidget)
-	{
-		PlayerName3DWidgetComponentInternal->SetWidget(PlayerNameWidget);
-	}
-}
-
-/*********************************************************************************************
  * Player ID
  ********************************************************************************************* */
 
-// Applies the playerID-dependent logic for this character
-void APlayerCharacter::ApplyPlayerId(int32 CurrentPlayerId/* = INDEX_NONE*/)
+// Returns own character ID, e.g: 0, 1, 2, 3
+int32 APlayerCharacter::GetPlayerId() const
 {
-	if (CurrentPlayerId == INDEX_NONE)
+	if (const AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
 	{
-		CurrentPlayerId = GetPlayerId();
+		return MyPlayerState->GetPlayerId();
 	}
 
-	// Set a nameplate material
-	if (ensureMsgf(NameplateMeshInternal, TEXT("ASSERT: 'NameplateMeshComponent' is not valid")))
-	{
-		const UPlayerDataAsset& PlayerDataAsset = UPlayerDataAsset::Get();
-		const int32 NameplateMeshesNum = PlayerDataAsset.GetNameplateMaterialsNum();
-		if (NameplateMeshesNum > 0)
-		{
-			const int32 MaterialNo = CurrentPlayerId < NameplateMeshesNum ? CurrentPlayerId : CurrentPlayerId % NameplateMeshesNum;
-			if (UMaterialInterface* Material = PlayerDataAsset.GetNameplateMaterial(MaterialNo))
-			{
-				NameplateMeshInternal->SetMaterial(0, Material);
-			}
-		}
-	}
-
-	UpdateCollisionObjectType();
+	// Player state is not initialized yet, return it directly from the order on the level
+	return ULevelActorsUtilsLibrary::GetIndexByLevelActor(MapComponentInternal);
 }
 
 /*********************************************************************************************

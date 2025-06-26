@@ -2,29 +2,13 @@
 
 #include "UI/Widgets/PlayerNameWidget.h"
 //---
-#include "LevelActors/PlayerCharacter.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "DataAssets/PlayerDataAsset.h"
 //---
+#include "Components/Image.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextBlock.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerNameWidget)
-
-// Is overridden to hide dependent 3D widget components along with this widget
-void UPlayerNameWidget::SetVisibility(ESlateVisibility InVisibility)
-{
-	Super::SetVisibility(InVisibility);
-
-	// Hide 3D widget components if this widget is hidden
-	const APlayerCharacter* PlayerOwner = UMyBlueprintFunctionLibrary::GetPlayerCharacter(AssociatedPlayerIdInternal);
-	UStaticMeshComponent* NameplateMesh = PlayerOwner ? PlayerOwner->GetNameplateMesh() : nullptr;
-	if (NameplateMesh)
-	{
-		constexpr bool bPropagateToChildren = true;
-		const bool bMakeVisible = InVisibility != ESlateVisibility::Collapsed && InVisibility != ESlateVisibility::Hidden;
-		NameplateMesh->SetVisibility(bMakeVisible, bPropagateToChildren);
-	}
-}
 
 /*********************************************************************************************
  * Player Name
@@ -47,7 +31,7 @@ void UPlayerNameWidget::SetPlayerName(const FText& NewPlayerName)
 }
 
 /*********************************************************************************************
- * Player Owner
+ * Player ID
  ********************************************************************************************* */
 
 // Sets the player character to the widget
@@ -56,5 +40,41 @@ void UPlayerNameWidget::SetAssociatedPlayerId(int32 NewPlayerId)
 	if (ensureMsgf(NewPlayerId >= 0, TEXT("ASSERT: [%i] %hs:\n'NewPlayer' is null!"), __LINE__, __FUNCTION__))
 	{
 		AssociatedPlayerIdInternal = NewPlayerId;
+		SetBackgroundMaterial(NewPlayerId);
 	}
+}
+
+// Sets the background material for the nameplate
+void UPlayerNameWidget::SetBackgroundMaterial(int32 PlayerId)
+{
+	// Retrieve player-specific material configuration
+	const UPlayerDataAsset& PlayerDataAsset = UPlayerDataAsset::Get();
+	const int32 NameplateMaterialsNum = PlayerDataAsset.GetNameplateMaterialsNum();
+
+	if (NameplateMaterialsNum <= 0)
+	{
+		return;
+	}
+
+	// Calculate material index based on available materials
+	const int32 MaterialIndex = PlayerId < NameplateMaterialsNum ? PlayerId : PlayerId % NameplateMaterialsNum;
+	UMaterialInterface* BackgroundMaterial = PlayerDataAsset.GetNameplateMaterial(MaterialIndex);
+
+	if (BackgroundMaterial)
+	{
+		checkf(BackgroundImageWidget, TEXT("ERROR: [%i] %hs:\n'BackgroundImage' is null!"), __LINE__, __FUNCTION__);
+		BackgroundImageWidget->SetBrushFromMaterial(BackgroundMaterial);
+	}
+}
+
+/*********************************************************************************************
+ * Overrides
+ ********************************************************************************************* */
+
+// Called by both the game and the editor.  Allows users to run initial setup for their widgets to better preview
+void UPlayerNameWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	SetBackgroundMaterial(AssociatedPlayerIdInternal);
 }
