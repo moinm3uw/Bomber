@@ -41,7 +41,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAddedToLevel, UMapComponent*, MapComponent);
 
 	/** Called when this level actor is reconstructed or added on the Generated Map, on both server and clients.
-	 * Is used by Level Actors instead of the BeginPlay().
+	 * Is used by Level Actors instead of the BeginPlay(), but also called in editor preview before game even started.
 	 * In Editor on construction: AActor::RerunConstructionScripts() -> AActor::OnConstruction() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded()
 	 * In build: AGeneratedMap::SpawnActorByType() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded() */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
@@ -49,14 +49,16 @@ public:
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPreRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called right before owner actor going to remove from the Generated Map, on both server and clients.
-	 * Is useful to listen for actor before it is exploded and its data being reset. */
+	/** Called right before owner actor going to remove from the Generated Map.
+	 * Is useful to listen for actor before it is exploded and its data being reset.
+	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPreRemovedFromLevel OnPreRemovedFromLevel;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPostRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called each time after owner actor was removed from Generated Map, on both server and clients. */
+	/** Called each time after owner actor was removed from Generated Map.
+	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPostRemovedFromLevel OnPostRemovedFromLevel;
 

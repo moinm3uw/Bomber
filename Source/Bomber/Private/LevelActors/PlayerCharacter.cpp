@@ -450,7 +450,7 @@ void APlayerCharacter::OnPreRemovedFromLevel_Implementation(UMapComponent* MapCo
 		if (!CauserCharacter)
 		{
 			const ABombActor* Bomb = DestroyCauser ? Cast<ABombActor>(DestroyCauser) : nullptr;
-			CauserCharacter = Bomb ? Bomb->GetBombPlacer() : nullptr;
+			CauserCharacter = Bomb ? Cast<APlayerCharacter>(Bomb->GetBombPlacer()) : nullptr;
 		}
 		return CauserCharacter ? CauserCharacter->GetPlayerState<AMyPlayerState>() : nullptr;
 	}();

@@ -53,20 +53,21 @@ ABombActor::ABombActor()
  ********************************************************************************************* */
 
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
-void ABombActor::InitBomb(const APlayerCharacter* BombPlacer/* = nullptr*/)
+void ABombActor::InitBomb(const UObject* OptionalBombPlacer/* = nullptr*/)
 {
+	SetBombPlacer(OptionalBombPlacer);
+
 	constexpr int32 MinFireRadius = 1;
 	int32 InFireRadius = MinFireRadius;
-	if (BombPlacer) // Might be null if spawned from external source (e.g. cheat manager)
-	{
-		// Set bomb placer, so others can track who spawned the bomb, e.g: to record the score 
-		SetBombPlacer(BombPlacer);
 
-		InFireRadius = BombPlacer->GetPowerUp(EIT::Fire);
+	// Is bomb placer is a player character, then apply its fire radius and player type
+	if (const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(OptionalBombPlacer))
+	{
+		InFireRadius = OwnerCharacter->GetPowerUp(EIT::Fire);
 
 		// Override default mesh with one with the player type (each character has own bomb)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		const ULevelActorRow* BombRow = UBombDataAsset::Get().GetRowByLevelType(BombPlacer->GetPlayerType());
+		const ULevelActorRow* BombRow = UBombDataAsset::Get().GetRowByLevelType(OwnerCharacter->GetPlayerType());
 		MapComponentInternal->SetLocalMesh(BombRow->Mesh);
 	}
 
@@ -101,7 +102,7 @@ void ABombActor::SetFireRadius(int32 InFireRadius)
 }
 
 // Sets the character who placed the bomb, can be called on the server-only
-void ABombActor::SetBombPlacer(const APlayerCharacter* InBombPlacer)
+void ABombActor::SetBombPlacer(const UObject* InBombPlacer)
 {
 	if (!HasAuthority()
 	    || BombPlacerInternal == InBombPlacer)
@@ -264,11 +265,12 @@ void ABombActor::ApplyMaterial()
 	TObjectPtr<class UMaterialInterface> NewBombMaterial = nullptr;
 
 	// If bot character, override material with the player type
-	if (BombPlacerInternal
-	    && BombPlacerInternal->IsBotControlled())
+	const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(BombPlacerInternal);
+	if (OwnerCharacter
+	    && OwnerCharacter->IsBotControlled())
 	{
 		// If bot character, set material for its default bomb with the same mesh
-		const int32 PlayerIndex = BombPlacerInternal->GetPlayerId();
+		const int32 PlayerIndex = OwnerCharacter->GetPlayerId();
 		const UBombDataAsset& BombDataAsset = UBombDataAsset::Get();
 		const int32 BombMaterialsNum = BombDataAsset.GetBombMaterialsNum();
 		if (PlayerIndex != INDEX_NONE // Is not debug character
