@@ -68,7 +68,7 @@ struct BOMBER_API FMapComponentSpec : public FFastArraySerializerItem
 
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FMapComponentSpec& B) { return A.MapComponent == B.MapComponent && A.Cell == B.Cell && A.PoolObjectHandle == B.PoolObjectHandle; }
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const UMapComponent* B) { return A.MapComponent == B; }
-	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FCell& B) { return A.Cell == B; }
+	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FCell& B) { return FCell(A.Cell) == B; }
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FPoolObjectHandle& B) { return A.PoolObjectHandle == B; }
 };
 
