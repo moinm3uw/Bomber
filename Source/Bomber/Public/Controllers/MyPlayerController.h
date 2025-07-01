@@ -25,7 +25,7 @@ public:
 
 	/*********************************************************************************************
 	 * Game States
-	 * Is designed for clients to change the game state
+	 * Is designed for clients to change the game state (if CanChangeGameState is true).
 	 * Server can call AMyGameStateBase::Get().SetGameState(NewState) directly
 	 ********************************************************************************************* */
 public:
@@ -33,18 +33,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	bool CanChangeGameState(ECurrentGameState NewGameState) const;
 
-	/** Sets and replicates the Starting game state (3-2-1 countdown), can be called on the client. */
+	/** Sets and replicates the Starting game state (3-2-1 countdown). */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetGameStartingState();
 
-	/** Sets and replicates the Menu game state, can be called on the client. */
+	/** Sets and replicates the Menu game state. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetMenuState();
-
-	/** Is called during the In-Game state to show results to all players regarding finished match (Win, Lose or Draw).
-	 * Can be called on the client. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetEndGameState();
 
 protected:
 	/** Set the new game state for the current game. */
@@ -60,7 +55,7 @@ protected:
 	TArray<TObjectPtr<const UMyInputMappingContext>> AllInputContextsInternal;
 
 	/** Component that responsible for mouse-related logic like showing and hiding itself. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = ""))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mouse Component"))
 	TObjectPtr<class UMouseActivityComponent> MouseComponentInternal = nullptr;
 
 	/*********************************************************************************************
@@ -90,6 +85,9 @@ protected:
 
 	/** Is overridden to spawn player state or reuse existing one. */
 	virtual void InitPlayerState() override;
+
+	/** Is overridden to prevent destroyed possessed pawn, which is expected to be reused. */
+	virtual void PawnLeavingGame() override;
 
 	/*********************************************************************************************
 	 * Events

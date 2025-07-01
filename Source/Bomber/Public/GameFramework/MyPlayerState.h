@@ -8,9 +8,12 @@
 //---
 #include "MyPlayerState.generated.h"
 
+enum class EPlayerType : uint8;
+
 /**
  * Holds Player's data like nickname.
  * It's replicated to all clients and persists between matches.
+ * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused like character.
  */
 UCLASS(Config = "GameUserSettings", DefaultConfig)
 class BOMBER_API AMyPlayerState final : public APlayerState
@@ -22,10 +25,12 @@ public:
 	AMyPlayerState();
 
 	/** Returns true if this Player State is controlled by a locally controlled player. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	bool IsPlayerStateLocallyControlled() const;
 
-	/** Returns always valid owner (human or bot), or crash if nullptr. */
+	/** Returns owner human or bot character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	class APlayerCharacter* GetPlayerCharacter() const;
 	class APlayerCharacter& GetPlayerCharacterChecked() const;
 
 	/*********************************************************************************************
@@ -87,9 +92,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetPendingPlayerName(FName NewName) { SetOldPlayerName(NewName.ToString()); }
 
-	/** Exposes Base::GetOldPlayerName() to blueprints to get locally the player name on each nickname change.*/
+	/** Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE FName GetPendingPlayerName() const { return *GetOldPlayerName(); }
+	FName GetPendingPlayerName() const;
 
 	/** Sets saved human name to config property.
 	 * SaveConfig() needs to be called separately to save it to the file. */
@@ -100,12 +105,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE FName GetSavedPlayerName() const { return SavedPlayerNameInternal; }
 
-	/** Assigns default bots name based on current character ID like "AI 0", "AI 1" etc. */
+	/** Attempts to assign default nickname.
+	 * - Bots names rely on current character ID like "AI 0", "AI 1" etc.
+	 * - Human names are obtained from the OS or online subsystem if available. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetDefaultBotName();
+	void SetDefaultPlayerName();
 
 	/** Is overridden to additionally set player name on server and broadcast it. */
-	virtual void SetPlayerName(const FString& S) override;
+	virtual void SetPlayerName(const FString& NewPlayerName) override;
 
 	/** Applies and broadcasts player name. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
@@ -160,17 +167,61 @@ protected:
 	void OnPostCharacterDead(const TSet<struct FCell>& Cells);
 
 	/*********************************************************************************************
+	 * Killed Opponents Num
+	 * Is opposite to IsCharacterDead, is increased when this player kills an opponent.
+	 *********************************************************************************************/
+public:
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnOpponentsKilledNumChanged, int32, OpponentsKilledNum);
+
+	/** Called when an opponent is killed. May be triggered multiple times during multi-kill increments.
+	 * Broadcast only number of killed opponents, might be useful for scoreboards.
+	 * To track who exactly killed the player, use delegates like UMapComponent::OnDeactivatedMapComponent. */
+	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
+	FOnOpponentsKilledNumChanged OnOpponentsKilledNumChanged;
+
+	/** Returns the number of opponents killed by the player associated with this Player State. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetOpponentsKilledNum() const { return OpponentsKilledNumInternal; }
+
+	/** Increments the number of opponents killed, is server-only.
+	 * @param DefeatedCharacter The character of the opponent who was killed by the player associated with this Player State. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void SetOpponentKilled(const class APlayerCharacter* DefeatedCharacter);
+
+	/** Sets the number of opponents killed by the player associated with this Player State, is server-only.
+	 * @param NewOpponentsKilledNum The new number of total opponents killed. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void SetOpponentKilledNum(int32 NewOpponentsKilledNum);
+
+protected:
+	/** Holds the number of opponents killed */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_OpponentsKilledNum", AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Opponents Killed Num"))
+	int32 OpponentsKilledNumInternal = 0;
+
+	/** Called on client when Opponents Killed Num changes */
+	UFUNCTION()
+	void OnRep_OpponentsKilledNum();
+
+	/** Applies and broadcasts Opponents Killed Num changes */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void ApplyOpponentsKilledNum();
+
+	/*********************************************************************************************
 	 * Is Human / Bot
 	 * APlayerState::bIsABot is used to determine if the player is a bot.
 	 * - SetIsABot() to assign bot status
 	 * - SetIsHuman() to assign human status
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIsABotChanged, bool, bIsABot);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerTypeChanged, EPlayerType, PlayerType);
 
 	/** Called when player is changed from human to bot or vice versa. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
-	FOnIsABotChanged OnIsABotChanged;
+	FOnPlayerTypeChanged OnPlayerTypeChanged;
+
+	/** Returns the type of owner: Human or AI. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE EPlayerType GetPlayerType() const { return IsABot() ? EPlayerType::Bot : EPlayerType::Human; }
 
 	/** Applies bot status, overloads engine's APlayerState::SetIsABot(bool) that is not virtual and not exposed to blueprints. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
@@ -222,7 +273,8 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 public:
-	/** Is called when player state is initialized with assigned character. */
+	/** Is called when player state is initialized with assigned character.
+	 * Can be called multiple times on each player join due to reusing player states. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnPlayerStateInit();
 
@@ -243,6 +295,9 @@ protected:
 
 	/** Called when the game starts. */
 	virtual void BeginPlay() override;
+
+	/** Is overridden to prevent the player state from being destroyed to be able to reuse it by bots. */
+	virtual void OnDeactivated() override;
 
 	/** Register a player with the online subsystem. */
 	virtual void RegisterPlayerWithSession(bool bWasFromInvite) override;

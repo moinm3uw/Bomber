@@ -41,6 +41,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	bool IsSpotAvailable() const;
 
+	/** Returns true if this spot current skin is unlocked and can be selected by player.
+	 * To make this spot skin unavailable, call SetSkinAvailable(false, skinIndex) on this spot on its skeletal mesh. */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	bool IsSpotSkinAvailable() const;
+
 	/** Returns the Skeletal Mesh of the Bomber character. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	class UMySkeletalMeshComponent* GetMySkeletalMeshComponent() const;
@@ -135,7 +140,7 @@ protected:
 
 	/** Called when the Main Menu state was changed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnNewMainMenuStateChanged(ENMMState NewState);
+	void OnNewMainMenuStateChanged(ENMMState NewState, ENMMState PreviousState);
 
 	/** Called when the sequence is paused or when cinematic was ended. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

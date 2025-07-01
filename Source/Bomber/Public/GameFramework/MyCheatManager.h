@@ -78,12 +78,9 @@ public:
 	 * Box
 	 ********************************************************************************************* */
 public:
-	/**
-	 * Override the chance to spawn item after box destroying.
-	 * @param Chance Put 0 to stop spawning, 100 to spawn all time.
-	 */
-	UFUNCTION(meta = (CheatName = "Bomber.Box.SetItemChance"))
-	static void SetItemChance(int32 Chance);
+	/** Override the percentage of items spawn from boxes, where 100 is maximum, 0 is disabled (default chance will be used). 
+	 * e.g Bomber.Box.SetPowerupsChance 100 - set 100% chance to spawn powerups. */
+	static TAutoConsoleVariable<int32> CVarPowerupsChance;
 
 	/*********************************************************************************************
 	 * Bomb
@@ -103,10 +100,6 @@ public:
 	 */
 	UFUNCTION(meta = (CheatName = "Bomber.Player.SetPowerups"))
 	static void SetPlayerPowerups(int32 NewLevel);
-
-	/** Enable or disable the God mode to make a controllable player undestroyable. */
-	UFUNCTION(meta = (CheatName = "Bomber.Player.SetGodMode"))
-	static void SetGodMode(bool bShouldEnable);
 
 	/** Enable or disable the Auto Copilot mode to make a controllable player to play automatically. */
 	UFUNCTION(meta = (CheatName = "Bomber.Player.SetAutoCopilot"))
@@ -142,15 +135,12 @@ public:
 	 * Debug
 	 ********************************************************************************************* */
 public:
-	/**
-	 * Shows coordinates of all level actors by specified types, ex: 'Box Item'.
+	/** Shows coordinates of level actors of specified types (requires regeneration), e.g: 'Box Item'.
 	 * Bomber.Debug.DisplayCells Wall - show walls.
 	 * Bomber.Debug.DisplayCells Wall Bomb - show walls and bombs.
 	 * Bomber.Debug.DisplayCells Wall Bomb Player - show walls, bombs and players.
-	 * Bomber.Debug.DisplayCells All - show all actors (walls, bombs, players, items and boxes).
-	 */
-	UFUNCTION(meta = (CheatName = "Bomber.Debug.DisplayCells"))
-	static void DisplayCells(const FString& ActorTypesString);
+	 * Bomber.Debug.DisplayCells All - show all actors (walls, bombs, players, items and boxes). */
+	static TAutoConsoleVariable<FString> CVarDisplayCells;
 
 	/*********************************************************************************************
 	 * Level

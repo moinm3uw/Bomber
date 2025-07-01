@@ -2,8 +2,9 @@
 
 #include "UI/ViewModel/MVVM_MyCharacterBase.h"
 //---
+#include "AdvancedSteamFriendsLibrary.h"
+#include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
-#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -34,6 +35,45 @@ void UMVVM_MyCharacterBase::OnNicknameChanged_Implementation(FName NewNickname)
 void UMVVM_MyCharacterBase::OnCharacterDeadChanged_Implementation(bool bIsCharacterDead)
 {
 	SetIsDeadVisibility(bIsCharacterDead ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+/*********************************************************************************************
+ * Avatar (Human / Bot / Online)
+ ********************************************************************************************* */
+
+// Assigns current avatar based on player type
+void UMVVM_MyCharacterBase::UpdateAvatar()
+{
+	const AMyPlayerState* MyPlayerState = UMyBlueprintFunctionLibrary::GetMyPlayerState(GetCharacterId());
+	const EPlayerType PlayerType = MyPlayerState ? MyPlayerState->GetPlayerType() : EPlayerType::None;
+	UTexture2D* NewAvatar = UUIDataAsset::Get().GetDefaultAvatar(PlayerType);
+	if (!ensureMsgf(NewAvatar, TEXT("ASSERT: [%i] %hs:\n'NewAvatar' is null, can not obtain any!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	if (PlayerType == EPlayerType::Bot)
+	{
+		// Set default bot avatar
+		SetAvatar(NewAvatar);
+		return;
+	}
+
+	if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
+	{
+		// Try to obtain online avatar, if not found - human default will be used
+		EBlueprintAsyncResultSwitch Result = EBlueprintAsyncResultSwitch::OnFailure;
+		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/Result);
+		if (OnlineAvatar
+		    && Result == EBlueprintAsyncResultSwitch::OnSuccess)
+		{
+			// Online avatar is found
+			NewAvatar = OnlineAvatar;
+		}
+	}
+
+	// Set human avatar
+	SetAvatar(NewAvatar);
 }
 
 /*********************************************************************************************
@@ -77,13 +117,12 @@ void UMVVM_MyCharacterBase::OnPlayerStateReady_Implementation(AMyPlayerState* Pl
 	PlayerState->OnCharacterDeadChanged.AddUniqueDynamic(this, &ThisClass::OnCharacterDeadChanged);
 	OnCharacterDeadChanged(PlayerState->IsCharacterDead());
 
-	PlayerState->OnIsABotChanged.AddUniqueDynamic(this, &ThisClass::OnIsBotChanged);
-	OnIsBotChanged(PlayerState->IsABot());
+	PlayerState->OnPlayerTypeChanged.AddUniqueDynamic(this, &ThisClass::OnPlayerTypeChanged);
+	OnPlayerTypeChanged(PlayerState->GetPlayerType());
 }
 
 // Called when changed character Bot status is changed, applies both bot and human visibility
-void UMVVM_MyCharacterBase::OnIsBotChanged_Implementation(bool bIsBot)
+void UMVVM_MyCharacterBase::OnPlayerTypeChanged_Implementation(EPlayerType PlayerType)
 {
-	SetIsHumanVisibility(bIsBot ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-	SetIsBotVisibility(bIsBot ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	UpdateAvatar();
 }

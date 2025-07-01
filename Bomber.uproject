@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "5.5",
 	"Category": "",
 	"Description": "Open-source Bomberman game made in Unreal Engine 5",
 	"Modules": [
@@ -17,15 +17,7 @@
 	],
 	"Plugins": [
 		{
-			"Name": "MagicLeapMedia",
-			"Enabled": false
-		},
-		{
-			"Name": "MagicLeap",
-			"Enabled": false
-		},
-		{
-			"Name": "Bridge",
+			"Name": "Fab",
 			"Enabled": false
 		},
 		{
@@ -58,6 +50,10 @@
 		},
 		{
 			"Name": "ModelViewViewModel",
+			"Enabled": true
+		},
+		{
+			"Name": "Iris",
 			"Enabled": true
 		}
 	]

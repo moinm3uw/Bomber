@@ -3,7 +3,6 @@
 #include "UI/ViewModel/MVVM_MyGameViewModel.h"
 //---
 #include "Components/MouseActivityComponent.h"
-#include "DataAssets/ItemDataAsset.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
@@ -14,6 +13,18 @@
 #include "Engine/World.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MVVM_MyGameViewModel)
+
+/*********************************************************************************************
+ * Current Game State
+ ********************************************************************************************* */
+
+// Called when the current game state was changed
+void UMVVM_MyGameViewModel::OnGameStateChanged_Implementation(ECurrentGameState InGameState)
+{
+	SetCurrentGameState(InGameState);
+
+	SetCanRestartGame(AMyGameStateBase::Get().CanStartGame());
+}
 
 /*********************************************************************************************
  * End-Game State
@@ -47,25 +58,6 @@ void UMVVM_MyGameViewModel::OnInGameTimerSecRemainChanged_Implementation(float N
 }
 
 /*********************************************************************************************
- * PowerUps
- ********************************************************************************************* */
-
-// Called when power-ups were updated on local character
-void UMVVM_MyGameViewModel::OnPowerUpsChanged_Implementation(const FPowerUp& NewPowerUps)
-{
-	SetPowerUpSkateN(FText::AsNumber(NewPowerUps.SkateN));
-	SetPowerUpBombN(FText::AsNumber(NewPowerUps.BombN));
-	SetPowerUpFireN(FText::AsNumber(NewPowerUps.FireN));
-
-	const float MaxPowerUps = static_cast<float>(UItemDataAsset::Get().GetMaxAllowedItemsNum());
-	checkf(MaxPowerUps > 0.f, TEXT("ERROR: [%i] %s:\n'MaxPowerUps > 0' is null!"), __LINE__, *FString(__FUNCTION__));
-	SetPowerUpSkatePercent(static_cast<float>(NewPowerUps.SkateN) / MaxPowerUps);
-	SetPowerUpBombPercent(static_cast<float>(NewPowerUps.BombN) / MaxPowerUps);
-	SetPowerUpBombCurrentPercent(static_cast<float>(NewPowerUps.BombNCurrent) / MaxPowerUps);
-	SetPowerUpFirePercent(static_cast<float>(NewPowerUps.FireN) / MaxPowerUps);
-}
-
-/*********************************************************************************************
  * Mouse Visibility
  ********************************************************************************************* */
 
@@ -85,7 +77,7 @@ void UMVVM_MyGameViewModel::OnViewModelConstruct_Implementation(const UUserWidge
 {
 	Super::OnViewModelConstruct_Implementation(UserWidget);
 
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::SetCurrentGameState);
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
 	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
 
@@ -115,15 +107,12 @@ void UMVVM_MyGameViewModel::OnGameStateCreated_Implementation(AGameStateBase* Ga
 	AMyGameStateBase& MyGameState = *CastChecked<AMyGameStateBase>(GameState);
 	MyGameState.OnStartingTimerSecRemainChanged.AddUniqueDynamic(this, &ThisClass::OnStartingTimerSecRemainChanged);
 	MyGameState.OnInGameTimerSecRemainChanged.AddUniqueDynamic(this, &ThisClass::OnInGameTimerSecRemainChanged);
+	MyGameState.GetWorld()->GameStateSetEvent.RemoveAll(this);
 }
 
 // Called when the local player character is spawned, possessed, and replicated
 void UMVVM_MyGameViewModel::OnLocalCharacterReady_Implementation(APlayerCharacter* PlayerCharacter, int32 CharacterID)
 {
-	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
-	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-	OnPowerUpsChanged(PlayerCharacter->GetPowerups());
-
 	AMyPlayerState* PlayerState = PlayerCharacter->GetPlayerState<AMyPlayerState>();
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);
 	PlayerState->OnEndGameStateChanged.AddUniqueDynamic(this, &ThisClass::OnEndGameStateChanged);

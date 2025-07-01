@@ -1,5 +1,5 @@
 <a href="https://github.com/JanSeliv/Bomber/blob/main/LICENSE">![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)</a>
-<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.4-dea309?style=flat&logo=unrealengine)</a>
+<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.5-dea309?style=flat&logo=unrealengine)</a>
 
 <br/>
 <p align="center">
@@ -19,7 +19,7 @@
 
 ## 🌟 About
 
-Bomberrage is an open-source indie game developed on Unreal Engine 5 for Windows, MacOS and Linux.
+Bomberrage is an open-source Unreal Engine 5 game available on Steam for Windows, macOS and Linux.
 
 Forget hidden exits and classic rules - Bomberrage is a fast, competitive game where you beat tough AI or friends in explosive multiplayer battles!
 
@@ -34,7 +34,6 @@ Forget hidden exits and classic rules - Bomberrage is a fast, competitive game w
 - [🛠 Key Features](#-key-features)
 - [📋 Kanban Board](#-kanban-board)
 - [📅 Changelog](#-changelog)
-- [🎮 Overview](#-overview)
 - [🧑‍🤝‍🧑 Credits](#-credits)
 - [📫 Feedback & Contribution](#-feedback--contribution)
 - [📜 License](#-license)
@@ -60,24 +59,26 @@ git submodule update --init --recursive
 
 ## 💻 Unreal Project Requirements
 
-- **Unreal Engine 5.4**
-- **Project Disk Space:** 33GB
+- **Unreal Engine 5.5**
+- **Project Size:** ~30GB (build ~3GB)
 
 The project has been tested and launching the editor on the following platforms:
 
 - **Windows 10 22H2**
 - **macOS Sonoma 14.4** (Apple M2 hardware)
 - **Ubuntu 22.04 LTS**
+- **Android 14** (experimental with some issues)
 
 ## 🛠 Key Features
 
 This project could be useful for learners, demonstrating next features:
 
-- Multiplayer
+- Steam multiplayer support for 4 players (via Steam Friends)
+- Modern networking: the Push Model and Iris replication
 - Procedurally generated playfield
 - Challenging AI
 - Enhanced Input
-- Modular Game Features
+- Mods and Modular Game Features
 - Complex cinematics (Level Sequences)
 - World Partition
 - Model-View-ViewModel (MVVM) UI Pattern
@@ -104,6 +105,31 @@ Next [plugins](https://github.com/JanSeliv/Bomber/tree/master/Plugins) were deve
 Stay updated with the current progress and plans on the [Trello board](https://trello.com/b/1jbKvyeh/bomber-kanban).
 
 ## 📅 Changelog
+#### `2025-06-30:`
+- Updated to **Unreal Engine 5.5**.
+- Uploaded the game to the **Steam** for public testing: [store page](https://store.steampowered.com/app/1873240/Bomberrage/).
+- Added **Steam multiplayer** support, so players can invite and join each other via Steam Friends.
+- Added **Android** support (experimental, with some issues).
+- Improved performance with up to 300% gain → [results](https://docs.google.com/spreadsheets/d/10pPYJZAu-qeA9zKYOt6jn8ioxhOD58mFPgjdrATaN84/edit?usp=sharing).
+- Improved networking efficiency by up to 642% with **Push Model** and **Iris** replication → [results](https://trello.com/c/A3kK1Uqj).
+- Finished 4 skins for each character by [Kateryna Shchetinina](https://www.artstation.com/kateseliv), with skins unlock mechanic by [Valeriy Rotermel](https://github.com/h4rdmol):
+> ![NewSkins](https://github.com/user-attachments/assets/11decad0-fa4c-45ff-ba33-9a6e2d805773)
+- Added `Play Area Surrounder` mod on medium difficulty surrounding the play area with walls over time by [Anton Selivanov](https://github.com/antokior)
+> ![PlayAreaSurrounder](https://github.com/user-attachments/assets/1ff184f3-ba25-4315-8ca1-df87d213dfb4)
+- Added `Bomb Storm` mod on hard difficulty massively spawning bombs:
+> ![BombStorm](https://github.com/user-attachments/assets/a7bed05d-0e83-4cf4-aa17-b45744aea124)
+- New Bastet bomb by [Maksim Shashkov](https://www.artstation.com/maksimshashkov):
+> ![BastetBomb](https://github.com/user-attachments/assets/27bcf3fe-2ea0-429b-8689-07b3ac4a482b)
+- Progression System has been updated with new star mesh by [Kateryna Shchetinina](https://www.artstation.com/kateseliv) and implementation by [Valeriy Rotermel](https://github.com/h4rdmol):
+> ![NewStars](https://github.com/user-attachments/assets/66160a94-d192-4bf7-8f99-cfa9854be7eb)
+- Implemented the Loading Screen on launching the game and joining a multiplayer session:
+> ![LoadingScreen](https://github.com/user-attachments/assets/084270ca-abc3-44c8-bd44-ae1ce26d1e25)
+- Added the **Language setting** and fully localized the game in 30 languages, including Arabic, Chinese, Korean, and Thai:
+> ![Localization](https://github.com/user-attachments/assets/68d3c9db-c850-4346-8ffb-231c5c6ec0e8)
+- Implemented `Honor Loss` game result rewarding players who perform well despite losing by design from [Yevhenii Oksenchuk](https://t.me/ComeThird).
+- Implemented unique starting attributes for each character (e.g., Bastet starts with 2 speed, Roger with 2 bombs, etc.)
+- Improved nicknames display in the Main Menu and in-game UI.
+ ---
 #### `2024-12-29:`
 - Updated to **Unreal Engine 5.4**.
 - Added **Linux** support (tested on Ubuntu 22.04 LTS)
@@ -166,132 +192,33 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 >  ![](https://user-images.githubusercontent.com/20540872/120127584-0e232d00-c1c0-11eb-8467-74633600c180.jpg)
  ---
 #### `2021-01-31:`
+ - Updated to **Unreal Engine 4.26**.
  - Added the Bastet (Sphynx cat) and Roger (Pirate) characters by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  - Fori and Hugo characters got additional second skins by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/106404153-23ff2c00-6432-11eb-8cb1-d3a7bc33b51b.gif)
  ---
-#### `25.10.2020:
+#### `2025-10-25`:
+ - Updated to **Unreal Engine 4.25**.
  - Added the Hugo and Fori characters by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/97118032-125a0a00-1708-11eb-8256-4bec419b1d48.gif)
  ---
-#### `2019-10-15:` Uploaded first game-ready build.
-
-## 🎮 Overview
-
-**The level camera** that moves and zooms lens depending on the distance between players:
-
-![GIF1](https://user-images.githubusercontent.com/20540872/62881283-b6d47400-bd2f-11e9-91bb-94d60942f8f8.gif)
-
-## Level actors
-
-- **Items** that affect the abilities of a player during gameplay:
-
-Skate:  Increase the movement speed of the character.
-
-Bomb: Increase the number of bombs that can be set at one time.
-
-Fire: Increase the bomb blast radius.
-
-- **Bombs:** are left by the character to destroy the level actors. Triggers other bombs and prevents players from
-  moving through the bomb after it has been left behind.
-- **Walls**: are not destroyed by a bomb explosion and stop the explosion.
-- **Boxes** on destruction with some chances spawn an item.
-- **Players and AI** - characters whose goal is to remain the last survivor for the win.
-
-## Game interface
-
-The number of items that are shown at the left side of the player’s avatar, the timer that is placed under and at the
-right side is shown the number of alive players:
-
-![GIF2](https://user-images.githubusercontent.com/20540872/63038224-f8e0ef80-bec0-11e9-9f32-711793cd9bee.gif)
-
-The game menu is shown the result of the games match (win, lose, draw). If the match has not yet finished, it could be
-minimized or opened out by ESC button in order to continue watching the game or restart the play, or to return to the
-main menu:
-
-- Shows the **win** notification when there is one character left:
-
-![GIF3](https://user-images.githubusercontent.com/20540872/63024460-87487780-bea7-11e9-8573-b0950a040fe4.gif)
-
-- Shows the **draw** when the last players are killed at the same time or at the end of game timer:
-
-![GIF4](https://user-images.githubusercontent.com/20540872/63047128-12d7fd80-bed4-11e9-8c45-036ccb33fc97.gif)
-
-- Shows the **lose** when the player was killed:
-
-![GIF5](https://user-images.githubusercontent.com/20540872/63043291-38f99f80-becc-11e9-8234-765a402ab8f1.gif)
-
-## Procedural generation
-
-- Symmetrical regeneration for each new game:
-
-![GIF6](https://user-images.githubusercontent.com/20540872/67123411-8659fc00-f1f0-11e9-8b71-f0b9072c34f8.gif)
-
-- Scaling sides sizes in the editor or sizes selection in the start menu:
-
-![GIF7](https://user-images.githubusercontent.com/20540872/63046685-45352b00-bed3-11e9-81f4-fea4fdf1f0c7.gif)
-
-## Cells Data Structure
-
-- Actors snapping to the center of the cell:
-
-![GIF8](https://user-images.githubusercontent.com/20540872/63049470-0efaaa00-bed9-11e9-9f7d-9da1c16b69fd.gif)
-
-- Searching of the nearest cell to an actor:
-
-![GIF9](https://user-images.githubusercontent.com/20540872/63049762-ba0b6380-bed9-11e9-926f-2f82f621a130.gif)
-
-## The Map Component
-
-These components manage their owners and update this level actors in case of any changes on the map that allow to:
-
-- Prepare in advance the level actors in the editor time:
-
-_(Dragged from the Content Browser the wall, the character, the item, the box, and the bomb, that correctly exploded due
-to Maps Components)_
-
-![GIF10](https://user-images.githubusercontent.com/20540872/63053411-f5aa2b80-bee1-11e9-9328-79cf77609ec7.gif)
-
-- Free location and rotation of the level map in the editor time:
-
-![GIF11](https://user-images.githubusercontent.com/20540872/63057315-3f970f80-beea-11e9-979f-c7874042a382.gif)
-
-## Artificial Intelligence
-
-Bots behave like players with no use of the Unreal NavMesh:
-
-- They can find items even around the corners and are able to manage their priorities correctly:
-
-_(There are three items: A - the nearest under the bomb explosion, B - the item that is placed around the corner near
-the enemy character. C - the farthest safe item. The bot does not risk and chooses to move to the C)_
-
-![GIF12](https://user-images.githubusercontent.com/20540872/63061142-770ab980-bef4-11e9-9f34-d80e28fcbaaf.gif)
-
-- Emergency Priority Change:
-
-_(The bot runs for the item, the player otherwise set the bomb. Meanwhile, the bot changes direction and runs off the
-bomb)_
-
-![GIF13](https://user-images.githubusercontent.com/20540872/63061569-de753900-bef5-11e9-98dc-e12a57554dfc.gif)
-
-- The bots even survive through in the midst of explosions:
-
-![GIF14](https://user-images.githubusercontent.com/20540872/63062621-e46d1900-bef9-11e9-8e84-dbad3eb14dc6.gif)
-
-- The editor preview visualization for selected bot automatically updates upon any changes on the map including addition
-  from the Content Browser or drag-and-drop.
-
-_Where is :_
-
-_Green +: a safe crossway._
-
-_Red +: crossway which has at least one enemy character._
-
-_Yellow F: filtered cells for moving._
-
-_Grey Х: the selected cell on which the bot moves to._
-
-![GIF15](https://user-images.githubusercontent.com/20540872/63063848-aa524600-befe-11e9-93fb-ece39892ace5.gif)
+#### `2019-10-15:`
+- Uploaded first game-ready build on **Unreal Engine 4.23**: [download from GDrive](https://drive.google.com/file/d/1DY4l9XEcazxouiTDTPcZhBv3XDKAfDBD)
+- **The level camera** that moves and zooms lens depending on the distance between players:
+> ![GIF1](https://user-images.githubusercontent.com/20540872/62881283-b6d47400-bd2f-11e9-91bb-94d60942f8f8.gif)
+- First UI displaying the items (at the left side of the player’s avatar), the timer (that is placed under) and the number of alive players (at the
+right side):
+> ![GIF2](https://user-images.githubusercontent.com/20540872/63038224-f8e0ef80-bec0-11e9-9f32-711793cd9bee.gif)
+- Symmetrical **Procedural generation** for each new game:
+> ![GIF6](https://user-images.githubusercontent.com/20540872/67123411-8659fc00-f1f0-11e9-8b71-f0b9072c34f8.gif)
+- Dynamic scaling in the editor:
+> ![GIF7](https://user-images.githubusercontent.com/20540872/63046685-45352b00-bed3-11e9-81f4-fea4fdf1f0c7.gif)
+- Dynamic placement of the actors on the level:
+> ![GIF10](https://user-images.githubusercontent.com/20540872/63053411-f5aa2b80-bee1-11e9-9328-79cf77609ec7.gif)
+- Free location and rotation of the level map in the editor:
+> ![GIF11](https://user-images.githubusercontent.com/20540872/63057315-3f970f80-beea-11e9-979f-c7874042a382.gif)
+- Smart **AI** surviving through any explosions:
+> ![GIF14](https://user-images.githubusercontent.com/20540872/63062621-e46d1900-bef9-11e9-8e84-dbad3eb14dc6.gif)
 
 ## 🧑‍🤝‍🧑 Credits
 
@@ -300,7 +227,7 @@ _Grey Х: the selected cell on which the bot moves to._
 - **Kateryna Shchetinina** - Characters & Animations - [Artstation](https://www.artstation.com/kateseliv)
 - **Yevhenii Oksenchuk** - Game Design (Audio, UI, and Cinematics) - [Telegram](https://t.me/ComeThird)
 - **Valeriy Rotermel** - [Progression System](https://github.com/h4rdmol/ProgressionSystem) - [GitHub](https://github.com/h4rdmol)
-- **Anton Selivanov** - Foot Trails - [GitHub](https://github.com/antokior)
+- **Anton Selivanov** - Foot Trails | Play Area Surrounder - [GitHub](https://github.com/antokior)
 
 Special thanks to the following companies for providing their licenses to support our open source development:
 

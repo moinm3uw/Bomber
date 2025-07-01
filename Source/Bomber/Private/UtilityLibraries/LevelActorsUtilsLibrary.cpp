@@ -22,12 +22,48 @@ void ULevelActorsUtilsLibrary::GetLevelActors(FMapComponents& OutBitmaskedCompon
 		return;
 	}
 
+	if (!OutBitmaskedComponents.IsEmpty())
+	{
+		OutBitmaskedComponents.Empty();
+	}
+
 	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
 	{
 		if (MapComponentIt
 		    && EnumHasAnyFlags(MapComponentIt->GetActorType(), TO_ENUM(EActorType, ActorsTypesBitmask)))
 		{
 			OutBitmaskedComponents.Add(MapComponentIt);
+		}
+	}
+}
+
+// Returns level actors that are located on the specified cells
+void ULevelActorsUtilsLibrary::GetLevelActorsOnCells(FMapComponents& OutMapComponents, const FCells& InCells)
+{
+	const AGeneratedMap* GeneratedMap = AGeneratedMap::GetGeneratedMap();
+	if (!GeneratedMap)
+	{
+		// Might be null if called before the map is initialized
+		return;
+	}
+
+	if (!GeneratedMap->MapComponentsInternal.Num())
+	{
+		return;
+	}
+
+	if (!OutMapComponents.IsEmpty())
+	{
+		OutMapComponents.Empty();
+	}
+
+	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
+	{
+		const FCell& CellIt = MapComponentIt ? MapComponentIt->GetCell() : FCell::InvalidCell;
+		if (CellIt.IsValid()
+		    && InCells.Contains(CellIt))
+		{
+			OutMapComponents.Add(MapComponentIt);
 		}
 	}
 }
@@ -84,4 +120,19 @@ UMapComponent* ULevelActorsUtilsLibrary::GetLevelActorByIndex(int32 Index, int32
 	}
 
 	return nullptr;
+}
+
+// Takes level actors and returns only matching with specified actor types
+FMapComponents ULevelActorsUtilsLibrary::FilterLevelActors(const FMapComponents& InActors, int32 ActorsTypesBitmask)
+{
+	FMapComponents FilteredActors;
+	for (UMapComponent* It : InActors)
+	{
+		if (It
+		    && EnumHasAnyFlags(It->GetActorType(), TO_ENUM(EActorType, ActorsTypesBitmask)))
+		{
+			FilteredActors.Add(It);
+		}
+	}
+	return FilteredActors;
 }

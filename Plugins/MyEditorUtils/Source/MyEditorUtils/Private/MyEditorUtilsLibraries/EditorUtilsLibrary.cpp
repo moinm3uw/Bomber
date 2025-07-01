@@ -31,52 +31,6 @@ bool FEditorUtilsLibrary::IsPIE()
 	return IsEditor() && GEditor->IsPlaySessionInProgress();
 }
 
-// Returns true if is started multiplayer game (server + client(s)) right in the Editor
-bool FEditorUtilsLibrary::IsEditorMultiplayer()
-{
-	if (IsPIE())
-	{
-		const TOptional<FPlayInEditorSessionInfo>& PIEInfo = GEditor->GetPlayInEditorSessionInfo();
-		return PIEInfo.IsSet() && PIEInfo->PIEInstanceCount > 0;
-	}
-	return false;
-}
-
-// Returns the index of current player during editor multiplayer
-int32 FEditorUtilsLibrary::GetEditorPlayerIndex()
-{
-	if (!IsEditorMultiplayer())
-	{
-		return INDEX_NONE;
-	}
-
-	const UWorld* CurrentEditorWorld = GEditor->GetCurrentPlayWorld();
-	if (!CurrentEditorWorld)
-	{
-		return INDEX_NONE;
-	}
-
-	int32 FoundAtIndex = INDEX_NONE;
-	const TIndirectArray<FWorldContext>& WorldContexts = GEditor->GetWorldContexts();
-	for (const FWorldContext& WorldContextIt : WorldContexts)
-	{
-		if (WorldContextIt.PIEInstance == INDEX_NONE)
-		{
-			continue;
-		}
-
-		++FoundAtIndex;
-
-		const UWorld* WorldIt = WorldContextIt.World();
-		if (WorldIt
-			&& WorldIt == CurrentEditorWorld)
-		{
-			return FoundAtIndex;
-		}
-	}
-	return INDEX_NONE;
-}
-
 // Obtains the current world from the editor
 UWorld* FEditorUtilsLibrary::GetEditorWorld()
 {

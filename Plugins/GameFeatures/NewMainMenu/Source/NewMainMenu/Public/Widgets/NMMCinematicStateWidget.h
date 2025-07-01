@@ -40,10 +40,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
 	TObjectPtr<class URadialSlider> SkipHoldProgress = nullptr;
 
-	/** Displays the 'Skip' text. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
-	TObjectPtr<class UTextBlock> SkipText = nullptr;
-
 	/** Contains current time player holds the skip cinematic button. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "NAME"))
 	float CurrentHoldTimeInternal = 0.f;
@@ -58,7 +54,7 @@ protected:
 
 	/** Called when the Main Menu state was changed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnNewMainMenuStateChanged(ENMMState NewState);
+	void OnNewMainMenuStateChanged(ENMMState NewState, ENMMState PreviousState);
 
 	/** Is called from input while the skip holding button is ongoing. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
@@ -67,10 +63,6 @@ protected:
 	/** Is called from input on skip cinematic button released (cancelled). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnCinematicSkipReleased();
-
-	/** Is called on the beginning of holding the skip button. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnCinematicSkipStarted();
 
 	/** Is called to skip cinematic on finished holding the skip button or clicked on UI. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

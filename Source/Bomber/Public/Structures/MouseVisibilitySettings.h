@@ -17,20 +17,20 @@ struct BOMBER_API FMouseVisibilitySettings
 	/** Default settings */
 	static const FMouseVisibilitySettings Invalid;
 
-	/** Determines the game state to show or hide the mouse. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mouse", meta = (ShowOnlyInnerProperties, EditCondition = "bUseCustomGameState == false"))
-	ECurrentGameState GameState = ECurrentGameState::None;
-
 	/** If true, custom game state will be used instead of default one. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mouse", meta = (ShowOnlyInnerProperties, InlineEditConditionToggle))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mouse", meta = (ShowOnlyInnerProperties))
 	bool bUseCustomGameState = false;
 
+	/** Determines the game state to show or hide the mouse. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mouse", meta = (ShowOnlyInnerProperties, EditCondition = "!bUseCustomGameState", EditConditionHides))
+	ECurrentGameState GameState = ECurrentGameState::None;
+
 	/** Determines the custom game state to show or hide the mouse. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mouse", meta = (ShowOnlyInnerProperties, EditCondition = "bUseCustomGameState == true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mouse", meta = (ShowOnlyInnerProperties, EditCondition = "bUseCustomGameState", EditConditionHides))
 	FName CustomGameState = NAME_None;
 
 	/** Determines visibility by default. If set, mouse will be shown, otherwise hidden. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mouse", meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mouse", meta = (ShowOnlyInnerProperties))
 	bool bIsVisible = false;
 
 	/** Set true to hide the mouse if inactive for a while.

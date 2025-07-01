@@ -203,14 +203,7 @@ void UNMMSpotsSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 }
@@ -228,7 +221,7 @@ void UNMMSpotsSubsystem::Deinitialize()
  ********************************************************************************************* */
 
 // Called when the Main Menu state was changed
-void UNMMSpotsSubsystem::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMSpotsSubsystem::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	if (NewState == ENMMState::None)
 	{

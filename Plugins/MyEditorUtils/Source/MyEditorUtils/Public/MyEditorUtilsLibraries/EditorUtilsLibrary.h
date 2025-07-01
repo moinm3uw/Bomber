@@ -20,15 +20,6 @@ public:
 	/** Returns true if game is started in the Editor. */
 	static bool IsPIE();
 
-	/** Returns true if is started multiplayer game (server + client(s)) right in the Editor. */
-	static bool IsEditorMultiplayer();
-
-	/** Returns the index of current player during editor multiplayer.
-	 * 0 is server.
-	 * 1 (or higher) is client.
-	 * -1 in the standalone game. */
-	static int32 GetEditorPlayerIndex();
-
 	/** Obtains the current world from the editor. */
 	static UWorld* GetEditorWorld();
 

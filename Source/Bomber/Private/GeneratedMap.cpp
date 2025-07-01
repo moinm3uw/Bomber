@@ -12,8 +12,6 @@
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-#include "UtilityLibraries/LevelActorsUtilsLibrary.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "Components/GameFrameworkComponentManager.h"
 #include "Engine/World.h"
@@ -22,9 +20,6 @@
 #if WITH_EDITOR
 #include "MyUnrealEdEngine.h"
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
-//---
-#include "EditorLevelUtils.h"
-#include "EditorUtilityLibrary.h"
 #endif
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMap)
@@ -47,7 +42,8 @@ AGeneratedMap::AGeneratedMap()
 
 	// Replicate an actor
 	bReplicates = true;
-	NetUpdateFrequency = 10.f;
+	static constexpr float NewNewUpdateFrequency = 10.f;
+	SetNetUpdateFrequency(NewNewUpdateFrequency);
 	bAlwaysRelevant = true;
 
 #if WITH_EDITOR	 //[Editor]
@@ -59,6 +55,7 @@ AGeneratedMap::AGeneratedMap()
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
 	static const FVector DefaultRelativeScale(9.F, 9.F, 1.F);
 	RootComponent->SetRelativeScale3D_Direct(DefaultRelativeScale);
+	RootComponent->SetIsReplicated(true); // Enable to replicate own transform and attached level actors
 
 	// Find blueprint class of the background
 	CollisionComponentInternal = CreateDefaultSubobject<UChildActorComponent>(TEXT("Collision Component"));
@@ -85,203 +82,33 @@ AGeneratedMap* AGeneratedMap::GetGeneratedMap(const UObject* OptionalWorldContex
 	return Subsystem ? Subsystem->GetGeneratedMap(bWarnIfNull) : nullptr;
 }
 
-// Sets the size for generated map, it will automatically regenerate the level for given size
+// Returns the settings used for generating the map
+const FGeneratedMapSettings& AGeneratedMap::GetGenerationSetting() const
+{
+	if (bOverrideGenerationSettingsInternal)
+	{
+		return OverriddenGenerationSettingsInternal;
+	}
+
+	if (const UGeneratedMapDataAsset* GeneratedMapDataAsset = UDataAssetsContainer::GetGeneratedMapDataAsset())
+	{
+		return GeneratedMapDataAsset->GetGenerationSettings();
+	}
+
+	static constexpr FGeneratedMapSettings DefaultSettings{};
+	return DefaultSettings;
+}
+
+// Allows to change the size for generated map in runtime, it will automatically regenerate the level
 void AGeneratedMap::SetLevelSize(const FIntPoint& LevelSize)
 {
 	if (!HasAuthority()
-	    || !ensureMsgf(LevelSize.GetMin() > 0, TEXT("%s: 'LevelSize' is invalid: %s"), *FString(__FUNCTION__), *LevelSize.ToString()))
+	    || !ensureMsgf(LevelSize.GetMin() > 0, TEXT("%hs: 'LevelSize' is invalid: %s"), __FUNCTION__, *LevelSize.ToString()))
 	{
 		return;
 	}
 
-	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
-	if (MyGameState && MyGameState->GetCurrentGameState() == ECGS::InGame)
-	{
-		MyGameState->SetGameState(ECurrentGameState::GameStarting);
-	}
-
-	MulticastSetLevelSize(LevelSize);
-}
-
-// Getting an array of cells by four sides of an input center cell and type of breaks
-void AGeneratedMap::GetSidesCells(
-	FCells& OutCells,
-	const FCell& Cell,
-	EPathType Pathfinder,
-	int32 SideLength,
-	int32 DirectionsBitmask,
-	bool bBreakInputCells) const
-{
-	const int32 MaxWidth = UCellsUtilsLibrary::GetCellColumnsNumOnLevel();
-	if (!ensureMsgf(MaxWidth, TEXT("ASSERT: Level has zero width (Scale.X)"))
-	    || !ensureMsgf(DirectionsBitmask, TEXT("ASSERT: 'DirectionsBitmask' is not set"))
-	    || !ensureMsgf(SideLength > 0, TEXT("ASSERT: 'SideLength' is less than 1"))
-	    || !ensureMsgf(Cell.IsValid(), TEXT("ASSERT: 'Cell' is invalid")))
-	{
-		return;
-	}
-
-	const bool bIsAnyPath = Pathfinder == EPathType::Any;
-
-	// ----- Walls definition -----
-	FCells Walls;
-	bool bBreakOnWalls = !bIsAnyPath && !OutCells.Num();
-	if (bBreakOnWalls)
-	{
-		Walls = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Wall));
-	}
-	else if (bBreakInputCells) // specified OutCells is not empty, these cells break lines as the Wall behavior
-	{
-		bBreakOnWalls = true;
-		Walls = OutCells; // these cells break lines as the Wall behavior, don't empty specified array
-	}
-	else // !bBreakOnWalls && !bBreakInputCells
-	{
-		OutCells.Empty(); // should empty array in order to return only sides cells
-	}
-
-	// the index of the specified cell
-	const int32 C0 = GridCellsInternal.IndexOfByPredicate([&Cell](const FCell& InCell) { return InCell == Cell; });
-	if (C0 == INDEX_NONE) // if index was found and cell is contained in the array
-	{
-		return;
-	}
-
-	// ----- A path without obstacles -----
-	FCells Obstacles;
-	const bool bBreakOnObstacles = !bIsAnyPath && Pathfinder != EPathType::Explosion;
-	if (bBreakOnObstacles) // if is the request to find the path without Bombs/Boxes
-	{
-		Obstacles = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Bomb | EAT::Box));
-	}
-
-	// ----- Secure: a path without players -----
-	FCells PlayersCells;
-	const bool bBreakOnPlayers = Pathfinder == EPathType::Secure;
-	if (bBreakOnPlayers) // if is the request to find the path without players cells.
-	{
-		PlayersCells = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Player));
-	}
-
-	// ----- A path without explosions -----
-	FCells DangerousCells = AdditionalDangerousCells;
-	const bool bBreakOnExplosions = Pathfinder == EPathType::Safe || Pathfinder == EPathType::Secure;
-	if (bBreakOnExplosions) // if is the request to find the path without explosions.
-	{
-		DangerousCells.Append(UCellsUtilsLibrary::GetAllExplosionCells());
-	}
-
-	// ----- The specified cell adding -----
-	if (bBreakOnExplosions == false        // can be danger
-	    || !DangerousCells.Contains(Cell)) // is not dangerous cell
-	{
-		OutCells.Emplace(Cell);
-	}
-
-	// ----- Cells finding -----
-	for (int8 bIsY = 0; bIsY <= 1; ++bIsY) // 0(X-raw direction) and 1(Y-column direction)
-	{
-		const int32 PositionC0 = bIsY ? /*Y-column*/ C0 % MaxWidth : C0 / MaxWidth /*raw*/;
-		for (int8 SideMultiplier = -1; SideMultiplier <= 1; SideMultiplier += 2) // -1(Left|Down) and 1(Right|Up)
-		{
-			const FVector& VectorDirection = bIsY ? FVector::BackwardVector : FVector::RightVector;
-			const FCell CellDirection = VectorDirection * FVector(SideMultiplier);
-			const ECellDirection EnumDirection = FCell::GetCellDirection(CellDirection);
-			if (!EnumHasAnyFlags(EnumDirection, TO_ENUM(ECellDirection, DirectionsBitmask)))
-			{
-				continue;
-			}
-
-			for (int8 i = 1; i <= SideLength; ++i)
-			{
-				int32 Distance = i * SideMultiplier;
-				if (bIsY)
-				{
-					Distance *= MaxWidth;
-				}
-				const int32 FoundIndex = C0 + Distance;
-				if (PositionC0 != (bIsY ? FoundIndex % MaxWidth : FoundIndex / MaxWidth) // PositionC0 != PositionX
-				    || !GridCellsInternal.IsValidIndex(FoundIndex))                      // is not in range
-				{
-					break; // to the next side
-				}
-
-				const FCell FoundCell = GridCellsInternal[FoundIndex];
-
-				if (bBreakOnWalls
-				    && Walls.Contains(FoundCell))
-				{
-					// cell contains a wall
-					break;
-				}
-
-				if (bBreakOnObstacles
-				    && Obstacles.Contains(FoundCell))
-				{
-					// cell contains an obstacle (Bombs/Boxes)
-					break;
-				}
-
-				if (bBreakOnPlayers
-				    && PlayersCells.Contains(FoundCell))
-				{
-					// cell contains a player
-					break;
-				}
-
-				if (bBreakOnExplosions
-				    && DangerousCells.Contains(FoundCell))
-				{
-					// cell contains an explosion
-					break;
-				}
-
-				OutCells.Emplace(FoundCell);
-			} // Cells iterating
-		}     // Each side iterating: -1(Left|Down) and 1(Right|Up)
-	}         // Each direction iterating: 0(X-raw) and 1(Y-column)
-}
-
-// Returns true if any player is able to reach all specified cells by any any path
-bool AGeneratedMap::DoesPathExistToCells(const FCells& CellsToFind, const FCells& OptionalPathBreakers/* = FCell::EmptyCells*/) const
-{
-	FCells InOutSideCells = OptionalPathBreakers;
-	if (OptionalPathBreakers.IsEmpty())
-	{
-		// Include walls to prevent finding way through their cells
-		InOutSideCells = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Wall));
-	}
-
-	// Contains all cells need to find their side cells
-	check(GridCellsInternal.IsValidIndex(0));
-	FCells CellsToIterate{GridCellsInternal[0]};
-
-	FCells FoundCells = FCell::EmptyCells;
-	while (CellsToIterate.Num())
-	{
-		// Cache all previous side cells
-		const FCells PrevSideCells = InOutSideCells;
-
-		for (const FCell& CellIt : CellsToIterate)
-		{
-			constexpr int32 MaxInteger = TNumericLimits<int32>::Max();
-			constexpr bool bBreakInputCells = true;
-			// InOutAllFoundCells include as wall cells as well all previous iterated cells
-			GetSidesCells(/*InOut*/InOutSideCells, CellIt, EPathType::Explosion, MaxInteger, TO_FLAG(ECellDirection::All), bBreakInputCells);
-		}
-
-		// Extract newly found cells
-		CellsToIterate = InOutSideCells.Difference(PrevSideCells);
-
-		const FCells NotFoundCells = CellsToFind.Difference(FoundCells);
-		FoundCells = CellsToIterate.Intersect(NotFoundCells).Union(FoundCells);
-		if (FoundCells.Includes(CellsToFind))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	SetActorScale3D(FVector(LevelSize.X, LevelSize.Y, 1.f));
 }
 
 /*********************************************************************************************
@@ -289,7 +116,7 @@ bool AGeneratedMap::DoesPathExistToCells(const FCells& CellsToFind, const FCells
  ********************************************************************************************* */
 
 // Spawns level actor on the Generated Map by the specified type
-void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const TFunction<void(AActor*)>& OnSpawned/* = nullptr*/)
+void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const TFunction<void(UMapComponent&)>& OnSpawned/* = nullptr*/)
 {
 	if (!HasAuthority()
 	    || UCellsUtilsLibrary::IsCellHasAnyMatchingActor(Cell, TO_FLAG(~EAT::Player)) // the free cell was not found
@@ -298,12 +125,13 @@ void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const T
 		return;
 	}
 
+	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::SpawnActorByType);
+
 	// --- Prepare spawn request
-	const TWeakObjectPtr<ThisClass> WeakThis(this);
-	const FOnSpawnCallback OnCompleted = [WeakThis, OnSpawned](const FPoolObjectData& CreatedObject)
+	const FOnSpawnCallback OnCompleted = [WeakThis = TWeakObjectPtr(this), OnSpawned](const FPoolObjectData& CreatedObject)
 	{
-		AGeneratedMap* GeneratedMap = WeakThis.Get();
-		if (!GeneratedMap)
+		AGeneratedMap* This = WeakThis.Get();
+		if (!This)
 		{
 			return;
 		}
@@ -311,11 +139,16 @@ void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const T
 		// Setup spawned actor
 		AActor& SpawnedActor = CreatedObject.GetChecked<AActor>();
 		SpawnedActor.SetFlags(RF_Transient); // Do not save generated actors into the map
-		SpawnedActor.SetOwner(GeneratedMap);
+		SpawnedActor.SetOwner(This);
+
+		UMapComponent* MapComponent = UMapComponent::GetMapComponent(&SpawnedActor);
+		checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+
+		This->AddToGrid(MapComponent);
 
 		if (OnSpawned != nullptr)
 		{
-			OnSpawned(&SpawnedActor);
+			OnSpawned(*MapComponent);
 		}
 	};
 
@@ -328,8 +161,8 @@ void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const T
 	MapComponentsInternal.FindOrAdd(Handle);
 }
 
-// Spawns many level actors at once, used for level generation
-void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSpawn)
+// Spawns multiple level actors at once, mostly used for level generation
+void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSpawn, const TFunction<void(const TArray<UMapComponent*>&)>& OnSpawned/* = nullptr*/)
 {
 	if (!HasAuthority())
 	{
@@ -354,8 +187,7 @@ void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSp
 	}
 
 	// --- Prepare On Spawn All callback
-	TWeakObjectPtr<ThisClass> WeakThis(this);
-	const FOnSpawnAllCallback OnCompleted = [WeakThis](const TArray<FPoolObjectData>& CreatedObjects)
+	const FOnSpawnAllCallback OnCompleted = [WeakThis = TWeakObjectPtr(this), OnSpawned](const TArray<FPoolObjectData>& CreatedObjects)
 	{
 		AGeneratedMap* This = WeakThis.Get();
 		if (!This)
@@ -364,16 +196,24 @@ void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSp
 		}
 
 		// Setup spawned actors
+		TArray<UMapComponent*> MapComponents;
 		for (const FPoolObjectData& CreatedObject : CreatedObjects)
 		{
 			AActor& SpawnedActor = CreatedObject.GetChecked<AActor>();
 			SpawnedActor.SetFlags(RF_Transient); // Do not save generated actors into the map
 			SpawnedActor.SetOwner(This);
+
+			UMapComponent* MapComponent = UMapComponent::GetMapComponent(&SpawnedActor);
+			checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+			MapComponents.AddUnique(MapComponent);
+
+			This->AddToGrid(MapComponent);
 		}
 
-		This->MapComponentsInternal.MarkArrayDirty();
-
-		This->OnGeneratedLevelActors.Broadcast();
+		if (OnSpawned != nullptr)
+		{
+			OnSpawned(MapComponents);
+		}
 	};
 
 	// --- Spawn all actors
@@ -407,26 +247,48 @@ void AGeneratedMap::SpawnActorsByPattern(EActorType ActorsType, const TArray<FIn
 	SpawnActorsByTypes(CellsToSpawn);
 }
 
+// Spawns level actors with the specified mesh data on the Generated Map
+void AGeneratedMap::SpawnActorWithMesh(EActorType ActorType, const FCell& Cell, const FBmrMeshData& MeshData)
+{
+	if (ensureMsgf(MeshData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'MeshData' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		const auto& OnSpawned = [MeshData](UMapComponent& MapComponent) { MapComponent.SetReplicatedMeshData(MeshData); };
+		SpawnActorByType(ActorType, Cell, OnSpawned);
+	}
+}
+
 // Adding and attaching the specified Map Component to the Level
 void AGeneratedMap::AddToGrid(UMapComponent* AddedComponent)
 {
 	AActor* ComponentOwner = AddedComponent ? AddedComponent->GetOwner() : nullptr;
 	if (!HasAuthority()
-	    || !ComponentOwner
-	    || !ComponentOwner->HasAuthority())
+	    || IS_TRANSIENT(ComponentOwner))
 	{
 		return;
 	}
 
-	const FPoolObjectHandle& Handle = UPoolManagerSubsystem::Get().FindPoolHandleByObject(ComponentOwner);
-	if (!ensureMsgf(Handle.IsValid(), TEXT("ASSERT: [%i] %s:\n'Handle' is not valid, this object has to be known by Pool Manager!"), __LINE__, *FString(__FUNCTION__)))
+	if (MapComponentsInternal.Contains(AddedComponent))
 	{
 		return;
 	}
+
+	// First, add it to the Pool Manager if level actor was spawned manually
+	UPoolManagerSubsystem& PoolManager = UPoolManagerSubsystem::Get();
+	const FPoolObjectHandle& Handle = PoolManager.FindPoolHandleByObject(ComponentOwner);
+	if (!Handle.IsValid())
+	{
+		FPoolObjectData ObjectData(Owner);
+		ObjectData.bIsActive = true;
+		PoolManager.RegisterObjectInPool(ObjectData);
+	}
+
+	// Snap to the nearest cell
+	SetNearestCell(AddedComponent);
 
 	const FCell& Cell = AddedComponent->GetCell();
 	if (!ensureMsgf(Cell.IsValid(), TEXT("ASSERT: 'Cell' is zero")))
 	{
+		// Actor is already added on the level
 		return;
 	}
 
@@ -462,71 +324,48 @@ void AGeneratedMap::AddToGrid(UMapComponent* AddedComponent)
 
 	// Locate actor on cell
 	ComponentOwner->SetActorTransform(FTransform(ActorRotation, ActorLocation, FVector::OneVector));
+
+	// Notify listeners
+	AddedComponent->OnAdded();
 }
 
-// The intersection of (OutCells ∩ ActorsTypesBitmask).
-void AGeneratedMap::IntersectCellsByTypes(
-	FCells& InOutCells,
-	int32 ActorsTypesBitmask,
-	bool bIntersectAllIfEmpty) const
+// Client-only method to resolve a newly spawned Map Component
+void AGeneratedMap::ResolveSpawnedMapComponent(UMapComponent& AddedComponent)
 {
-	if (!GridCellsInternal.Num())
+	if (HasAuthority())
 	{
-		// nothing to intersect
+		// Is not a client
 		return;
 	}
 
-	if (!bIntersectAllIfEmpty && !InOutCells.Num())
+	const FCell Cell = UCellsUtilsLibrary::SnapActorOnLevel(AddedComponent.GetOwner());
+	FMapComponentSpec* FoundSpec = MapComponentsInternal.Find(Cell);
+	if (!FoundSpec)
 	{
-		// should not intersect with all existed cells but the specified array is empty
+		// Not found, nothing to resolve
 		return;
 	}
 
-	if (!ActorsTypesBitmask)
+	const bool bNeedsResolve = !FoundSpec->MapComponent;
+	if (bNeedsResolve)
 	{
-		// Find all empty grid cell locations where non of actors are present
-		const FCells AllEmptyCells = FCells(
-			GridCellsInternal.FilterByPredicate([&MapComponents = MapComponentsInternal](const FCell& CellIt)
-			{
-				return !MapComponents.Contains(CellIt);
-			}));
-
-		if (InOutCells.Num())
-		{
-			InOutCells = InOutCells.Intersect(AllEmptyCells);
-		}
-		else
-		{
-			InOutCells = AllEmptyCells;
-		}
-
-		return;
+		// The reference was replicated before the component was spawned
+		// Validate the reference to fixup broken reference
+		// It intentionally affects only this client, but not server and other players
+		FoundSpec->MapComponent = AddedComponent;
+		FoundSpec->PostReplicatedAdd(MapComponentsInternal);
 	}
+}
 
-	FMapComponents BitmaskedComponents;
-	ULevelActorsUtilsLibrary::GetLevelActors(BitmaskedComponents, ActorsTypesBitmask);
-	if (!BitmaskedComponents.Num())
-	{
-		InOutCells.Empty(); // nothing found, returns empty OutCells array
-		return;
-	}
+// Internal method called on both server and client to increment the replication token whenever any level actor is spawned
+void AGeneratedMap::IncrementReplicationToken()
+{
+	++MapComponentsInternal.LocalReplicationToken;
 
-	FCells BitmaskedCells;
-	for (const UMapComponent* MapCompIt : BitmaskedComponents)
+	if (MapComponentsInternal.LocalReplicationToken == GenerateLevelActorsTokenInternal)
 	{
-		if (MapCompIt)
-		{
-			BitmaskedCells.Emplace(MapCompIt->GetCell());
-		}
-	}
-
-	if (InOutCells.Num())
-	{
-		InOutCells = InOutCells.Intersect(BitmaskedCells);
-	}
-	else
-	{
-		InOutCells = BitmaskedCells;
+		// All level actors completed spawn (on server) or all replicated (on client)
+		OnGeneratedLevelActors.Broadcast();
 	}
 }
 
@@ -555,7 +394,7 @@ void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* Dest
 		UMapComponent* MapComponentIt = MapComponentsInternal[Index];
 		const AActor* OwnerIt = MapComponentIt ? MapComponentIt->GetOwner() : nullptr;
 		const bool bCellIsOnGrid = MapComponentIt && Cells.Contains(MapComponentIt->GetCell());
-		if (!OwnerIt                                                        // if is null, destroy that object from the array
+		if (!OwnerIt // if is null, destroy that object from the array
 		    || bCellIsOnGrid)
 		{
 			// Remove from the array
@@ -565,7 +404,6 @@ void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* Dest
 		}
 	}
 	MapComponentsInternal.Items.Shrink();
-	MapComponentsInternal.MarkArrayDirty();
 
 	if (OnPostDestroyedLevelActors.IsBound())
 	{
@@ -582,24 +420,25 @@ void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* Dest
 		return;
 	}
 
+	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::DestroyLevelActor);
+
 	AActor* ComponentOwner = MapComponent ? MapComponent->GetOwner() : nullptr;
-
-	// Remove from the array (MapComponent can be invalid)
-	MapComponentsInternal.Remove(MapComponent);
-
 	if (!ComponentOwner)
 	{
 		return;
 	}
 
-	if (AMyGameStateBase::GetCurrentGameState() == ECurrentGameState::InGame
-	    && MapComponent->IsUndestroyable())
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame
+	    && !ComponentOwner->CanBeDamaged())
 	{
-		// Do not destroy actor during the game session if required
+		// Do not destroy in-game actor during the play session if required
 		return;
 	}
 
-	MapComponent->OnDeactivated(DestroyCauser);
+	MapComponentsInternal.Remove(MapComponent);
+
+	// Notify listeners right before destroying and reset the actor
+	MapComponent->OnPreRemoved(DestroyCauser);
 
 	// Deactivate the iterated owner
 	UPoolManagerSubsystem* PoolManager = UPoolManagerSubsystem::GetPoolManager(this);
@@ -615,6 +454,9 @@ void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* Dest
 	}
 
 	DestroyLevelActorDragged(MapComponent);
+
+	// Notify listeners after destroying being performed
+	MapComponent->OnPostRemoved(DestroyCauser);
 }
 
 // Destroys level actor by specified handle
@@ -657,32 +499,47 @@ void AGeneratedMap::DestroyLevelActorsByType(EActorType ActorsType, UObject* Des
 	DestroyLevelActorsOnCells(ExistingActorCells);
 }
 
-// Finds the nearest cell pointer to the specified Map Component
-void AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
+// Applies the snapped cell to the specified Map Component
+bool AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
 {
-	const AActor* ComponentOwner = MapComponent ? MapComponent->GetOwner() : nullptr;
+	AActor* LevelActor = MapComponent ? MapComponent->GetOwner() : nullptr;
 	if (!HasAuthority()
-	    || !ComponentOwner
-	    || !ComponentOwner->HasAuthority())
+	    || !LevelActor)
 	{
-		return;
+		return false;
 	}
 
-	const FCell CurrentCellByLocation = ComponentOwner->GetActorLocation();
-
-	const FCell LastCell = MapComponent->GetCell();
+	// Snap the actor to the current cell (even if the cell is occupied by others)
+	const FCell& LastCell = MapComponent->GetCell();
+	FCell FoundFreeCell = UCellsUtilsLibrary::SnapActorOnLevel(LevelActor);
 	if (LastCell.IsValid()
-	    && UCellsUtilsLibrary::SnapCellOnLevel(CurrentCellByLocation) == LastCell)
+	    && FoundFreeCell == LastCell)
 	{
 		// The actor is already aligned on the level
-		return;
+		return false;
 	}
 
-	const FCell FoundFreeCell = UCellsUtilsLibrary::GetNearestFreeCell(CurrentCellByLocation);
+#if WITH_EDITOR //[IsEditorNotPieWorld]
+	if (UUtilsLibrary::IsEditorNotPieWorld())
+	{
+		// In editor world, always move to the free cell without any actors, so dragged actor will never overlap
+		FoundFreeCell = UCellsUtilsLibrary::GetNearestFreeCell(LevelActor->GetActorLocation());
 
-	SetNearestCellDragged(MapComponent, FoundFreeCell);
+		SetNearestCellDragged(MapComponent, FoundFreeCell);
+	}
+#endif //WITH_EDITOR [IsEditorNotPieWorld]
 
 	MapComponent->SetCell(FoundFreeCell);
+
+	// If Map Component is added to the level (spec exists), then update its cell for the replication purpose
+	// It might be not added to the level yet by design, so it will be added and updated later
+	if (FMapComponentSpec* Spec = MapComponentsInternal.Find(MapComponent))
+	{
+		Spec->Cell = FoundFreeCell;
+		MapComponentsInternal.MarkItemDirty(*Spec);
+	}
+
+	return true;
 }
 
 // Returns true if specified map component has non-generated owner that is manually dragged to the scene
@@ -712,7 +569,7 @@ FTransform AGeneratedMap::ActorTransformToGridTransform(const FTransform& ActorT
 
 	// Align location snapping to the grid size
 	FVector NewLocation = FVector::ZeroVector;
-	if (!UGeneratedMapDataAsset::Get().IsLockedOnZero())
+	if (!Get().GetGenerationSetting().LockOnZero)
 	{
 		NewLocation = FCell::SnapCell(ActorTransform.GetLocation());
 	}
@@ -738,12 +595,6 @@ FTransform AGeneratedMap::ActorTransformToGridTransform(const FTransform& ActorT
 	return MoveTemp(NewTransform);
 }
 
-// Set for which level actors should show debug renders, is not available in shipping build
-void AGeneratedMap::SetDisplayCellsActorTypes(int32 NewValue)
-{
-	DisplayCellsActorTypesInternal = NewValue;
-}
-
 /* ---------------------------------------------------
  *		Generated Map protected functions
  * --------------------------------------------------- */
@@ -753,13 +604,18 @@ void AGeneratedMap::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	OnConstructionGeneratedMap(Transform);
+	if (UUtilsLibrary::IsEditorNotPieWorld())
+	{
+		// In editor, construct this actor for preview
+		OnConstructionGeneratedMap(Transform);
+	}
 }
 
 // Initialize this Generated Map actor, could be called multiple times
-void AGeneratedMap::OnConstructionGeneratedMap(const FTransform& Transform)
+void AGeneratedMap::OnConstructionGeneratedMap_Implementation(const FTransform& Transform)
 {
-	if (IS_TRANSIENT(this)) // the Generated Map is transient
+	if (IS_TRANSIENT(this)
+	    || !ensureMsgf(!Transform.GetScale3D().IsZero(), TEXT("ASSERT: [%i] %hs:\n'Transform' has zero scale!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
@@ -784,21 +640,7 @@ void AGeneratedMap::OnConstructionGeneratedMap(const FTransform& Transform)
 	}
 
 	// Align transform and build cells
-	TransformGeneratedMap(Transform);
-
-#if WITH_EDITOR // [Editor-Standalone]
-	if (UUtilsLibrary::HasWorldBegunPlay())
-	{
-		// Level actors are spawned differently on client for unsaved level if run without RunInderOneProcess or Standalone
-		// so destroy from pool all unsaved level actors to avoid it being unsynced on clients
-		auto IsDirtyPredicate = [](const UObject* PoolObject) -> bool
-		{
-			return PoolObject && !PoolObject->HasAllFlags(RF_WasLoaded | RF_LoadCompleted);
-		};
-
-		UPoolManagerSubsystem::Get().EmptyAllByPredicate(IsDirtyPredicate);
-	}
-#endif // WITH_EDITOR // [Editor-Standalone]
+	BuildGridCells(Transform);
 
 	// Actors generation
 	GenerateLevelActors();
@@ -833,10 +675,17 @@ void AGeneratedMap::PostInitializeComponents()
 
 	OnConstructionGeneratedMap(GetActorTransform());
 
-	if (HasAuthority())
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
+
+	// During the game, OnConstruction is not called when location, rotation or scale is changed, so bind to listen transform updates
+	checkf(RootComponent, TEXT("ERROR: [%i] %hs:\n'RootComponent' is null!"), __LINE__, __FUNCTION__);
+	RootComponent->TransformUpdated.AddLambda([WeakThis = TWeakObjectPtr(this)](USceneComponent*, EUpdateTransformFlags, ETeleportType)
 	{
-		BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-	}
+		if (AGeneratedMap* This = WeakThis.Get())
+		{
+			This->OnConstructionGeneratedMap(This->GetActorTransform());
+		}
+	});
 }
 
 // Called when is explicitly being destroyed to destroy level actors, not called during level streaming or gameplay ending
@@ -864,6 +713,11 @@ void AGeneratedMap::Destroyed()
 #endif //WITH_EDITOR [IsEditorNotPieWorld]
 	}
 
+	if (RootComponent)
+	{
+		RootComponent->TransformUpdated.RemoveAll(this);
+	}
+
 	Super::Destroyed();
 }
 
@@ -872,19 +726,23 @@ void AGeneratedMap::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, GridCellsInternal);
-	DOREPLIFETIME(ThisClass, MapComponentsInternal);
-	DOREPLIFETIME(ThisClass, bIsGameRunningInternal);
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MapComponentsInternal, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, GenerateLevelActorsTokenInternal, Params);
 }
 
 // Spawns and fills the Grid Array values by level actors
 void AGeneratedMap::GenerateLevelActors()
 {
-	if (!ensureMsgf(!GridCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\nThere are no cells on the Generated Map!"), __LINE__, __FUNCTION__)
+	if (!ensureMsgf(!LocalGridCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\nThere are no cells on the Generated Map!"), __LINE__, __FUNCTION__)
 	    || !HasAuthority())
 	{
 		return;
 	}
+
+	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::GenerateLevelActors);
 
 	// Destroy all actors first
 	// Iterate it by handles to cancel spawning even if the actor is not spawned yet
@@ -895,8 +753,12 @@ void AGeneratedMap::GenerateLevelActors()
 	}
 	checkf(MapComponentsToDestroy.IsEmpty(), TEXT("ERROR: [%i] %s:\n'MapComponentsToDestroy' is not empty after removing all!"), __LINE__, *FString(__FUNCTION__));
 
+	AdditionalDangerousCells.Reset();
+
 	// Calls before generation preview actors to updating of all dragged to the Generated Map actors
-	FCells DraggedCells, DraggedWalls, DraggedItems;
+	FCells DraggedCells = FCell::EmptyCells;
+	FCells DraggedWalls = FCell::EmptyCells;
+	FCells DraggedItems = FCell::EmptyCells;
 	for (const TTuple<FCell, EActorType>& It : DraggedCellsInternal)
 	{
 		const FCell& Cell = It.Key;
@@ -926,9 +788,9 @@ void AGeneratedMap::GenerateLevelActors()
 	* Part 2: Spawning these actors
 	*/
 
-	const UGeneratedMapDataAsset& LevelsDataAsset = UGeneratedMapDataAsset::Get();
-	float WallsChance = LevelsDataAsset.GetWallsChance(); // Copy to decrease chance after each failed generation
-	int32 BoxesChance = LevelsDataAsset.GetBoxesChance();
+	const FGeneratedMapSettings& GenerationSettings = GetGenerationSetting();
+	float WallsChance = GenerationSettings.WallsChance; // Copy to decrease chance after each failed generation
+	int32 BoxesChance = GenerationSettings.BoxesChance;
 	TMap<FCell, EActorType> ActorsToSpawn;
 	int32 Counter = 0;
 	bool bFoundPath = false;
@@ -954,7 +816,7 @@ void AGeneratedMap::GenerateLevelActors()
 				const bool bIsSafeA = X == 0 && Y == 1;
 				const bool bIsSafeB = X == 1 && Y == 0;
 				const bool IsSafeZone = bIsSafeA || bIsSafeB;
-				FCell CellIt = GridCellsInternal[MapScale.X * Y + X];
+				FCell CellIt = LocalGridCellsInternal[MapScale.X * Y + X];
 
 				// --- Part 0: Actors random filling to the ArrayToGenerate._ ---
 
@@ -1009,7 +871,7 @@ void AGeneratedMap::GenerateLevelActors()
 								break;
 						}
 
-						CellIt = GridCellsInternal[MapScale.X * Yi + Xi];
+						CellIt = LocalGridCellsInternal[MapScale.X * Yi + Xi];
 					}
 
 					if (!LDraggedCells.Contains(CellIt)) // the cell is free
@@ -1031,8 +893,13 @@ void AGeneratedMap::GenerateLevelActors()
 
 		// --- Part 1 : Checking if there is a path to the bottom and side edges. If not, go to the 0 step._ ---
 
-		const FCells PathBreakers = WallsToSpawn.Union(DraggedWalls);
-		bFoundPath = DoesPathExistToCells(LCellsToFind, PathBreakers);
+		FCells PathBreakers = WallsToSpawn.Union(DraggedWalls);
+		if (PathBreakers.IsEmpty())
+		{
+			// Include walls to prevent finding way through their cells
+			PathBreakers = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Wall));
+		}
+		bFoundPath = UCellsUtilsLibrary::DoesPathExistToCellsOnLevel(LCellsToFind, PathBreakers);
 
 		// Go to the step 0 if don't found
 		if (!bFoundPath)
@@ -1048,7 +915,21 @@ void AGeneratedMap::GenerateLevelActors()
 
 	// --- Part 2: Spawning ---
 
-	SpawnActorsByTypes(ActorsToSpawn);
+	const TFunction<void(const TArray<UMapComponent*>&)> OnSpawned = [WeakThis = TWeakObjectPtr(this)](const TArray<UMapComponent*>& MapComponents)
+	{
+		AGeneratedMap* This = WeakThis.Get();
+		if (!This)
+		{
+			return;
+		}
+
+		// Replicate the token to clients, so they can track when all actors completed generation
+		This->GenerateLevelActorsTokenInternal = This->MapComponentsInternal.LocalReplicationToken;
+		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, GenerateLevelActorsTokenInternal, This);
+		This->OnGeneratedLevelActors.Broadcast();
+	};
+
+	SpawnActorsByTypes(ActorsToSpawn, OnSpawned);
 }
 
 // Listen game states to generate level actors
@@ -1059,26 +940,28 @@ void AGeneratedMap::OnGameStateChanged(ECurrentGameState CurrentGameState)
 		return;
 	}
 
+	const ECurrentGameState PreviousGameState = AMyGameStateBase::GetPreviousGameState();
 	switch (CurrentGameState)
 	{
-		case ECurrentGameState::Menu:
+		case ECGS::Menu: // Fallthrough
+		case ECGS::GameStarting:
 		{
-			// on returning to menu case
-			GenerateLevelActors();
-			bIsGameRunningInternal = false;
-			break;
-		}
-
-		case ECurrentGameState::GameStarting:
-		{
-			if (bIsGameRunningInternal)
+			if (PreviousGameState == ECGS::None)
 			{
-				// on reset pressed case
-				GenerateLevelActors();
+				// Game is starting for the first time, do nothing, the level is expected to be generated in the OnConstruction
+				break;
 			}
 
-			bIsGameRunningInternal = true;
-			AdditionalDangerousCells.Reset();
+			// Regenerate level actors when:
+			// 1. Returning to the menu (ensures the world resets properly)
+			// 2. Restarting the game (ensures a fresh state between matches)
+			const bool bNowInMenu = CurrentGameState == ECGS::Menu;
+			const bool bRestartedMatch = PreviousGameState != ECGS::Menu;
+			if (bNowInMenu
+			    || bRestartedMatch)
+			{
+				GenerateLevelActors();
+			}
 			break;
 		}
 
@@ -1088,16 +971,25 @@ void AGeneratedMap::OnGameStateChanged(ECurrentGameState CurrentGameState)
 }
 
 // Align transform and build cells
-void AGeneratedMap::TransformGeneratedMap(const FTransform& Transform)
+void AGeneratedMap::BuildGridCells(const FTransform& Transform)
 {
 	const FTransform NewGridTransform = ActorTransformToGridTransform(Transform);
+	if (UCellsUtilsLibrary::GetLevelGridTransform().Equals(NewGridTransform))
+	{
+		// Do not rebuild if the transform is the same
+		return;
+	}
+
 	const FCells NewGridCells = FCell::MakeCellGridByTransform(NewGridTransform);
 
-	ScaleDraggedCellsOnGrid(FCells{GridCellsInternal}, NewGridCells);
+	ScaleDraggedCellsOnGrid(FCells{LocalGridCellsInternal}, NewGridCells);
 
-	SetActorTransform(NewGridTransform);
+	if (HasAuthority())
+	{
+		SetActorTransform(NewGridTransform);
+	}
 
-	GridCellsInternal = NewGridCells.Array();
+	LocalGridCellsInternal = NewGridCells.Array();
 }
 
 // Scales dragged cells according new grid if sizes are different
@@ -1121,28 +1013,6 @@ void AGeneratedMap::ScaleDraggedCellsOnGrid(const FCells& OriginalGrid, const FC
 	}
 }
 
-// Is called on client to broadcast On Generated Level Actors delegate
-void AGeneratedMap::OnRep_MapComponents()
-{
-	// Array of level actors is just replicated, try to broadcast On Generated Level Actors delegate
-	if (OnGeneratedLevelActors.IsBound()
-	    && AMyGameStateBase::GetCurrentGameState() != ECGS::InGame
-	    && !MapComponentsInternal.ContainsByPredicate([](const FMapComponentSpec& It) { return !It.IsValid(); }))
-	{
-		// It is not regular match, probably is Menu state or game is currently starting (3-2-1)
-		// and array contains only valid specs (all actors are spawned and replicated)
-		OnGeneratedLevelActors.Broadcast();
-	}
-}
-
-// Internal multicast function to set new size for generated map for all instances
-void AGeneratedMap::MulticastSetLevelSize_Implementation(const FIntPoint& LevelSize)
-{
-	FTransform CurrentTransform = GetActorTransform();
-	CurrentTransform.SetScale3D(FVector(LevelSize.X, LevelSize.Y, 1.f));
-	OnConstructionGeneratedMap(CurrentTransform);
-}
-
 /* ---------------------------------------------------
  *					Editor development
  * --------------------------------------------------- */
@@ -1156,7 +1026,7 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 		return;
 	}
 
-	AActor* ComponentOwner = AddedComponent ? AddedComponent->GetOwner() : nullptr;
+	const AActor* ComponentOwner = AddedComponent ? AddedComponent->GetOwner() : nullptr;
 	if (!ComponentOwner
 	    || ComponentOwner->bIsEditorPreviewActor)
 	{
@@ -1175,37 +1045,11 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 	// The game that is not started yet and owner locates in the editor.
 	// Each similar not dragged actor that is generated by Generated Map is preview actor, so is not dragged.
 
-	// Move dragged actor from a sublevel to the Main level
-	ULevel* MainLevel = GetLevel();
-	const ULevel* OwnerLevel = ComponentOwner->GetLevel();
-	if (MainLevel != OwnerLevel)
+	const FCell& DraggedCell = AddedComponent->GetCell();
+	if (!DraggedCellsInternal.Contains(DraggedCell))
 	{
-		const FTransform OwnerTransform = ComponentOwner->GetActorTransform();
-
-		UEditorLevelUtils::MoveSelectedActorsToLevel(MainLevel);
-
-		const TArray<AActor*> SelectedActors = UEditorUtilityLibrary::GetSelectionSet();
-		AActor* CopiedActor = SelectedActors.IsValidIndex(0) ? SelectedActors[0] : nullptr;
-		UMapComponent* CopiedComponent = CopiedActor ? UMapComponent::GetMapComponent(CopiedActor) : nullptr;
-		if (CopiedComponent
-		    && CopiedComponent != AddedComponent)
-		{
-			CopiedActor->SetActorTransform(OwnerTransform);
-			SetNearestCell(CopiedComponent);
-			AddToGrid(CopiedComponent);
-		}
-
-		return; // new actor will be copied, this one no need to add
+		DraggedCellsInternal.Emplace(DraggedCell, AddedComponent->GetActorType());
 	}
-
-	if (!DraggedCellsInternal.Contains(AddedComponent->GetCell()))
-	{
-		DraggedCellsInternal.Emplace(AddedComponent->GetCell(), AddedComponent->GetActorType());
-	}
-
-	FPoolObjectData ObjectData(ComponentOwner);
-	ObjectData.bIsActive = true;
-	UPoolManagerSubsystem::Get().RegisterObjectInPool(ObjectData);
 #endif	//WITH_EDITOR [IsEditorNotPieWorld]
 }
 

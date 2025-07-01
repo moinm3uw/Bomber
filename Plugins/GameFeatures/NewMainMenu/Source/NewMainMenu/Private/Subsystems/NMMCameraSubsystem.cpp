@@ -125,14 +125,7 @@ void UNMMCameraSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 }
 
 // Return the stat id to use for this tickable
@@ -158,7 +151,7 @@ void UNMMCameraSubsystem::Tick(float DeltaTime)
  ********************************************************************************************* */
 
 // Called when the Main Menu state was changed
-void UNMMCameraSubsystem::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMCameraSubsystem::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	switch (NewState)
 	{

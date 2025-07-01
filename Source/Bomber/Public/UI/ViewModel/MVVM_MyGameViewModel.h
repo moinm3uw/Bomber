@@ -19,7 +19,7 @@ class BOMBER_API UMVVM_MyGameViewModel : public UMVVM_MyBaseViewModel
 	GENERATED_BODY()
 
 	/*********************************************************************************************
-	 * Game State
+	 * Current Game State
 	 ********************************************************************************************* */
 public:
 	/** Setter and Getter widgets about the current game state. */
@@ -33,6 +33,10 @@ protected:
 	 * Is commonly used by 'UMyBlueprintFunctionLibrary::GetVisibilityByGameState' to show or hide own widget. */
 	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
 	ECurrentGameState CurrentGameState = ECurrentGameState::None;
+
+	/** Called when the current game state was changed. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnGameStateChanged(ECurrentGameState InGameState);
 
 	/*********************************************************************************************
 	 * End-Game State
@@ -89,71 +93,6 @@ protected:
 	void OnInGameTimerSecRemainChanged(float NewInGameTimerSecRemain);
 
 	/*********************************************************************************************
-	 * Local Player's Power-Ups
-	 ********************************************************************************************* */
-public:
-	/** Setter and Getter about current amount of speed power-ups. */
-	void SetPowerUpSkateN(const FText& NewPowerUpSkate) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpSkateN, NewPowerUpSkate); }
-	const FText& GetPowerUpSkateN() const { return PowerUpSkateN; }
-
-	/** Setter and Getter about current amount of max bomb power-ups. */
-	void SetPowerUpBombN(const FText& NewPowerUpBomb) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpBombN, NewPowerUpBomb); }
-	const FText& GetPowerUpBombN() const { return PowerUpBombN; }
-
-	/** Setter and Getter about current amount of blast radius power-ups. */
-	void SetPowerUpFireN(const FText& NewPowerUpFire) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpFireN, NewPowerUpFire); }
-	const FText& GetPowerUpFireN() const { return PowerUpFireN; }
-
-	/** Setter and Getter about percentage of the current amount of speed power-ups. */
-	void SetPowerUpSkatePercent(float NewPowerUpSkatePercent) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpSkatePercent, NewPowerUpSkatePercent); }
-	float GetPowerUpSkatePercent() const { return PowerUpSkatePercent; }
-
-	/** Setter and Getter about percentage of the amount of max bomb power-ups. */
-	void SetPowerUpBombPercent(float NewPowerUpBombPercent) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpBombPercent, NewPowerUpBombPercent); }
-	float GetPowerUpBombPercent() const { return PowerUpBombPercent; }
-
-	/** Setter and Getter about current percentage available of the amount of blast radius power-ups. */
-	void SetPowerUpBombCurrentPercent(float NewPowerUpBombCurrentPercent) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpBombCurrentPercent, NewPowerUpBombCurrentPercent); }
-	float GetPowerUpBombCurrentPercent() const { return PowerUpBombCurrentPercent; }
-
-	/** Setter and Getter about percentage of the current amount of blast radius power-ups. */
-	void SetPowerUpFirePercent(float NewPowerUpFirePercent) { UE_MVVM_SET_PROPERTY_VALUE(PowerUpFirePercent, NewPowerUpFirePercent); }
-	float GetPowerUpFirePercent() const { return PowerUpFirePercent; }
-
-protected:
-	/** Current amount of speed power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	FText PowerUpSkateN = FText::GetEmpty();
-
-	/** Current amount of max bomb power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	FText PowerUpBombN = FText::GetEmpty();
-
-	/** Current amount of blast radius power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	FText PowerUpFireN = FText::GetEmpty();
-
-	/** Percentage of the current speed power-up. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	float PowerUpSkatePercent = 0.f;
-
-	/** Percentage of the amount of max bomb power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++", DisplayName = "Power Up Bomb Max Percent")
-	float PowerUpBombPercent = 0.f;
-
-	/** Percentage of the current available amount of max bomb power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	float PowerUpBombCurrentPercent = 0.f;
-
-	/** Percentage of the current amount of blast radius power-ups. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	float PowerUpFirePercent = 0.f;
-
-	/** Called when power-ups were updated on local character. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPowerUpsChanged(const struct FPowerUp& NewPowerUps);
-
-	/*********************************************************************************************
 	 * Mouse Visibility
 	 ********************************************************************************************* */
 public:
@@ -169,6 +108,19 @@ protected:
 	/** Called when mouse became shown or hidden. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnMouseVisibilityChanged(bool bIsShown);
+
+	/*********************************************************************************************
+	 * Can Restart Game
+	 ********************************************************************************************* */
+public:
+	/** Setter and Getter about does running game allow to be restarted. */
+	void SetCanRestartGame(const bool bNewIsPartyLeader) { UE_MVVM_SET_PROPERTY_VALUE(bCanRestart, bNewIsPartyLeader); }
+	bool GetCanRestartGame() const { return bCanRestart; }
+
+protected:
+	/** Determines if the player is the party leader */
+	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter = "SetCanRestartGame", Getter = "GetCanRestartGame", Category = "C++")
+	bool bCanRestart = true;
 
 	/*********************************************************************************************
 	 * Events

@@ -6,6 +6,7 @@
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMTypes.h"
 #include "Subsystems/NMMBaseSubsystem.h"
+#include "Subsystems/WidgetsSubsystem.h"
 //---
 #include "Components/Button.h"
 #include "Components/RadialSlider.h"
@@ -21,16 +22,10 @@ void UNMMCinematicStateWidget::SetCurrentHoldTime(float NewHoldTime)
 	const float MaxHoldTime = UNMMDataAsset::Get().GetSkipCinematicHoldTime();
 	const float HoldProgressNormalized = FMath::Clamp(CurrentHoldTimeInternal / MaxHoldTime, 0.f, 1.f);
 
-	checkf(SkipHoldProgress, TEXT("ERROR: [%i] %s:\n'SkipHoldProgress' is null!"), __LINE__, *FString(__FUNCTION__));
+	checkf(SkipHoldProgress, TEXT("ERROR: [%i] %hs:\n'SkipHoldProgress' is null!"), __LINE__, __FUNCTION__);
 	SkipHoldProgress->SetValue(HoldProgressNormalized);
 
-	const UWorld* World = GetWorld();
-	checkf(World, TEXT("ERROR: [%i] %s:\n'World' is null!"), __LINE__, *FString(__FUNCTION__));
-	if (CurrentHoldTimeInternal > 0.f && CurrentHoldTimeInternal <= World->GetDeltaSeconds())
-	{
-		OnCinematicSkipStarted();
-	}
-	else if (CurrentHoldTimeInternal >= MaxHoldTime)
+	if (CurrentHoldTimeInternal >= MaxHoldTime)
 	{
 		OnCinematicSkipFinished();
 	}
@@ -40,9 +35,6 @@ void UNMMCinematicStateWidget::SetCurrentHoldTime(float NewHoldTime)
 void UNMMCinematicStateWidget::ResetWidget()
 {
 	SetCurrentHoldTime(0.f);
-
-	checkf(SkipText, TEXT("ERROR: [%i] %s:\n'SkipText' is null!"), __LINE__, *FString(__FUNCTION__));
-	SkipText->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 // // Called after the underlying slate widget is constructed
@@ -53,14 +45,7 @@ void UNMMCinematicStateWidget::NativeConstruct()
 	// Hide this widget by default
 	SetVisibility(ESlateVisibility::Collapsed);
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	if (SkipCinematicButton)
 	{
@@ -70,10 +55,19 @@ void UNMMCinematicStateWidget::NativeConstruct()
 }
 
 // Called when the Main Menu state was changed
-void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
+	const bool bIsCinematic = NewState == ENMMState::Cinematic;
+
+	if (bIsCinematic
+		|| PreviousState == ENMMState::Cinematic)
+	{
+		// Hide all other widgets in Cinematic state and display them back when left
+ 		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
+	}
+
 	// Show this widget in Cinematic state
-	SetVisibility(NewState == ENMMState::Cinematic ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	SetVisibility(bIsCinematic ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
 
 	ResetWidget();
 }
@@ -86,7 +80,7 @@ void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMStat
 void UNMMCinematicStateWidget::OnCinematicSkipOngoing_Implementation()
 {
 	const UWorld* World = GetWorld();
-	checkf(World, TEXT("ERROR: [%i] %s:\n'World' is null!"), __LINE__, *FString(__FUNCTION__));
+	checkf(World, TEXT("ERROR: [%i] %hs:\n'World' is null!"), __LINE__, __FUNCTION__);
 	const float NewHoldTime = CurrentHoldTimeInternal + World->GetDeltaSeconds();
 
 	SetCurrentHoldTime(NewHoldTime);
@@ -96,13 +90,6 @@ void UNMMCinematicStateWidget::OnCinematicSkipOngoing_Implementation()
 void UNMMCinematicStateWidget::OnCinematicSkipReleased_Implementation()
 {
 	ResetWidget();
-}
-
-// Is called on the beginning of holding the skip button
-void UNMMCinematicStateWidget::OnCinematicSkipStarted_Implementation()
-{
-	checkf(SkipText, TEXT("ERROR: [%i] %s:\n'SkipText' is null!"), __LINE__, *FString(__FUNCTION__));
-	SkipText->SetVisibility(ESlateVisibility::Visible);
 }
 
 // Is called to skip cinematic on finished holding the skip button or clicked on UI

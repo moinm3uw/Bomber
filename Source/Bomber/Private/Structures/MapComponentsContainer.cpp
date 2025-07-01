@@ -6,12 +6,6 @@
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponentsContainer)
 
-bool operator==(const FMapComponentSpec& A, const FCell& B)
-{
-	const FCell& Cell = A.MapComponent ? A.MapComponent->GetCell() : FCell::InvalidCell;
-	return Cell == B;
-}
-
 FMapComponentSpec::FMapComponentSpec(UMapComponent& InMapComponent)
 	: MapComponent(&InMapComponent)
 	, Cell(InMapComponent.GetCell()) {}
@@ -19,10 +13,36 @@ FMapComponentSpec::FMapComponentSpec(UMapComponent& InMapComponent)
 FMapComponentSpec::FMapComponentSpec(FPoolObjectHandle InPoolObjectHandle)
 	: PoolObjectHandle(MoveTemp(InPoolObjectHandle)) {}
 
-// Updates the cell of the map component according current data
-void FMapComponentSpec::UpdateCellInComponent()
+void FMapComponentSpec::PreReplicatedRemove(const FMapComponentsContainer& InMapComponentsContainer)
 {
+	// On client, level actor removal was just replicated, perform cleanup to avoid unsynced cell data or dangling map component pointer
+
+	Cell = FCell::InvalidCell;
+
 	if (MapComponent)
+	{
+		MapComponent->OnPreRemoved();
+		MapComponent->OnPostRemoved();
+		MapComponent = nullptr;
+	}
+}
+
+void FMapComponentSpec::PostReplicatedAdd(const FMapComponentsContainer& InMapComponentsContainer)
+{
+	// The level actor was added, update both the replicated cell and the map component
+
+	if (IsValid())
+	{
+		MapComponent->SetCell(Cell);
+		MapComponent->OnAdded();
+	}
+}
+
+void FMapComponentSpec::PostReplicatedChange(const FMapComponentsContainer& InMapComponentsContainer)
+{
+	// The level actor was changed, update the replicated cell e.g: player character moved
+
+	if (IsValid())
 	{
 		MapComponent->SetCell(Cell);
 	}
@@ -54,6 +74,18 @@ UMapComponent* FMapComponentsIterator::operator*() const
 	const bool bValidIndex = Items.IsValidIndex(Index);
 	checkf(bValidIndex, TEXT("ERROR: [%i] %s:\nIndex %i is not valid for array of Map Components with length of %i!"), __LINE__, *FString(__FUNCTION__), Index, Items.Num());
 	return Items[Index].MapComponent;
+}
+
+// Marks this spec as dirty to push changes for replication, if valid
+void FMapComponentsContainer::MarkItemDirty(FFastArraySerializerItem& Item)
+{
+	// First, make sure the spec is fully valid
+	// Wait otherwise: it's often called when only Cell or Map Component is set (during construction), but push if only both are set
+	FMapComponentSpec& Spec = static_cast<FMapComponentSpec&>(Item);
+	if (Spec.IsValid())
+	{
+		FIrisFastArraySerializer::MarkItemDirty(Spec);
+	}
 }
 
 FMapComponentSpec& FMapComponentsContainer::FindOrAdd(UMapComponent& MapComponent)

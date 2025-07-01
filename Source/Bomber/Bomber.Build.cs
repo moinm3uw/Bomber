@@ -10,13 +10,16 @@ public class Bomber : ModuleRules
 		CppStandard = CppStandardVersion.Latest;
 		bEnableNonInlinedGenCppWarnings = true;
 
+		// Network: enable Iris replication
+		const bool bAddAsPublicDependency = true; // Created FMapComponentsContainer
+		SetupIrisSupport(Target, bAddAsPublicDependency);
+
 		PublicDependencyModuleNames.AddRange(new[]
 		    {
                 "Core" // Core
                 , "UMG" // UUserWidget creation
                 , "EnhancedInput" // Created UMyInputAction, UMyInputMappingContext
                 , "DeveloperSettings" // Created UDataAssetsContainer
-                , "NetCore" // Created FMapComponentsContainer
                 //My modules
                 , "FunctionPicker" // Created properties in UMyInputAction
                 , "MetaCheatManager" // Created UMyCheatManager
@@ -28,7 +31,10 @@ public class Bomber : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new[]
 			{
 				"CoreUObject", "Engine", "Slate", "SlateCore" // Core
+				, "NetCore" // Network: FFastArraySerializer, PushModel, Iris
+				, "OnlineSubsystem", "OnlineSubsystemUtils" // Online Sessions: create, destroy, join
 				, "InputCore" // FKey
+				, "AdvancedWidgets" // Widgets (URadialSlider etc)
 				, "RHI", "ApplicationCore" // Resolutions
 				, "AIModule" // AI
 				, "Niagara" // VFX
@@ -37,6 +43,7 @@ public class Bomber : ModuleRules
                 , "ModelViewViewModel" // MVVM UI pattern
 				//My modules
 				, "SettingsWidgetConstructor" // Generates settings
+				, "AdvancedSessions", "AdvancedSteamSessions" // Steam
 			}
 		);
 
@@ -46,7 +53,6 @@ public class Bomber : ModuleRules
 			PrivateDependencyModuleNames.AddRange(new[]
 				{
 					"UnrealEd" // FEditorDelegates
-					, "Blutility" // UEditorUtilityLibrary::GetSelectionSet()
 					//My modules
 					, "BomberEditor" // UMyUnrealEdEngine
 					, "MyEditorUtils" // FEditorUtilsLibrary

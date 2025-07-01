@@ -5,6 +5,7 @@
 #include "Cell.generated.h"
 
 struct FCell;
+struct FVector_NetQuantize;
 
 /** Typedef to allow for some nicer looking sets of cells. */
 typedef TSet<FCell> FCells;
@@ -69,6 +70,7 @@ struct BOMBER_API FCell
 
 	/** Vector to cell constructor. */
 	FCell(const FVector& Vector);
+	FCell(const FVector_NetQuantize& Vector);
 
 	/** Floats to cell constructor. */
 	explicit FCell(float X, float Y, float Z);
@@ -78,6 +80,7 @@ struct BOMBER_API FCell
 
 	/** Equal operator for vectors to directly copy its value to the cell. */
 	FCell& operator=(const FVector& Vector);
+	FCell& operator=(const FVector_NetQuantize& Vector);
 
 	/** Returns Cell's X component. */
 	float X() const { return Location.X; }
@@ -88,28 +91,27 @@ struct BOMBER_API FCell
 	/** Returns Cell's Z component. */
 	float Z() const { return Location.Z; }
 
-	/** Gets a copy of given cell rotated around given transform to the same yaw degree.
-	 * @param InCell - The cell to rotate.
-	 * @param AxisZ The Z param of the axis to rotate around.
-	 * @param OriginTransformNoScale The transform of the origin of the rotation. */
-	static FCell RotateCellAroundOrigin(const FCell& InCell, float AxisZ, const FTransform& OriginTransformNoScale);
-
 	/** Comparing with uninitialized Invalid Cell. */
 	FORCEINLINE bool IsInvalidCell() const { return *this == InvalidCell; }
 
 	/** Check is valid this cell. */
 	FORCEINLINE bool IsValid() const { return *this != InvalidCell; }
 
-	/** Finds the closest cell to the given cell within array of cells.
-	 * @param Cells The array of cells to search in.
-	 * @param CellToCheck The start position of the cell to check. */
-	static FCell GetCellArrayNearest(const TSet<FCell>& Cells, const FCell& CellToCheck);
+	/*********************************************************************************************
+	 * Rotation
+	 ********************************************************************************************* */
+public:
+	/** Gets a copy of given cell rotated around given transform to the same yaw degree.
+	 * @param InCell - The cell to rotate.
+	 * @param AxisZ The Z param of the axis to rotate around.
+	 * @param OriginTransformNoScale The transform of the origin of the rotation. */
+	static FCell RotateCellAroundOrigin(const FCell& InCell, float AxisZ, const FTransform& OriginTransformNoScale);
 
 	/** Allows rotate or unrotated given grid around its origin. */
 	static FCells RotateCellArray(float AxisZ, const FCells& InCells);
 
 	/*********************************************************************************************
-	 * Grid
+	 * Grid (Array of cells)
 	 ********************************************************************************************* */
 public:
 	/** Constructs and returns new grid from given transform.
@@ -144,10 +146,6 @@ public:
 	/** Gets a copy of given cell snapped its location to a grid while it does not respect rotated grids. */
 	static FORCEINLINE FCell SnapCell(const FCell& InCell) { return InCell.Location.GridSnap(CellSize); }
 
-	/*********************************************************************************************
-	 * Transform
-	 ********************************************************************************************* */
-public:
 	/** Makes origin transform for given grid. */
 	static FTransform GetCellArrayTransform(const FCells& InCells);
 	static FTransform GetCellArrayTransformNoScale(const FCells& InCells);
@@ -163,6 +161,27 @@ public:
 	static FVector2D GetCellArraySize(const FCells& InCells);
 	static float GetCellArrayWidth(const FCells& InCells);
 	static float GetCellArrayLength(const FCells& InCells);
+
+	/** Finds the closest cell to the given cell within array of cells.
+	 * @param InCells The array of cells to search in.
+	 * @param CellToCheck The start position of the cell to check. */
+	static FCell GetCellArrayNearest(const FCells& InCells, const FCell& CellToCheck);
+
+	/** Keeps cells within range of the StartingCell and avoids barriers.
+	 * E.g: might be useful to exclude all explosions cells and those that are out of explosions, so the bot (Starting Cell) will not attempt to go through explosions.
+	 * @param ActiveCells The cells to process and filter.
+	 * @param BoundaryCells The cells acting as barriers.
+	 * @param StartingCell The reference cell for proximity and direction.
+	 * @return A set of filtered cells (`FCells`) that meet the criteria. */
+	static FCells FilterCellsByBounds(const FCells& ActiveCells, const FCells& BoundaryCells, const FCell& StartingCell);
+
+	/** Returns true if the Starting Cell is in line of sight (in the direction of the Target Cell) within the given angle when comparing cells on the grid.
+	 * Might be useful for AI to check does it see the bomb or player in the line of sight.
+	 * @param StartingCell The reference starting cell (who is looking).
+	 * @param TargetCell The target cell to check direction to (that can be seen).
+	 * @param AllVisibleCells All cells that can be seen from the starting cell, the grid or just part of it.
+	 * @param MaxAngleDegrees The maximum allowable angle (in degrees) for alignment, is recommended around 20 degrees. */
+	static bool CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees = 40.f);
 
 	/*********************************************************************************************
 	 * Distance
@@ -197,8 +216,8 @@ public:
 	FCell& operator-=(const FCell& Other);
 	friend FORCEINLINE FCell operator-(const FCell& Lhs, const FCell& Rhs) { return FCell(Lhs.Location - Rhs.Location); }
 
-	/** Scales the cell. */
-	template <typename FArg, TEMPLATE_REQUIRES(std::is_arithmetic<FArg>::value)>
+	/** Scales the cell, where FArg requires scalar type. */
+	template <typename FArg UE_REQUIRES(std::is_arithmetic_v<FArg>)>
 	FORCEINLINE FCell operator*(FArg Scale) const { return FCell(Location * Scale); }
 
 	/** Creates a hash value from a FCell.
@@ -212,6 +231,7 @@ public:
 public:
 	/** Vector operator to return cell location. */
 	FORCEINLINE operator FVector() const { return this->Location; }
+	operator FVector_NetQuantize() const;
 
 	/** Returns the cell as a string. */
 	FString ToString() const { return FVector2D(Location).ToString(); }

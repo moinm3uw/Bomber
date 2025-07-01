@@ -67,6 +67,14 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 #endif
 }
 
+// Returns true if AI is enabled (move input is not ignored and cheat is not enabled)
+bool AMyAIController::IsAIEnabled() const
+{
+	return OwnerInternal
+	       && !OwnerInternal->IsMoveInputIgnored()
+	       && UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread();
+}
+
 /* ---------------------------------------------------
  *					Protected functions
  * --------------------------------------------------- */
@@ -143,11 +151,15 @@ void AMyAIController::OnPossess(APawn* InPawn)
 		OwnerInternal->SetPlayerState(NewPlayerState);
 
 		// Update default nickname for AI
-		NewPlayerState->SetDefaultBotName();
+		NewPlayerState->SetDefaultPlayerName();
 	}
 
 	// Notify host about bot possession
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*OwnerInternal);
+
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 }
 
 // Allows the controller to react on unpossessing the pawn
@@ -188,10 +200,9 @@ void AMyAIController::Reset()
 // The main AI logic
 void AMyAIController::UpdateAI()
 {
-	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
-	if (!OwnerInternal
-	    || !IsValid(MapComponent)
-	    || !UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread()) // AI is disabled
+	const UMapComponent* MapComponent = OwnerInternal ? UMapComponent::GetMapComponent(OwnerInternal) : nullptr;
+	if (!MapComponent
+	    || !IsAIEnabled())
 	{
 		return;
 	}
@@ -344,11 +355,12 @@ void AMyAIController::UpdateAI()
 
 	// ----- Part 2: Deciding whether to put the bomb -----
 
-	if (bIsDangerous == false          // is not dangerous situation
-	    && bIsFilteringFailed == false // filtering was not failed
-	    && bIsItemInDirect == false)   // was not found direct items
+	if (bCanSpawnBombs         // false meaning manually disabled 
+	    && !bIsDangerous       // is not dangerous situation
+	    && !bIsFilteringFailed // filtering was not failed
+	    && !bIsItemInDirect)   // was not found direct items
 	{
-		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, OwnerInternal->GetPowerups().FireN, TO_FLAG(EAT::Box | EAT::Player));
+		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, OwnerInternal->GetPowerUp(EItemType::Fire), TO_FLAG(EAT::Box | EAT::Player));
 		BoxesAndPlayers.Remove(MapComponent->GetCell());
 		if (BoxesAndPlayers.Num() > 0) // Are bombs or players in own bomb radius
 		{
@@ -380,8 +392,8 @@ void AMyAIController::UpdateAI()
 		static constexpr int32 VisualizationTypesNum = 3;
 		for (int32 Index = 0; Index < VisualizationTypesNum; ++Index)
 		{
-			FCells VisualizingStep;
-			FLinearColor Color;
+			FCells VisualizingStep = FCell::EmptyCells;
+			FLinearColor Color = FLinearColor::White;
 			FName Symbol = TEXT("+");
 			FVector Position = FVector::ZeroVector;
 			switch (Index)
@@ -410,7 +422,10 @@ void AMyAIController::UpdateAI()
 				default:
 					break;
 			}
-			const FDisplayCellsParams DisplayParams{Color, 263.f, 124.f, Symbol, Position};
+
+			constexpr float TextHeight = 263.f;
+			constexpr float TextSize = 124.f;
+			const FDisplayCellsParams DisplayParams{Color, TextHeight, TextSize, Symbol, Position};
 			UCellsUtilsLibrary::DisplayCells(OwnerInternal, VisualizingStep, DisplayParams);
 		} // [Loopy visualization]
 	}
@@ -443,8 +458,12 @@ void AMyAIController::SetAI(bool bShouldEnable)
 	}
 }
 
+/*********************************************************************************************
+ * Events
+ ********************************************************************************************* */
+
 // Listen game states to enable or disable AI
-void AMyAIController::OnGameStateChanged(ECurrentGameState CurrentGameState)
+void AMyAIController::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
 	switch (CurrentGameState)
 	{
@@ -463,4 +482,10 @@ void AMyAIController::OnGameStateChanged(ECurrentGameState CurrentGameState)
 		default:
 			break;
 	}
+}
+
+// Called when this level actor is destroyed on the Generated Map
+void AMyAIController::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
+{
+	SetAI(false);
 }

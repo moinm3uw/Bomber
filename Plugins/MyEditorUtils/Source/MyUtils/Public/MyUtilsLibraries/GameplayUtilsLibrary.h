@@ -6,8 +6,6 @@
 //---
 #include "GameplayUtilsLibrary.generated.h"
 
-class USaveGame;
-
 /**
  * Function library with gameplay-related helpers.
  */
@@ -16,28 +14,20 @@ class MYUTILS_API UGameplayUtilsLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
-public:
-	/*********************************************************************************************
-	 * Multiplayer Helpers
-	 ********************************************************************************************* */
-public:
-	/** Returns true if this instance has authority. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static bool IsServer();
-
-	/** Returns true if any client is connected to the game. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static FORCEINLINE bool IsMultiplayerGame() { return GetPlayersInMultiplayerNum() > 1; }
-
-	/** Returns amount of players (host + clients) playing this game. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static int32 GetPlayersInMultiplayerNum();
-
 	/*********************************************************************************************
 	 * Actor Helpers
 	 ********************************************************************************************* */
 public:
-	/** Abstract method that allows set both static and skeletal meshes to the specified mesh component.
+	/** Abstract getter that allows to obtain the static or skeletal mesh from given mesh component (base class of both).
+	 * @param MeshComponent The mesh component to get mesh. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static class UStreamableRenderAsset* GetMesh(const class UMeshComponent* MeshComponent);
+
+	/** Alternative code-only getter, e.g: UStaticMesh* StaticMesh = UGameplayUtilsLibrary::GetMesh<UStaticMesh>(MeshComponent); */
+	template <typename T>
+	static T* GetMesh(const UMeshComponent* MeshComponent) { return Cast<T>(GetMesh(MeshComponent)); }
+
+	/** Abstract method that allows set both static and skeletal meshes to the specified mesh component by its base class.
 	 * @param MeshComponent The mesh component to set mesh.
 	 * @param MeshAsset The mesh asset to set to the mesh component. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
@@ -65,26 +55,11 @@ public:
 	static bool ApplyTransformFromCurveTable(AActor* InActor, const FTransform& CenterWorldTransform, class UCurveTable* CurveTable, float TotalSecondsSinceStart);
 
 	/*********************************************************************************************
-	 * Save Helpers
+	 * Modular Game Features (MGF)
 	 ********************************************************************************************* */
 public:
-	/** Completely removes given save data and creates new empty one.
-	 * @param SaveGame The save game to reset.
-	 * @param SaveSlotName The name of the save slot.
-	 * @param SaveSlotIndex The index of the save slot.
-	 * @return The new empty save game object. */
+	/** Enables or disable all game features.
+	 * @see UGameStateDataAsset::GetGameFeaturesToEnable() */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	static USaveGame* ResetSaveGameData(USaveGame* SaveGame, const FString& SaveSlotName, int32 SaveSlotIndex);
-
-	/** Returns true if given object's config properties can be saved to the config file.
-	 * Is useful for validations to avoid unexpected behavior in builds.
-	 * @param Object The object to check. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	static bool CanSaveConfig(const UObject* Object);
-
-	/** Saves the given object's config properties to the config file.
-	 * Is useful because of its validation to avoid unexpected behavior in builds.
-	 * @param Object The object to save. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	static void SaveConfig(UObject* Object);
+	static void SetGameFeaturesEnabled(bool bEnable, const TArray<FName>& GameFeatures);
 };

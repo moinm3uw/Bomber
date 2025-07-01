@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "NMMUtils.h"
+#include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
@@ -45,10 +46,18 @@ bool UNMMSpotComponent::IsCurrentSpot() const
 // Returns true if this spot is visible, unlocked and can be selected by player
 bool UNMMSpotComponent::IsSpotAvailable() const
 {
-	const UMySkeletalMeshComponent& MeshComponent = GetMeshChecked();
+	const UMySkeletalMeshComponent* MeshComponent = GetMySkeletalMeshComponent();
 	return IsActive()
-		&& MeshComponent.IsActive()
-		&& MeshComponent.IsVisible();
+		&& MeshComponent
+		&& MeshComponent->IsActive()
+		&& MeshComponent->IsVisible();
+}
+
+// Returns true if this spot current skin is unlocked and can be selected by player
+bool UNMMSpotComponent::IsSpotSkinAvailable() const
+{
+	const UMySkeletalMeshComponent* MeshComponent = GetMySkeletalMeshComponent();
+	return MeshComponent && MeshComponent->IsSkinAvailable(MeshComponent->GetAppliedSkinIndex());
 }
 
 // Returns the Skeletal Mesh of the Bomber character
@@ -67,15 +76,17 @@ UMySkeletalMeshComponent& UNMMSpotComponent::GetMeshChecked() const
 // Sets the look of this spot to the in-game player character
 void UNMMSpotComponent::ApplyMeshOnPlayer()
 {
-	APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	if (!ensureMsgf(PlayerCharacter, TEXT("ASSERT: [%i] %hs:\n'PlayerCharacter' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
 	// Update the chosen player mesh on the level
-	const FCustomPlayerMeshData& PlayerMeshData = GetMeshChecked().GetCustomPlayerMeshData();
-	PlayerCharacter->SetCustomPlayerMeshData(PlayerMeshData);
+	const FBmrMeshData& PlayerMeshData = GetMeshChecked().GetMeshData();
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(PlayerCharacter);
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->SetReplicatedMeshData(PlayerMeshData);
 }
 
 /*********************************************************************************************
@@ -149,10 +160,13 @@ void UNMMSpotComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (GetWorld()->bIsTearingDown)
+	const UWorld* World = GetWorld();
+	if (!World
+		|| World->bIsTearingDown
+		|| World->IsNetMode(NM_DedicatedServer))
 	{
-		// Don't process modular if world is restarting
-		// It could happen since module could be loaded very late, right after request of restarting a level
+		// Don't process spot if world is restarting (which could happen since module could be loaded very late, right after request of restarting a level)
+		// or if it's a dedicated server (when client-only mode is running)
 		return;
 	}
 
@@ -170,16 +184,9 @@ void UNMMSpotComponent::BeginPlay()
 	UpdateCinematicData();
 	LoadMasterSequencePlayer();
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
-
 	UNMMCameraSubsystem::Get().OnCameraRailTransitionStateChanged.AddUniqueDynamic(this, &ThisClass::OnCameraRailTransitionStateChanged);
+
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 }
@@ -380,7 +387,7 @@ void UNMMSpotComponent::OnGameStateChanged_Implementation(ECurrentGameState Curr
 }
 
 // Called wen the Main Menu state was changed
-void UNMMSpotComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMSpotComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	const bool bIsCurrentSpot = IsCurrentSpot();
 

@@ -24,6 +24,7 @@ public class MyUtils : ModuleRules
 				, "MovieScene", "MovieSceneTracks" // UCinematicUtils
 				, "EnhancedInput", "InputCore" // UInputUtilsLibrary
 				, "NavigationSystem", "AIModule" // UAIUtilsLibrary
+				, "GameFeatures" // GameplayUtilsLibrary
 			}
 		);
 

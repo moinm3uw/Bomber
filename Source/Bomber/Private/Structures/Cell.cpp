@@ -2,6 +2,8 @@
 
 #include "Structures/Cell.h"
 //---
+#include "Engine/NetSerialization.h"
+//---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(Cell)
 
 const FCell FCell::InvalidCell = FCell(0.f, 0.f, -1.f);
@@ -19,6 +21,9 @@ FCell::FCell(const FVector& Vector)
 	Location.Y = FMath::RoundToFloat(Vector.Y);
 	Location.Z = FMath::RoundToFloat(Vector.Z);
 }
+
+FCell::FCell(const FVector_NetQuantize& Vector)
+	: FCell(FVector(Vector)) {}
 
 // Floats to cell constructor
 FCell::FCell(float X, float Y, float Z)
@@ -43,6 +48,16 @@ FCell& FCell::operator=(const FVector& Vector)
 	return *this;
 }
 
+FCell& FCell::operator=(const FVector_NetQuantize& Vector)
+{
+	Location = FVector(Vector);
+	return *this;
+}
+
+/*********************************************************************************************
+ * Rotation
+ ********************************************************************************************* */
+
 // Gets a copy of given cell rotated around given transform to the same yaw degree
 FCell FCell::RotateCellAroundOrigin(const FCell& InCell, float AxisZ, const FTransform& OriginTransformNoScale)
 {
@@ -52,40 +67,6 @@ FCell FCell::RotateCellAroundOrigin(const FCell& InCell, float AxisZ, const FTra
 	const FVector RotatedVector = Dimensions.RotateAngleAxis(AngleDeg, Axis);
 	FCell RotatedCell(InCell.Location + RotatedVector - Dimensions);
 	return MoveTemp(RotatedCell);
-}
-
-// Finds the closest cell to the given cell within array of cells
-FCell FCell::GetCellArrayNearest(const FCells& Cells, const FCell& CellToCheck)
-{
-	//-----------------
-	// +-----+-----+   |
-	// |  1  |  2  |   | 1-4: are given values in 'Cells' array
-	// +-----+-----+   |
-	// | [3] |  4  |   | [3]: is the found nearest cell.
-	// +-----+-----+   |
-	//    X            | X: is given 'CellToCheck'
-	//-----------------
-
-	if (!Cells.Num())
-	{
-		return InvalidCell;
-	}
-
-	FCell NearestCell = InvalidCell;
-	static constexpr float MaxFloat = TNumericLimits<float>::Max();
-	float NearestDistance = MaxFloat;
-
-	for (const FCell& CellIt : Cells)
-	{
-		const float DistanceIt = Distance<float>(CellIt, CellToCheck);
-		if (DistanceIt < NearestDistance)
-		{
-			NearestCell = CellIt;
-			NearestDistance = DistanceIt;
-		}
-	}
-
-	return NearestCell;
 }
 
 // Allows rotate or unrotated given grid around its origin
@@ -118,6 +99,10 @@ FCells FCell::RotateCellArray(float AxisZ, const FCells& InCells)
 
 	return MoveTemp(RotatedCells);
 }
+
+/*********************************************************************************************
+ * Grid
+ ********************************************************************************************* */
 
 // Constructs and returns new grid from given transform
 FCells FCell::MakeCellGridByTransform(const FTransform& OriginTransform)
@@ -156,7 +141,7 @@ FCell FCell::GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCells
 {
 	const int32 MaxWidth = FMath::FloorToInt32(GetCellArrayWidth(InGrid));
 	const int32 CellIndex = CellPosition.Y/*Row*/ * MaxWidth/*ColumnsNum*/ + CellPosition.X/*Column*/;
-	const TArray<FCell>& GridArray = InGrid.Array();
+	const FCellsArr& GridArray = InGrid.Array();
 	return GridArray.IsValidIndex(CellIndex) ? GridArray[CellIndex] : InvalidCell;
 }
 
@@ -332,6 +317,160 @@ float FCell::GetCellArrayLength(const FCells& InCells)
 	return CellsBox.GetSize().Y / CellSize + 1.f;
 }
 
+// Finds the closest cell to the given cell within array of cells
+FCell FCell::GetCellArrayNearest(const FCells& InCells, const FCell& CellToCheck)
+{
+	//-----------------
+	// +-----+-----+   |
+	// |  1  |  2  |   | 1-4: are given values in 'Cells' array
+	// +-----+-----+   |
+	// | [3] |  4  |   | [3]: is the found nearest cell.
+	// +-----+-----+   |
+	//    X            | X: is given 'CellToCheck'
+	//-----------------
+
+	if (!InCells.Num())
+	{
+		return InvalidCell;
+	}
+
+	FCell NearestCell = InvalidCell;
+	static constexpr float MaxFloat = TNumericLimits<float>::Max();
+	float NearestDistance = MaxFloat;
+
+	for (const FCell& CellIt : InCells)
+	{
+		const float DistanceIt = Distance<float>(CellIt, CellToCheck);
+		if (DistanceIt < NearestDistance)
+		{
+			NearestCell = CellIt;
+			NearestDistance = DistanceIt;
+		}
+	}
+
+	return NearestCell;
+}
+
+// Keeps cells within range of the StartingCell and avoids barriers
+FCells FCell::FilterCellsByBounds(const FCells& ActiveCells, const FCells& BoundaryCells, const FCell& StartingCell)
+{
+	// Input Grid:            Resulting Grid:
+	// +---+---+---+---+      +---+---+---+---+
+	// | + | B | + | + |      | - | B | - | + |
+	// +---+---+---+---+      +---+---+---+---+
+	// | B | B | B | + |      | B | B | B | + |
+	// +---+---+---+---+      +---+---+---+---+
+	// | + | B | + | + |      | - | B | + | + |
+	// +---+---+---+---+      +---+---+---+---+
+	// | + | + | + |[S]|      | + | + | + |[S]|
+	// +---+---+---+---+      +---+---+---+---+
+	//
+	// B are cells in BoundaryCells (act as barriers)
+	// S is Starting cell (reference point for trimming)
+	// + are Active Cells to be processed and filtered
+	// - are cells that are filtered out
+
+	FCells ResultCells = EmptyCells;
+
+	// First iteration, determine all cells within line of sight
+	FCells VisibleCells = EmptyCells;
+	for (const FCell& ActiveCellIt : ActiveCells)
+	{
+		if (BoundaryCells.Contains(ActiveCellIt))
+		{
+			// Active cell is a boundary cell, skip it completely
+			continue;
+		}
+
+		if (CanCellSeeTarget(StartingCell, ActiveCellIt, BoundaryCells))
+		{
+			// The cell is withing the bounds, add it to further processing
+			VisibleCells.Add(ActiveCellIt);
+			continue;
+		}
+
+		// By default, all not visible cells are treated as within the bounds (as they are not arounded by any boundary cells)
+		ResultCells.Add(ActiveCellIt);
+	}
+
+	// Second iteration: Process the visible cells by comparing distances to StartingCell
+	for (const FCell& VisibleCellIt : VisibleCells)
+	{
+		bool bKeepCell = true;
+		const float DistanceToVisible = FVector::Dist(StartingCell.Location, VisibleCellIt.Location);
+
+		for (const FCell& BoundaryCellIt : BoundaryCells)
+		{
+			const float DistanceToBoundary = FVector::Dist(StartingCell.Location, BoundaryCellIt.Location);
+
+			// Exclude the visible cell if it's farther than (or equal to) any boundary cell
+			if (DistanceToVisible >= DistanceToBoundary
+			    || DistanceToVisible < CellSize)
+			{
+				bKeepCell = false;
+				break;
+			}
+		}
+
+		if (bKeepCell)
+		{
+			ResultCells.Add(VisibleCellIt);
+		}
+	}
+
+	return ResultCells;
+}
+
+// Returns true if Starting Cell is in the direction of any of the Target Cells within the given angle
+bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees/* = 40.f*/)
+{
+	/**     .  .  .  T  .  .  .
+	 *             \ | /
+	 *              \|/
+	 *               S
+	 *
+	 * S - StartingCell
+	 * T - TargetCells */
+
+	const FVector DirectionTarget = (TargetCell.Location - StartingCell.Location).GetSafeNormal();
+	if (DirectionTarget.IsNearlyZero())
+	{
+		return false;
+	}
+
+	for (const FCell& VisibleCell : AllVisibleCells)
+	{
+		// Compute direction from StartingCell to the current visible cell
+		const FVector DirectionVisible = (VisibleCell.Location - StartingCell.Location).GetSafeNormal();
+		if (DirectionVisible.IsNearlyZero())
+		{
+			continue;
+		}
+
+		// Dot product tells us how aligned the two directions are
+		const float Dot = FVector::DotProduct(DirectionTarget, DirectionVisible);
+		if (Dot <= 0.0f)
+		{
+			// Directions are more than 90 degrees apart or invalid
+			continue;
+		}
+
+		// Convert the dot product result into an angle (in degrees)
+		const float AngleDegrees = FMath::RadiansToDegrees(FMath::Acos(Dot));
+		if (AngleDegrees <= MaxAngleDegrees)
+		{
+			// As soon as we find a visible cell meeting the criteria, we can return true
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*********************************************************************************************
+ * Math operators
+ ********************************************************************************************* */
+
 // Sums cells
 FCell& FCell::operator+=(const FCell& Other)
 {
@@ -344,6 +483,16 @@ FCell& FCell::operator-=(const FCell& Other)
 {
 	Location -= Other.Location;
 	return *this;
+}
+
+/*********************************************************************************************
+ * Conversion
+ ********************************************************************************************* */
+
+// Vector operator to return cell location
+FCell::operator FVector_NetQuantize() const
+{
+	return FVector_NetQuantize(Location);
 }
 
 // Returns the cell direction by its enum.

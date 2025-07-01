@@ -44,11 +44,14 @@ AMyPlayerController::AMyPlayerController()
 
 	// Create the mouse activity component, so it will be responsible for mouse visibility
 	MouseComponentInternal = CreateDefaultSubobject<UMouseActivityComponent>(TEXT("MouseActivityComponent"));
+
+	// Attach to pawn by default, so controller has always valid location: is useful for replication
+	bAttachToPawn = true;
 }
 
 /*********************************************************************************************
  * Game States
- * Is designed for clients to change the game state
+ * Is designed for clients to change the game state (if CanChangeGameState is true)
  * Server can call AMyGameStateBase::Get().SetGameState(NewState) directly
  ********************************************************************************************* */
 
@@ -66,7 +69,7 @@ bool AMyPlayerController::CanChangeGameState(ECurrentGameState NewGameState) con
 	return !bCinematicMode;
 }
 
-// Sets and replicates the Starting game state (3-2-1 countdown), can be called on the client
+// Sets and replicates the Starting game state (3-2-1 countdown)
 void AMyPlayerController::SetGameStartingState()
 {
 	if (CanChangeGameState(ECGS::GameStarting))
@@ -75,22 +78,12 @@ void AMyPlayerController::SetGameStartingState()
 	}
 }
 
-// Sets and replicates the Menu game state, can be called on the client
+// Sets and replicates the Menu game state
 void AMyPlayerController::SetMenuState()
 {
 	if (CanChangeGameState(ECGS::Menu))
 	{
 		ServerSetGameState(ECGS::Menu);
-	}
-}
-
-// Is called during the In-Game state to show results to all players regarding finished match (Win, Lose or Draw)
-void AMyPlayerController::SetEndGameState()
-{
-	if (CanChangeGameState(ECGS::EndGame)
-	    && UMyBlueprintFunctionLibrary::GetAlivePlayersNum() <= 1)
-	{
-		ServerSetGameState(ECGS::EndGame);
 	}
 }
 
@@ -164,10 +157,9 @@ void AMyPlayerController::InitInputSystem()
 	Super::InitInputSystem();
 
 	// Handle UI inputs
-	UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem(GetLocalPlayer());
-	checkf(WidgetsSubsystem, TEXT("ERROR: [%i] %hs:\n'WidgetsSubsystem' is null!"), __LINE__, __FUNCTION__);
-	WidgetsSubsystem->OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
-	if (WidgetsSubsystem->AreWidgetInitialized())
+	UWidgetsSubsystem& WidgetsSubsystem = UWidgetsSubsystem::Get(this);
+	WidgetsSubsystem.OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
+	if (WidgetsSubsystem.AreWidgetInitialized())
 	{
 		OnWidgetsInitialized();
 	}
@@ -230,6 +222,24 @@ void AMyPlayerController::InitPlayerState()
 	PlayerState->SetOwner(this);
 }
 
+// Is overridden to prevent destroyed possessed pawn, which is expected to be reused
+void AMyPlayerController::PawnLeavingGame()
+{
+	// Don't call super to avoid destroying the pawn
+
+	if (PlayerState)
+	{
+		// First, notify the player state (as it might still need valid pawn)
+		PlayerState->UnregisterPlayerWithSession();
+	}
+
+	if (APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>())
+	{
+		// Finally, notify the player character
+		PlayerCharacter->OnPostLogout(this);
+	}
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
@@ -238,8 +248,7 @@ void AMyPlayerController::InitPlayerState()
 void AMyPlayerController::OnWidgetsInitialized_Implementation()
 {
 	// Listens to handle input on opening and closing the Settings widget
-	USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget();
-	if (ensureMsgf(SettingsWidget, TEXT("ASSERT: 'SettingsWidget' is not valid")))
+	if (USettingsWidget* SettingsWidget = UMyBlueprintFunctionLibrary::GetSettingsWidget())
 	{
 		SettingsWidget->OnToggledSettings.AddUniqueDynamic(this, &ThisClass::OnToggledSettings);
 	}
@@ -525,15 +534,26 @@ void AMyPlayerController::SpawnPlayerCameraManager()
 }
 
 // Is overriden to return correct camera location and rotation for the player
-void AMyPlayerController::GetPlayerViewPoint(FVector& Location, FRotator& Rotation) const
+void AMyPlayerController::GetPlayerViewPoint(FVector& OutLocation, FRotator& OutRotation) const
 {
-	Super::GetPlayerViewPoint(Location, Rotation);
+	Super::GetPlayerViewPoint(OutLocation, OutRotation);
+
+	const AActor* ViewTarget = PlayerCameraManager ? PlayerCameraManager->GetViewTarget() : nullptr;
+	if (!ViewTarget
+	    || ViewTarget == this)
+	{
+		// Camera is not possessed yet, likely game is loading
+		// Controller does not have own camera: proper view target is level or pawn
+		// Output some far location, so player will not see the level until any camera is possessed
+		static const FVector StartupBlackViewLocation(1000000.f);
+		OutLocation = StartupBlackViewLocation;
+	}
 
 #if !UE_BUILD_SHIPPING
 	if (bIsDebugCameraEnabledInternal)
 	{
 		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D 
-		Rotation.Roll = 0.f;
+		OutRotation.Roll = 0.f;
 	}
 #endif // !UE_BUILD_SHIPPING
 }

@@ -23,7 +23,8 @@ AItemActor::AItemActor()
 
 	// Replicate an actor
 	bReplicates = true;
-	NetUpdateFrequency = 10.f;
+	static constexpr float NewNewUpdateFrequency = 10.f;
+	SetNetUpdateFrequency(NewNewUpdateFrequency);
 	bAlwaysRelevant = true;
 	SetReplicatingMovement(true);
 
@@ -34,67 +35,31 @@ AItemActor::AItemActor()
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
 }
 
-// Initialize an item actor, could be called multiple times
-void AItemActor::ConstructItemActor()
+// Set new item type, can be called on the server-only
+void AItemActor::SetItemType(EItemType NewItemType)
 {
-	checkf(MapComponentInternal, TEXT("%s: 'MapComponentInternal' is null"), *FString(__FUNCTION__));
-	MapComponentInternal->OnOwnerWantsReconstruct.AddUniqueDynamic(this, &ThisClass::OnConstructionItemActor);
-	MapComponentInternal->ConstructOwnerActor();
+	if (!HasAuthority()
+	    || ItemTypeInternal == NewItemType)
+	{
+		return;
+	}
+
+	ItemTypeInternal = NewItemType;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ItemTypeInternal, this);
 }
+
+/*********************************************************************************************
+ * Overrides
+ ********************************************************************************************* */
 
 // Called when an instance of this class is placed (in editor) or spawned
 void AItemActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	ConstructItemActor();
-}
-
-// Is called on an item actor construction, could be called multiple times
-void AItemActor::OnConstructionItemActor()
-{
-	if (IS_TRANSIENT(this)                 // This actor is transient
-	    || !IsValid(MapComponentInternal)) // Is not valid for map construction
-	{
-		return;
-	}
-
-	// Rand the item type if not set yet
-	if (ItemTypeInternal == EItemType::None)
-	{
-		const int32 RandomIndex = FMath::RandRange(EIT_FIRST_FLAG, EIT_LAST_FLAG);
-		ItemTypeInternal = static_cast<EItemType>(RandomIndex);
-	}
-
-	// Override mesh
-	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
-	{
-		MapComponentInternal->SetCustomMeshAsset(FoundItemRow->Mesh);
-	}
-}
-
-// Called when the game starts or when spawned
-void AItemActor::BeginPlay()
-{
-	Super::BeginPlay();
-
-	OnActorBeginOverlap.AddDynamic(this, &AItemActor::OnItemBeginOverlap);
-}
-
-// Sets the actor to be hidden in the game. Alternatively used to avoid destroying
-void AItemActor::SetActorHiddenInGame(bool bNewHidden)
-{
-	Super::SetActorHiddenInGame(bNewHidden);
-
-	if (!bNewHidden)
-	{
-		// Is added on Generated Map
-		ConstructItemActor();
-		return;
-	}
-
-	// Is removed from Generated Map
-	ResetItemType();
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
 // Returns properties that are replicated for the lifetime of the actor channel
@@ -102,11 +67,41 @@ void AItemActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, ItemTypeInternal);
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, ItemTypeInternal, Params);
+}
+
+/*********************************************************************************************
+ * Events
+ ********************************************************************************************* */
+
+// Called when this level actor is reconstructed or added on the Generated Map
+void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
+{
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
+
+	OnActorBeginOverlap.AddUniqueDynamic(this, &AItemActor::OnItemBeginOverlap);
+
+	// Rand the item type if not set yet
+	if (ItemTypeInternal == EItemType::None)
+	{
+		const int32 RandomIndex = FMath::RandRange(EIT_FIRST_FLAG, EIT_LAST_FLAG);
+		const EItemType NewItemType = static_cast<EItemType>(RandomIndex);
+		SetItemType(NewItemType);
+	}
+
+	// Override mesh
+	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
+	{
+		MapComponent->SetLocalMesh(FoundItemRow->Mesh);
+	}
 }
 
 // Triggers when this item starts overlap a player character to destroy itself
-void AItemActor::OnItemBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
+void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if (!OtherActor
 	    || !OtherActor->IsA(UDataAssetsContainer::GetActorClassByType(EAT::Player)))
@@ -118,4 +113,15 @@ void AItemActor::OnItemBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 
 	// Destroy itself on overlapping
 	AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, OtherActor);
+}
+
+// Called when this level actor is destroyed from the Generated Map
+void AItemActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
+{
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
+
+	OnActorBeginOverlap.RemoveAll(this);
+
+	SetItemType(EItemType::None);
 }

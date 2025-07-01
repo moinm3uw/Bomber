@@ -31,6 +31,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void MoveToCell(const FCell& DestinationCell);
 
+	/** Returns true if AI is enabled (move input is not ignored and cheat is not enabled). */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (DisplayName = "Is AI Enabled"))
+	bool IsAIEnabled() const;
+
+	/** Returns true if AI can spawn bombs */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (DisplayName = "Can AI Spawn Bomb"))
+	FORCEINLINE bool CanAISpawnBomb() const { return bCanSpawnBombs; }
+
+	/** Enable or disable spawning bombs for this bot (might be useful for some game modes)
+	 * Main logic still will be running unless move input is ignored as well. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DisplayName = "Set AI Can Spawn Bomb"))
+	void SetAICanSpawnBomb(bool bCanSpawn) { bCanSpawnBombs = bCanSpawn; }
+
 protected:
 	/* ---------------------------------------------------
 	*		Protected properties
@@ -47,6 +60,11 @@ protected:
 	/** Controlled character */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Owner Character"))
 	TObjectPtr<class APlayerCharacter> OwnerInternal = nullptr;
+
+	/** If disabled, AI will not be able to put any bombs. Might be useful for some game modes.
+	 * Main logic still will be running unless move input is ignored as well. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "NAME"))
+	bool bCanSpawnBombs = true;
 
 	/* ---------------------------------------------------
 	*		Protected functions
@@ -81,7 +99,15 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, meta = (BlueprintProtected))
 	void SetAI(bool bShouldEnable);
 
+	/*********************************************************************************************
+	 * Events
+	 ********************************************************************************************* */
+protected:
 	/** Listen game states to enable or disable AI. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
+
+	/** Called when this level actor is destroyed on the Generated Map. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPostRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
 };

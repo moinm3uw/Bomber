@@ -34,9 +34,9 @@ UWorld* UUtilsLibrary::GetPlayWorld(const UObject* OptionalWorldContext)
 	}
 #endif
 
-	if (!ensureMsgf(FoundWorld, TEXT("%s: Can not obtain current world"), *FString(__FUNCTION__)))
+	if (!FoundWorld)
 	{
-		return nullptr;
+		FoundWorld = GWorld;
 	}
 
 	return FoundWorld;
@@ -72,36 +72,16 @@ bool UUtilsLibrary::IsPIE()
 #endif
 }
 
-// Returns true if is started multiplayer game (server + client(s)) right in the Editor
-bool UUtilsLibrary::IsEditorMultiplayer()
-{
-#if WITH_EDITOR
-	return FEditorUtilsLibrary::IsEditorMultiplayer();
-#else
-	return false;
-#endif
-}
-
-// Returns the index of current player during editor multiplayer
-int32 UUtilsLibrary::GetEditorPlayerIndex()
-{
-#if WITH_EDITOR
-	return FEditorUtilsLibrary::IsEditorMultiplayer();
-#else
-	return INDEX_NONE;
-#endif
-}
-
 // Returns true if game was started
 bool UUtilsLibrary::HasWorldBegunPlay()
 {
-	if (IsPIE())
-	{
-		return true;
-	}
-
-	const UWorld* World = GetPlayWorld();
-	return World && World->HasBegunPlay();
+	// Check if the world has begun play only in the editor, otherwise assume the world is always playing (in -game or cook)
+#if WITH_EDITOR
+	const bool bIsMinusGame = !FEditorUtilsLibrary::IsEditor();
+	return bIsMinusGame || FEditorUtilsLibrary::IsPIE();
+#else
+	return true;
+#endif
 }
 
 // Returns true if viewport is initialized, is always true in PIE, but takes a while in builds

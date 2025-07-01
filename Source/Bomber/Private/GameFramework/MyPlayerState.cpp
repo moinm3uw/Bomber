@@ -2,6 +2,8 @@
 
 #include "GameFramework/MyPlayerState.h"
 //---
+#include "AdvancedIdentityLibrary.h"
+#include "AdvancedSteamFriendsLibrary.h"
 #include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
@@ -9,10 +11,12 @@
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 //---
@@ -35,10 +39,18 @@ bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 	return PC && PC->IsLocalPlayerController();
 }
 
+// Returns owner human or bot character
+APlayerCharacter* AMyPlayerState::GetPlayerCharacter() const
+{
+	return Cast<APlayerCharacter>(GetPawn());
+}
+
 // Returns always valid owner (human or bot), or crash if nullptr
 APlayerCharacter& AMyPlayerState::GetPlayerCharacterChecked() const
 {
-	return *CastChecked<APlayerCharacter>(GetPawn());
+	APlayerCharacter* PlayerCharacter = GetPlayerCharacter();
+	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
+	return *PlayerCharacter;
 }
 
 /*********************************************************************************************
@@ -72,12 +84,18 @@ void AMyPlayerState::UpdateEndGameState()
 
 	const EEndGameState NewEndGameState = [&]
 	{
-		const int32 PlayerNum = UMyBlueprintFunctionLibrary::GetAlivePlayersNum();
+		const int32 PlayerNum = UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any);
 
 		if (IsCharacterDead())
 		{
-			// Draw: last players were blasted together
-			return PlayerNum <= 0 ? EEndGameState::Draw : EEndGameState::Lose;
+			if (PlayerNum <= 0)
+			{
+				// Draw: last players were blasted together
+				return EEndGameState::Draw;
+			}
+
+			// Lose: player is dead, or Honor Loss if player has killed anyone else before dying
+			return OpponentsKilledNumInternal > 0 ? EEndGameState::HonorLoss : EEndGameState::Lose;
 		}
 
 		// Win: Is alive owner and is the last player
@@ -91,13 +109,15 @@ void AMyPlayerState::UpdateEndGameState()
 void AMyPlayerState::SetEndGameState(EEndGameState NewEndGameState)
 {
 	if (!HasAuthority()
-		|| NewEndGameState == EndGameStateInternal)
+	    || NewEndGameState == EndGameStateInternal)
 	{
 		// No changes needed
 		return;
 	}
 
 	EndGameStateInternal = NewEndGameState;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, EndGameStateInternal, this);
+
 	ApplyEndGameState();
 }
 
@@ -110,10 +130,14 @@ void AMyPlayerState::OnRep_EndGameState()
 // Applies currently changed End-Game state for this player
 void AMyPlayerState::ApplyEndGameState()
 {
-	if (HasAuthority()
-		&& UMyBlueprintFunctionLibrary::GetAlivePlayersNum() <= 1)
+	// Try to end the game globally for all players
+	if (EndGameStateInternal != EEndGameState::None)
 	{
-		AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
+		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1       // no characters to play with
+		    || UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Human) == 0) // all human players are dead
+		{
+			AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
+		}
 	}
 
 	if (OnEndGameStateChanged.IsBound())
@@ -132,51 +156,105 @@ void AMyPlayerState::ServerSetPlayerName_Implementation(FName NewName)
 	SetPlayerName(NewName.ToString());
 }
 
+// Is created on expose code-only GetOldPlayerName() base method to blueprints to get locally the player name on each nickname change
+FName AMyPlayerState::GetPendingPlayerName() const
+{
+	const FName OldPlayerName = *GetOldPlayerName();
+	return !OldPlayerName.IsNone() ? OldPlayerName : SavedPlayerNameInternal;
+}
+
 // Sets saved human name to config property
 void AMyPlayerState::SetSavedPlayerName(FName NewName)
 {
-	if (SavedPlayerNameInternal != NewName)
+	if (SavedPlayerNameInternal == NewName
+	    || !IsPlayerStateLocallyControlled())
 	{
-		SavedPlayerNameInternal = NewName;
-
-		SetPlayerName(SavedPlayerNameInternal.ToString());
-	}
-}
-
-// Applies default AI name based on current character ID like "AI 0", "AI 1" etc
-void AMyPlayerState::SetDefaultBotName()
-{
-	if (!HasAuthority()
-	    || !IsABot())
-	{
-		// Is not bot
 		return;
 	}
 
-	const int32 CharacterID = GetPlayerCharacterChecked().GetPlayerId();
-	const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
-	if (GetPlayerName() != AIName)
+	SavedPlayerNameInternal = NewName;
+
+	SetPlayerName(SavedPlayerNameInternal.ToString());
+}
+
+// Attempts to assign default nickname
+void AMyPlayerState::SetDefaultPlayerName()
+{
+	if (!HasAuthority())
 	{
-		SetPlayerName(AIName);
+		return;
+	}
+
+	FString NewName = TEXT("");
+	const EPlayerType PlayerType = GetPlayerType();
+	switch (PlayerType)
+	{
+		case EPlayerType::Bot:
+		{
+			const int32 CharacterID = GetPlayerId();
+			const FString AIName = FString::Printf(TEXT("AI %s"), *FString::FromInt(CharacterID));
+			if (GetPlayerName() != AIName)
+			{
+				NewName = AIName;
+			}
+			break;
+		}
+
+		case EPlayerType::Human:
+		{
+			if (IsPlayerStateLocallyControlled())
+			{
+				// First, try to obtain player name from the OS
+				NewName = UKismetSystemLibrary::GetPlatformUserName();
+			}
+
+			// Then, try to obtain player name from online subsystem
+			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
+			{
+				FString OnlinePlayerName = TEXT("");
+				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/OnlinePlayerName);
+				if (!OnlinePlayerName.IsEmpty())
+				{
+					NewName = OnlinePlayerName;
+				}
+			}
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	// New default name is set, so save it to config (if local)
+	if (IsPlayerStateLocallyControlled())
+	{
+		SetSavedPlayerName(*NewName);
+	}
+	else
+	{
+		// Set name directly (without config)
+		SetPlayerName(NewName);
 	}
 }
 
 // Overrides base method to additionally set player name on server and broadcast it
-void AMyPlayerState::SetPlayerName(const FString& S)
+void AMyPlayerState::SetPlayerName(const FString& NewPlayerName)
 {
-	if (S == GetPlayerName())
+	if (NewPlayerName == GetPlayerName()
+	    || NewPlayerName.IsEmpty())
 	{
 		return;
 	}
 
-	if (HasAuthority())
+	// First, apply new nickname locally
+	Super::SetPlayerName(NewPlayerName);
+	ApplyPlayerName();
+
+	if (!HasAuthority()
+	    && IsPlayerStateLocallyControlled())
 	{
-		Super::SetPlayerName(S);
-	}
-	else
-	{
-		ServerSetPlayerName(*S);
-		ApplyPlayerName(); // apply locally
+		// Let server know about new nickname, so it replicates to all clients
+		ServerSetPlayerName(*NewPlayerName);
 	}
 }
 
@@ -213,6 +291,8 @@ void AMyPlayerState::SetCharacterDead(bool bIsDead)
 	}
 
 	bIsCharacterDeadInternal = bIsDead;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, bIsCharacterDeadInternal, this);
+
 	ApplyIsCharacterDead();
 }
 
@@ -244,6 +324,53 @@ void AMyPlayerState::OnPostCharacterDead_Implementation(const FCells& Cells)
 		AGeneratedMap::Get().OnPostDestroyedLevelActors.RemoveAll(this);
 
 		UpdateEndGameState();
+	}
+}
+
+/*********************************************************************************************
+ * Killed Opponents Num
+ *********************************************************************************************/
+
+// Called when an opponent is killed
+void AMyPlayerState::SetOpponentKilled(const class APlayerCharacter* KilledOpponent)
+{
+	if (!HasAuthority()
+	    || !KilledOpponent
+	    || KilledOpponent == GetPawn()) // is killed by itself
+	{
+		return;
+	}
+
+	const int32 NewValue = OpponentsKilledNumInternal + 1;
+	SetOpponentKilledNum(NewValue);
+}
+
+void AMyPlayerState::SetOpponentKilledNum(int32 NewOpponentsKilledNum)
+{
+	if (!HasAuthority()
+	    || NewOpponentsKilledNum == OpponentsKilledNumInternal)
+	{
+		return;
+	}
+
+	OpponentsKilledNumInternal = NewOpponentsKilledNum;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, OpponentsKilledNumInternal, this);
+
+	ApplyOpponentsKilledNum();
+}
+
+// Called on client when Opponents Killed Num changes
+void AMyPlayerState::OnRep_OpponentsKilledNum()
+{
+	ApplyOpponentsKilledNum();
+}
+
+// Applies and broadcasts Opponents Killed Num changes
+void AMyPlayerState::ApplyOpponentsKilledNum()
+{
+	if (OnOpponentsKilledNumChanged.IsBound())
+	{
+		OnOpponentsKilledNumChanged.Broadcast(OpponentsKilledNumInternal);
 	}
 }
 
@@ -286,9 +413,9 @@ void AMyPlayerState::OnRep_IsABot()
 // Applies and broadcasts IsABot status
 void AMyPlayerState::ApplyIsABot()
 {
-	if (OnIsABotChanged.IsBound())
+	if (OnPlayerTypeChanged.IsBound())
 	{
-		OnIsABotChanged.Broadcast(IsABot());
+		OnPlayerTypeChanged.Broadcast(GetPlayerType());
 	}
 }
 
@@ -377,13 +504,21 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 	}
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnPlayerStateInit(*this);
-}
 
-// Listens game settings to apply them once saved
-void AMyPlayerState::OnSaveSettings_Implementation()
-{
-	const FName PendingPlayerName = GetPendingPlayerName();
-	SetSavedPlayerName(PendingPlayerName);
+	if (IsPlayerStateLocallyControlled())
+	{
+		// Listen game settings to apply them once saved
+		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
+
+		// Apply custom player name from config
+		SetPlayerName(SavedPlayerNameInternal.ToString());
+		if (SavedPlayerNameInternal.IsNone())
+		{
+			// Game is firstly launched, update config with default name
+			SetDefaultPlayerName();
+			SaveConfig();
+		}
+	}
 }
 
 // Listen game states to notify server about ending game for controlled player
@@ -391,11 +526,12 @@ void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState Current
 {
 	switch (CurrentGameState)
 	{
-		case ECGS::Menu:         // fallthrough
+		case ECGS::Menu:         // Fallthrough
 		case ECGS::GameStarting: // Fallthrough
 		case ECGS::InGame:
 		{
 			SetCharacterDead(false);
+			SetOpponentKilledNum(0);
 			SetEndGameState(EEndGameState::None);
 			break;
 		}
@@ -409,6 +545,13 @@ void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState Current
 	}
 }
 
+// Listens game settings to apply them once saved
+void AMyPlayerState::OnSaveSettings_Implementation()
+{
+	const FName PendingPlayerName = GetPendingPlayerName();
+	SetSavedPlayerName(PendingPlayerName);
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
@@ -418,13 +561,18 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, EndGameStateInternal);
-	DOREPLIFETIME(ThisClass, bIsCharacterDeadInternal);
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
 
-	// APlayerState::bIsABot private property has replication condition as 'Initial'
-	// Reset to default condition, so the same player state can change its type without respawn
-	static const FName bIsABot_PrivateProperty = TEXT("bIsABot");
-	ResetReplicatedLifetimeProperty(StaticClass(), Super::StaticClass(), bIsABot_PrivateProperty, COND_None, OutLifetimeProps);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, EndGameStateInternal, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, bIsCharacterDeadInternal, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, OpponentsKilledNumInternal, Params);
+
+	// Override APlayerState's COND_InitialOnly properties to allow updates on reused instances without requiring respawn
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, PlayerId, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsInactive, COND_None);
+	DOREPLIFETIME_OVERRIDE_CONDITION(Super, UniqueId, COND_None);
 }
 
 // Called when the game starts
@@ -438,27 +586,25 @@ void AMyPlayerState::BeginPlay()
 	}
 }
 
+// Is overridden to prevent the player state from being destroyed to be able to reuse it by bots
+void AMyPlayerState::OnDeactivated()
+{
+	// Do not call super to avoid destroying the player state
+	return;
+}
+
 // Register a player with the online subsystem
 void AMyPlayerState::RegisterPlayerWithSession(bool bWasFromInvite)
 {
+	if (!GetUniqueId().IsValid())
+	{
+		// Network id is not valid: player likely has left the session
+		return;
+	}
+
 	Super::RegisterPlayerWithSession(bWasFromInvite);
 
 	SetIsHuman();
-
-	// Apply custom player name from config if any
-	if (IsPlayerStateLocallyControlled())
-	{
-		// Listen game settings to apply them once saved
-		UMyGameUserSettings::Get().OnSaveSettings.AddUniqueDynamic(this, &ThisClass::OnSaveSettings);
-
-		// Apply custom player name from config
-		if (SavedPlayerNameInternal.IsNone())
-		{
-			SavedPlayerNameInternal = *UKismetSystemLibrary::GetPlatformUserName();
-		}
-		SetPlayerName(SavedPlayerNameInternal.ToString());
-		SetPendingPlayerName(SavedPlayerNameInternal);
-	}
 }
 
 // Unregister a player with the online subsystem
@@ -466,7 +612,23 @@ void AMyPlayerState::UnregisterPlayerWithSession()
 {
 	Super::UnregisterPlayerWithSession();
 
+	const UWorld* World = GetWorld();
+	if (!World || World->bIsTearingDown)
+	{
+		return;
+	}
+
+	// Human player left session, so set it as bot
 	SetIsABot();
+
+	// Reset player name to default
+	SetDefaultPlayerName();
+
+	// Reset network id, bots should have it empty
+	if (GetUniqueId().IsValid())
+	{
+		SetUniqueId(FUniqueNetIdRepl());
+	}
 }
 
 // Is overridden to handle own OnRep functions for engine properties

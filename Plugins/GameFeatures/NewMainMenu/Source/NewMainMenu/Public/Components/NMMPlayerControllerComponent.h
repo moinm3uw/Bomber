@@ -102,7 +102,7 @@ protected:
 
 	/** Called wen the Main Menu state was changed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnNewMainMenuStateChanged(ENMMState NewState);
+	void OnNewMainMenuStateChanged(ENMMState NewState, ENMMState PreviousState);
 
 	/** Is listen to set Menu game state once first spot is ready. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
@@ -110,5 +110,5 @@ protected:
 
 	/** Is called from AsyncLoadGameFromSlot once Save Game is loaded, or null if it failed to load. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnAsyncLoadGameFromSlotCompleted(const FString& SlotName, int32 UserIndex, class USaveGame* SaveGame);
+	void OnAsyncLoadGameFromSlotCompleted(class USaveGame* SaveGame);
 };

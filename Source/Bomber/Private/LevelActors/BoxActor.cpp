@@ -23,7 +23,8 @@ ABoxActor::ABoxActor()
 
 	// Replicate an actor
 	bReplicates = true;
-	NetUpdateFrequency = 10.f;
+	static constexpr float NewNewUpdateFrequency = 10.f;
+	SetNetUpdateFrequency(NewNewUpdateFrequency);
 	bAlwaysRelevant = true;
 	SetReplicatingMovement(true);
 
@@ -34,102 +35,60 @@ ABoxActor::ABoxActor()
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
 }
 
-// Initialize a box actor, could be called multiple times
-void ABoxActor::ConstructBoxActor()
-{
-	checkf(MapComponentInternal, TEXT("%s: 'MapComponentInternal' is null"), *FString(__FUNCTION__));
-	MapComponentInternal->OnOwnerWantsReconstruct.AddUniqueDynamic(this, &ThisClass::OnConstructionBoxActor);
-	MapComponentInternal->ConstructOwnerActor();
-}
-
-// Called when an instance of this class is placed (in editor) or spawned.
-void ABoxActor::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-
-	ConstructBoxActor();
-}
-
-// Is called on a box actor construction, could be called multiple times
-void ABoxActor::OnConstructionBoxActor()
-{
-	if (IS_TRANSIENT(this)                 // This actor is transient
-	    || !IsValid(MapComponentInternal)) // Is not valid for map construction
-	{
-		return;
-	}
-
-	UpdateItemChance();
-}
-
-// Called when the game starts or when spawned
-void ABoxActor::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (HasAuthority())
-	{
-		check(MapComponentInternal);
-		MapComponentInternal->OnDeactivatedMapComponent.AddDynamic(this, &ThisClass::OnDeactivatedMapComponent);
-	}
-
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-}
-
-void ABoxActor::SetActorHiddenInGame(bool bNewHidden)
-{
-	Super::SetActorHiddenInGame(bNewHidden);
-
-	if (!bNewHidden)
-	{
-		// Is added on Generated Map
-		ConstructBoxActor();
-	}
-}
-
-// Called when owned map component is destroyed on the Generated Map
-void ABoxActor::OnDeactivatedMapComponent(UMapComponent* MapComponent, UObject* DestroyCauser)
-{
-	const bool bIsCauserAllowedForItems = UMyBlueprintFunctionLibrary::IsActorHasAnyMatchingType(Cast<AActor>(DestroyCauser), TO_FLAG(EAT::Bomb | EActorType::Player));
-	if (bIsCauserAllowedForItems)
-	{
-		TrySpawnItem();
-	}
-}
-
 // Spawn item with a chance
 void ABoxActor::TrySpawnItem()
 {
-	if (!IsValid(MapComponentInternal) // The Map Component is not valid or is destroyed already
+	if (!HasAuthority()
 	    || AMyGameStateBase::GetCurrentGameState() != ECurrentGameState::InGame)
 	{
 		return;
 	}
 
 	// Spawn item with the chance
-	static constexpr int32 Max = 100;
-	if (FMath::RandHelper(Max) < SpawnItemChanceInternal)
+	constexpr int32 MaxChance = 100;
+	const int32 CurrentChance = FMath::RandHelper(MaxChance);
+	const int32 PowerupsChance = UBoxDataAsset::Get().GetPowerupsChance();
+	if (CurrentChance <= PowerupsChance)
 	{
+		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
 		AGeneratedMap::Get().SpawnActorByType(EAT::Item, MapComponentInternal->GetCell());
 	}
 }
 
-// The item chance can be overrided in game, so it should be reset for each new game
-void ABoxActor::UpdateItemChance()
+/*********************************************************************************************
+ * Overrides
+ ********************************************************************************************* */
+
+// Called when an instance of this class is placed (in editor) or spawned.
+void ABoxActor::OnConstruction(const FTransform& Transform)
 {
-	// Update current chance from Data Asset
-	if (MapComponentInternal)
-	{
-		SpawnItemChanceInternal = UBoxDataAsset::Get().GetSpawnItemChance();
-	}
+	Super::OnConstruction(Transform);
+
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Listen to reset item chance for each new game
-void ABoxActor::OnGameStateChanged(ECurrentGameState CurrentGameState)
+/*********************************************************************************************
+ * Events
+ ********************************************************************************************* */
+
+// Called when this level actor is reconstructed or added on the Generated Map
+void ABoxActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
-	if (CurrentGameState == ECurrentGameState::GameStarting)
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
+}
+
+// Called when this level actor is destroyed on the Generated Map
+void ABoxActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
+{
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
+
+	const bool bIsCauserAllowedForItems = UMyBlueprintFunctionLibrary::IsActorHasAnyMatchingType(Cast<AActor>(DestroyCauser), TO_FLAG(EAT::Bomb | EActorType::Player));
+	if (bIsCauserAllowedForItems)
 	{
-		// Update current chance from Data Asset
-		UpdateItemChance();
+		TrySpawnItem();
 	}
 }

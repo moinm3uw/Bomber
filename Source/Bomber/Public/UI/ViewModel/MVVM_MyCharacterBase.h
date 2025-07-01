@@ -8,6 +8,10 @@
 //---
 #include "MVVM_MyCharacterBase.generated.h"
 
+class UTexture2D;
+
+enum class EPlayerType : uint8;
+
 /**
  * Contains UI character-related data to be used only by widgets, it can represent player as well as bot.
  */
@@ -58,29 +62,21 @@ protected:
 	void OnCharacterDeadChanged(bool bIsCharacterDead);
 
 	/*********************************************************************************************
-	 * Is Human / Bot
+	 * Avatar (Human / Bot / Online)
 	 ********************************************************************************************* */
 public:
-	/** Setter and Getter is character human controlled, should be 'Visible' when character is human. */
-	void SetIsHumanVisibility(ESlateVisibility NewIsHumanVisibility) { UE_MVVM_SET_PROPERTY_VALUE(IsHumanVisibility, NewIsHumanVisibility); }
-	ESlateVisibility GetIsHumanVisibility() const { return IsHumanVisibility; }
+	/** Setter and Getter about character's avatar, is always valid: default human, bot, or player's online avatar. */
+	void SetAvatar(UTexture2D* NewAvatar) { UE_MVVM_SET_PROPERTY_VALUE(Avatar, NewAvatar); }
+	UTexture2D* GetAvatar() const { return Avatar; }
 
-	/** Setter and Getter character bot controlled, should be 'Visible' when character is bot. */
-	void SetIsBotVisibility(ESlateVisibility NewIsBotVisibility) { UE_MVVM_SET_PROPERTY_VALUE(IsBotVisibility, NewIsBotVisibility); }
-	ESlateVisibility GetIsBotVisibility() const { return IsBotVisibility; }
+	/** Assigns current avatar based on player type. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void UpdateAvatar();
 
 protected:
-	/** Is 'Visible' when character is human. */
+	/** Character's avatar, is always valid: default human, bot, or player's online avatar. */
 	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	ESlateVisibility IsHumanVisibility = ESlateVisibility::Collapsed;
-
-	/** Is 'Visible' when character is bot. */
-	UPROPERTY(BlueprintReadWrite, Transient, FieldNotify, Setter, Getter, Category = "C++")
-	ESlateVisibility IsBotVisibility = ESlateVisibility::Collapsed;
-
-	/** Called when changed character Bot status is changed, applies both bot and human visibility. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnIsBotChanged(bool bIsBot);
+	TObjectPtr<UTexture2D> Avatar = nullptr;
 
 	/*********************************************************************************************
 	 * Events
@@ -96,6 +92,10 @@ protected:
 	/** Called when any player state is initialized and its assigned character is ready. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPlayerStateReady(class AMyPlayerState* PlayerState, int32 CharacterID);
+
+	/** Called when changed character Bot status is changed, applies both bot and human visibility. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPlayerTypeChanged(EPlayerType PlayerType);
 };
 
 /*********************************************************************************************

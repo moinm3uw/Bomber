@@ -1,0 +1,865 @@
+﻿{
+	"FormatVersion": 1,
+	"Namespace": "",
+	"Children": [
+		{
+			"Source":
+			{
+				"Text": "AUDIO"
+			},
+			"Keys": [
+				{
+					"Key": "EE8937004D3303A4D1637DBFFE1B4ED6",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.AudioTab.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Anti Aliasing"
+			},
+			"Keys": [
+				{
+					"Key": "AA661EBE442C495F179EEB9102E7D050",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.AntiAliasing.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Auto Skip Cinematics"
+			},
+			"Keys": [
+				{
+					"Key": "E76D8412443F242779726C9825623BB0",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Checkbox.AutoSkipCinematics.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Back"
+			},
+			"Keys": [
+				{
+					"Key": "CFC97B654007D0E10720D4B425844586",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Button.CloseSettings.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "CONTROLS"
+			},
+			"Keys": [
+				{
+					"Key": "034DA8B649A7D12B0CE11488B7A32D41",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.CustomWidget.InputControls.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Camera Lock"
+			},
+			"Keys": [
+				{
+					"Key": "2214E63746C2245B5A145EB3F845C43F",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.CameraLock.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Check if you want to lock camera on center"
+			},
+			"Keys": [
+				{
+					"Key": "F8AA30AC44F4BED1BADAD780A53DB7E5",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.CameraLock.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Check to enable the fullscreen mode"
+			},
+			"Keys": [
+				{
+					"Key": "D4DAAF084A3BE24A202DE68898F1E2E5",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.FullscreenMode.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Check to enable vertical synchronization"
+			},
+			"Keys": [
+				{
+					"Key": "B7FFF44B423CD59EE733BCA69238F83E",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.VSync.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Check to show the current FPS"
+			},
+			"Keys": [
+				{
+					"Key": "0523A0DC4613786EE0EB51BC0004E9E5",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.FPSCounter.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose a limit on the allowed FPS"
+			},
+			"Keys": [
+				{
+					"Key": "102752ED4A6BFCA0C118E998176772A4",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.FramerateLock.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose screen resolution"
+			},
+			"Keys": [
+				{
+					"Key": "C17A26CF44C13399941A65A8751FC629",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Resolution.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the anti-aliasing quality level"
+			},
+			"Keys": [
+				{
+					"Key": "7DB3E7A5495F4715BDBC5AA25156ABBC",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.AntiAliasing.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the effects quality level"
+			},
+			"Keys": [
+				{
+					"Key": "90F005634B366C90B26D718257A450B2",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Effects.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the foliage quality level"
+			},
+			"Keys": [
+				{
+					"Key": "D9BD4EBD465AA125DD46D6B2ED2AB23B",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Foliage.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the overall quality level"
+			},
+			"Keys": [
+				{
+					"Key": "67193396456DFF30A0D91E85F3A0A62D",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the post processing quality level"
+			},
+			"Keys": [
+				{
+					"Key": "35B9A2684BF5179C3B6934A6AFD61ECE",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.PostProcessing.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the shading quality level"
+			},
+			"Keys": [
+				{
+					"Key": "BBC7603A441AE43F7F852CAA459CA4B2",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Shading.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the shadows quality level"
+			},
+			"Keys": [
+				{
+					"Key": "9B41F86548F28A5428EAEFA29E041C32",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Shadows.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the textures quality level"
+			},
+			"Keys": [
+				{
+					"Key": "C54F71644D8F097BBE0C398598564C47",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Textures.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Choose the view distance quality level"
+			},
+			"Keys": [
+				{
+					"Key": "85CAA36A40052F6A6E2916BBA604F756",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.ViewDistance.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Cinematics Volume"
+			},
+			"Keys": [
+				{
+					"Key": "0C3773CA49BBEE805EAFB1B57ED9A4A4",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Slider.CinematicsVolume.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Credits"
+			},
+			"Keys": [
+				{
+					"Key": "179AD8E441B78C87BD46E4886566273F",
+					"Path": "/CreditsSystem/Data/DT_Credits_Settings.DT_Credits_Settings.Settings.Button.OpenCredits.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Custom Quality"
+			},
+			"Keys": [
+				{
+					"Key": "4BD5AC644E575D63EA6A51BAE630502E",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(0).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Difficulty"
+			},
+			"Keys": [
+				{
+					"Key": "17E689074C021878363191A8850A44C3",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Difficulty.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Easy Difficulty"
+			},
+			"Keys": [
+				{
+					"Key": "2503BD4742C4B5A090040F8662F3745C",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Difficulty.SettingsPicker.Combobox.Members(0).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Effects"
+			},
+			"Keys": [
+				{
+					"Key": "84B5B6574293D5119E2DEEBFCD7F6029",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Effects.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Enable/disable smooth transitions when switching characters in the Main Menu"
+			},
+			"Keys": [
+				{
+					"Key": "08829C344942CA83BEF10B81181542D3",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Checkbox.InstantCharacterSwitch.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Enter your nickname"
+			},
+			"Keys": [
+				{
+					"Key": "91BCE84A4CF9B58F61A9C8BB16663DB5",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.UserInput.PlayerName.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Foliage"
+			},
+			"Keys": [
+				{
+					"Key": "09E71C2742B9A57C9C3AEDA5CA9F1D82",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Foliage.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Framerate Lock"
+			},
+			"Keys": [
+				{
+					"Key": "830704614CB4A9294A1192AC105A706A",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.FramerateLock.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Fullscreen"
+			},
+			"Keys": [
+				{
+					"Key": "30E1B9914168CFDFD022ACAAF72408A2",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.FullscreenMode.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "GAMEPLAY"
+			},
+			"Keys": [
+				{
+					"Key": "158FFB6F4FEB9FFC58E5E9AB7D6D1E93",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.GameplayTab.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "GRAPHICS"
+			},
+			"Keys": [
+				{
+					"Key": "904134154319169B16FC20B12B24F27C",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.GraphicsTab.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Hard Difficulty"
+			},
+			"Keys": [
+				{
+					"Key": "69C060234A1322FB2F98A180AA66382E",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Difficulty.SettingsPicker.Combobox.Members(2).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "High Quality"
+			},
+			"Keys": [
+				{
+					"Key": "E8B2577745E0DD87448B218C5E6D0519",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(3).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Instant Character Switch"
+			},
+			"Keys": [
+				{
+					"Key": "75E882964F91F5D25CA02FAC4882FE61",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Checkbox.InstantCharacterSwitch.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Language"
+			},
+			"Keys": [
+				{
+					"Key": "CAD098984DE1C4FA4FCEF188053EB0B8",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Language.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Low Quality"
+			},
+			"Keys": [
+				{
+					"Key": "9DF5FE0544F93D49F8AE25AF6371B067",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(1).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Master Volume"
+			},
+			"Keys": [
+				{
+					"Key": "3FC144E945D22BA8DB903BB7FBD1AE1E",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.MasterVolume.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Medium Quality"
+			},
+			"Keys": [
+				{
+					"Key": "8642E36749EAEB860B2005BC52CFE5CF",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(2).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Music Volume"
+			},
+			"Keys": [
+				{
+					"Key": "FDDC03E84D349EAC5743FEB1C9E6B87D",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.MusicVolume.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Normal Difficulty"
+			},
+			"Keys": [
+				{
+					"Key": "7BD11C2F446ACF6089175E9887F5CF84",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Difficulty.SettingsPicker.Combobox.Members(1).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Opens Credits"
+			},
+			"Keys": [
+				{
+					"Key": "CAB0379B421FCD6A538C59B209008B55",
+					"Path": "/CreditsSystem/Data/DT_Credits_Settings.DT_Credits_Settings.Settings.Button.OpenCredits.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Overall Quality"
+			},
+			"Keys": [
+				{
+					"Key": "C5758D8D4760AC9C55185480331D72DB",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Player Name"
+			},
+			"Keys": [
+				{
+					"Key": "0A4D44494F98A414FFD6F399B8C3DAFE",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.UserInput.PlayerName.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Post Processing"
+			},
+			"Keys": [
+				{
+					"Key": "47AE80804DE9530F324B9BBBC8695072",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.PostProcessing.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Put Bomb P1"
+			},
+			"Keys": [
+				{
+					"Key": "E94B5B984AC0C39529AD68996273774F",
+					"Path": "/Game/Bomber/EnhancedInput/InputMappingContexts/IMC_Gameplay_P1.Default__IMC_Gameplay_P1_C:PlayerMappableKeySettings_0.DisplayName"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Put Bomb P2"
+			},
+			"Keys": [
+				{
+					"Key": "160FEA814CB10F63ABC61288E76130C5",
+					"Path": "/Game/Bomber/EnhancedInput/InputMappingContexts/IMC_Gameplay_P2.Default__IMC_Gameplay_P2_C:PlayerMappableKeySettings_0.DisplayName"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Return back to the main menu"
+			},
+			"Keys": [
+				{
+					"Key": "A31C26AB4E3A28D6819DC4A4D7EFA70D",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Button.CloseSettings.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "SETTINGS"
+			},
+			"Keys": [
+				{
+					"Key": "B1FD8AB64A187ECF1AF534A23B1EB4B9",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.Title.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Screen Resolution"
+			},
+			"Keys": [
+				{
+					"Key": "CDB22C8D449DFC08EA86DC8127FB526E",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Resolution.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Select your preferred language for in-game text and menus"
+			},
+			"Keys": [
+				{
+					"Key": "CD547BAA44610F362727FF9F020DBEAD",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Language.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Set new difficulty level that affects AI behavior"
+			},
+			"Keys": [
+				{
+					"Key": "E54B28574670C217638965A02A8D7B71",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Difficulty.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Set the overall volume for all sounds in the game"
+			},
+			"Keys": [
+				{
+					"Key": "B94B90AB43C910906DA3658FE85EBDDC",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.MasterVolume.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Set the sound volume for music in cinematics"
+			},
+			"Keys": [
+				{
+					"Key": "810E4989403C675727246A9BBB97549C",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Slider.CinematicsVolume.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Set the sound volume for the background music"
+			},
+			"Keys": [
+				{
+					"Key": "3EC174FB4DEA3029A69CEEA9C382A9DD",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.MusicVolume.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Set the sound volume for the effects like bomb explosions"
+			},
+			"Keys": [
+				{
+					"Key": "CE6CBAFE4B647A492890C4883AB59F95",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.SFXVolume.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Shading"
+			},
+			"Keys": [
+				{
+					"Key": "A7FA66064B59FEC6F8E727B54716A864",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Shading.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Shadows"
+			},
+			"Keys": [
+				{
+					"Key": "DF0944CD4A8D9C68EEB68FBB2F915930",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Shadows.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Show FPS"
+			},
+			"Keys": [
+				{
+					"Key": "E0880BDD4241E60FB2A3008CDB5CCA63",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.FPSCounter.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Skips previously seen cinematics automatically. With other players, cinematics are always skipped."
+			},
+			"Keys": [
+				{
+					"Key": "1835102C4C50DBD336D89F9D389D006F",
+					"Path": "/NewMainMenu/DataAssets/DT_MainMenuSettings.DT_MainMenuSettings.Settings.Checkbox.AutoSkipCinematics.SettingsPicker.PrimaryData.Tooltip"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Sound Effects Volume"
+			},
+			"Keys": [
+				{
+					"Key": "DC1E69F1449E9C4CD8B1D58CFCBB7676",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Slider.SFXVolume.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Textures"
+			},
+			"Keys": [
+				{
+					"Key": "450D242C4BCE9E1D850422BAD4296944",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.Textures.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Ultra Quality"
+			},
+			"Keys": [
+				{
+					"Key": "E9E2CACB4D4D0906038317A4A422AF02",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(5).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Uncapped"
+			},
+			"Keys": [
+				{
+					"Key": "C4A2940F4B4653B88F4EFCB4BFDB963B",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.FramerateLock.SettingsPicker.Combobox.Members(0).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "V-Sync"
+			},
+			"Keys": [
+				{
+					"Key": "E3C445BF447C7C7057DD6FBC4387E065",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Checkbox.VSync.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "VIDEO"
+			},
+			"Keys": [
+				{
+					"Key": "0606A8B34E9342299BF21DB4EE719FE7",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.VideoTab.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "Very High Quality"
+			},
+			"Keys": [
+				{
+					"Key": "EB7E162D4837053CBA6760BF2CE2786A",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.OverallQuality.SettingsPicker.Combobox.Members(4).Members"
+				}
+			]
+		},
+		{
+			"Source":
+			{
+				"Text": "View Distance"
+			},
+			"Keys": [
+				{
+					"Key": "0AFFFA6E41922B98E518148C195366C8",
+					"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.Combobox.ViewDistance.SettingsPicker.PrimaryData.Caption"
+				}
+			]
+		}
+	],
+	"Subnamespaces": [
+		{
+			"Namespace": "Core",
+			"Children": [
+				{
+					"Source":
+					{
+						"Text": "None"
+					},
+					"Keys": [
+						{
+							"Key": "None",
+							"Path": "/Game/Bomber/DataAssets/DT_Settings.DT_Settings.Settings.TextLine.Title.SettingsPicker.PrimaryData.Tooltip"
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -10,6 +10,7 @@ namespace FTransientChecker
 {
 /** Returns true is specified object is pending kill, CDO or exists on the Transient level. */
 BOMBER_API bool IsTransient(const UObject* Obj);
+BOMBER_API bool IsTransientLevel(const UObject* Obj);
 }
 
 /**
@@ -105,26 +106,6 @@ enum class EPathType : uint8
 };
 
 /**
- * Types of items.
- */
-UENUM(BlueprintType)
-enum class EItemType : uint8
-{
-	///< The type was not selected
-	None,
-	///< Increases speed
-	Skate,
-	///< increases the amount of bombs
-	Bomb,
-	///< Increases the range of explosion
-	Fire
-};
-
-using EIT = EItemType;
-#define EIT_FIRST_FLAG TO_FLAG(EIT::Skate)
-#define EIT_LAST_FLAG TO_FLAG(EIT::Fire)
-
-/**
  * The replicated states of the game. It shares the state between all the players at the same time.
  * Can be tracked both on host and client by binding with BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
  */
@@ -155,7 +136,24 @@ UENUM(BlueprintType)
 enum class EEndGameState : uint8
 {
 	None,
+	///< Player is last alive
 	Win,
+	///< Player has died
 	Lose,
+	///< Player has killed anyone else before dying
+	HonorLoss,
+	///< Last players have blasted each other or the time has run out
 	Draw
+};
+
+/**
+ * Represents the type of the character.
+ */
+UENUM(BlueprintType)
+enum class EPlayerType : uint8
+{
+	None,
+	Human,
+	Bot,
+	Any
 };

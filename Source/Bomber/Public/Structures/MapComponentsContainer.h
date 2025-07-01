@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "Net/Serialization/FastArraySerializer.h"
+#include "Iris/ReplicationState/IrisFastArraySerializer.h"
 //---
 #include "Cell.h"
 #include "PoolManagerTypes.h" // FPoolObjectHandle
+#include "Engine/NetSerialization.h" // FVector_NetQuantize
 //---
 #include "MapComponentsContainer.generated.h"
 
@@ -17,6 +18,7 @@
  *********************************************************************************************/
 
 struct FMapComponentsContainer;
+struct FCell;
 
 class UMapComponent;
 
@@ -39,29 +41,26 @@ struct BOMBER_API FMapComponentSpec : public FFastArraySerializerItem
 	TObjectPtr<UMapComponent> MapComponent = nullptr;
 
 	/** The position of the map component on the level.
-	 * Is replicated much faster than the component itself. */
+	 * Replicated here instead of in the component to stay in sync with the array, avoiding component replication delay
+	 * Uses NetQuantize to optimize network traffic */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++")
-	FCell Cell = FCell::InvalidCell;
+	FVector_NetQuantize Cell = FCell::InvalidCell;
 
 	/** Unique ID of Map Component's owner actor in the Pool Manager.
 	 * Is useful to track the owner actor lifecycle even it is not spawned yet, but its Spawn Request is in queue.
 	 * Is NOT replicated and exists only on the server side. */
 	FPoolObjectHandle PoolObjectHandle = FPoolObjectHandle::EmptyHandle;
 
-	/** Updates the cell of the map component according current data.
-	 * Allows to set the cell much faster than waiting for its replication. */
-	void UpdateCellInComponent();
-
 	/** Returns if current data is valid. If not, probably it's pending spawn or not replicated yet. */
-	bool IsValid() const { return MapComponent != nullptr; }
+	bool FORCEINLINE IsValid() const { return FCell(Cell).IsValid() && MapComponent != nullptr; }
 
 	/*********************************************************************************************
 	 * FFastArraySerializerItem implementation
 	 ********************************************************************************************* */
 
-	void PreReplicatedRemove(const FMapComponentsContainer& InMapComponentsContainer) { UpdateCellInComponent(); }
-	void PostReplicatedAdd(const FMapComponentsContainer& InMapComponentsContainer) { UpdateCellInComponent(); }
-	void PostReplicatedChange(const FMapComponentsContainer& InMapComponentsContainer) { UpdateCellInComponent(); }
+	void PreReplicatedRemove(const FMapComponentsContainer& InMapComponentsContainer);
+	void PostReplicatedAdd(const FMapComponentsContainer& InMapComponentsContainer);
+	void PostReplicatedChange(const FMapComponentsContainer& InMapComponentsContainer);
 
 	/*********************************************************************************************
 	 * Convenience operators to treat FMapComponentSpec as a UMapComponent*
@@ -69,7 +68,7 @@ struct BOMBER_API FMapComponentSpec : public FFastArraySerializerItem
 
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FMapComponentSpec& B) { return A.MapComponent == B.MapComponent && A.Cell == B.Cell && A.PoolObjectHandle == B.PoolObjectHandle; }
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const UMapComponent* B) { return A.MapComponent == B; }
-	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FCell& B);
+	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FCell& B) { return FCell(A.Cell) == B; }
 	friend BOMBER_API bool operator==(const FMapComponentSpec& A, const FPoolObjectHandle& B) { return A.PoolObjectHandle == B; }
 };
 
@@ -95,17 +94,24 @@ public:
 };
 
 /**
- * Custom container struct to hold FMapComponentSpec objects, inheriting from FFastArraySerializer 
- * to utilize Unreal's fast array serialization mechanics. This ensures reliable network replication 
- * even when the number of components in the array remains unchanged.
- * PostReplicatedChange can be added to handle custom logic after the array has been replicated.
+ * Is exposed to replicate the Map Components and their cells.
+ * Utilizes the fast array serialization instead of regular array of objects for next reasons:
+ * - reliable network replication even when the number of components in the array remains unchanged
+ * - minimizes bandwidth usage, essential as it can be large and frequently changing
+ * - efficiently tracks changes, including additions and removals
+ * - ensures each component and its cell replicate together as one package due to its structured design
  */
 USTRUCT(BlueprintType)
-struct BOMBER_API FMapComponentsContainer : public FFastArraySerializer
+struct BOMBER_API FMapComponentsContainer : public FIrisFastArraySerializer
 {
 	GENERATED_BODY()
 
-	/** The main data array for replication. */
+	/** Internal token for tracking replication progress, is not replicated, but is incremented locally on each instance whenever any level actor is spawned. */
+	UPROPERTY(Transient, NotReplicated)
+	int32 LocalReplicationToken = 0;
+
+	/** The main data array for replication.
+	 * @warning It shouldn't be accessed directly, use ULevelActorsUtilsLibrary functions instead for obtaining Level Actors. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++")
 	TArray<FMapComponentSpec> Items;
 
@@ -119,6 +125,9 @@ struct BOMBER_API FMapComponentsContainer : public FFastArraySerializer
 	/** Checks if an item should be written during delta serialization, considering client or server context. */
 	template <typename Type, typename SerializerType>
 	static bool ShouldWriteFastArrayItem(const Type& Item, const bool bIsWritingOnClient);
+
+	/** Marks this spec as dirty to push changes for replication, if valid. */
+	void MarkItemDirty(FFastArraySerializerItem& Item);
 
 	/*********************************************************************************************
 	 * Convenience methods to treat FMapComponentsContainer as a TArray<UMapComponent*>
@@ -136,7 +145,7 @@ public:
 	FORCEINLINE bool ContainsByPredicate(const TFunctionRef<bool(const FMapComponentSpec&)>& Predicate) const { return Items.ContainsByPredicate(Predicate); }
 
 	FMapComponentSpec* Find(const UMapComponent* Item) { return Items.FindByKey(Item); }
-	FMapComponentSpec* Find(const FCell& Cell) { return Items.FindByKey(Cell); }
+	FMapComponentSpec* Find(const FCell& Cell) { return Cell.IsValid() ? Items.FindByKey(Cell) : nullptr; }
 	FMapComponentSpec* Find(const FPoolObjectHandle& PoolObjectHandle) { return Items.FindByKey(PoolObjectHandle); }
 
 	FMapComponentSpec& FindOrAdd(UMapComponent& MapComponent);

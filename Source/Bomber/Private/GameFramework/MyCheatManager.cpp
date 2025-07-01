@@ -9,10 +9,10 @@
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyDebugCameraController.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/PlayerState.h"
-#include "LevelActors/BoxActor.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
@@ -125,29 +125,20 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 	}
 
 	// Destroy all specified
-	GeneratedMap.DestroyLevelActorsOnCells(CellsToDestroy);
+	APlayerCharacter* DestroyCauser = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	GeneratedMap.DestroyLevelActorsOnCells(CellsToDestroy, DestroyCauser);
 }
 
 /*********************************************************************************************
  * Box
  ********************************************************************************************* */
 
-// Override the chance to spawn item after box destroying
-void UMyCheatManager::SetItemChance(int32 Chance)
-{
-	// Get all boxes
-	FMapComponents MapComponents;
-	ULevelActorsUtilsLibrary::GetLevelActors(MapComponents, TO_FLAG(EAT::Box));
-	for (const UMapComponent* MapComponentIt : MapComponents)
-	{
-		ABoxActor* BoxActor = MapComponentIt ? MapComponentIt->GetOwner<ABoxActor>() : nullptr;
-		if (BoxActor)
-		{
-			// Override new chance
-			BoxActor->SpawnItemChanceInternal = Chance;
-		}
-	}
-}
+// Override the percentage of items spawn from boxes
+TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
+	TEXT("Bomber.Box.SetPowerupsChance"),
+	0.f,
+	TEXT("100 - is maximum, 0 - is disabled (default chance will be used)"),
+	ECVF_Cheat);
 
 /*********************************************************************************************
  * Bomb
@@ -173,16 +164,6 @@ void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 	}
 }
 
-// Enable or disable the God mode to make a controllable player undestroyable
-void UMyCheatManager::SetGodMode(bool bShouldEnable)
-{
-	const APlayerCharacter* ControllablePlayer = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
-	if (UMapComponent* MapComponent = UMapComponent::GetMapComponent(ControllablePlayer))
-	{
-		MapComponent->SetUndestroyable(bShouldEnable);
-	}
-}
-
 // Enable or disable the Auto Copilot mode to make a controllable player to play automatically
 void UMyCheatManager::SetAutoCopilot()
 {
@@ -195,7 +176,7 @@ void UMyCheatManager::SetAutoCopilot()
 
 	// Toggle the Copilot mode
 	PlayerState->SetIsABot(!PlayerState->IsABot());
-	LocalPlayer->TryPossessController();
+	LocalPlayer->TryPossessController(EPlayerType::Any);
 }
 
 /*********************************************************************************************
@@ -260,25 +241,12 @@ void UMyCheatManager::AddBot()
  * Debug
  ********************************************************************************************* */
 
-// Shows coordinates of all level actors by specified types
-void UMyCheatManager::DisplayCells(const FString& ActorTypesString)
-{
-	// Set on the level to visualize new level actors
-	const int32 ActorTypesBitmask = GetBitmaskFromActorTypesString(ActorTypesString);
-	AGeneratedMap::Get().SetDisplayCellsActorTypes(ActorTypesBitmask);
-
-	// Update existed level actors
-	FMapComponents MapComponents;
-	ULevelActorsUtilsLibrary::GetLevelActors(MapComponents, TO_FLAG(EAT::All));
-	for (UMapComponent* MapComponentIt : MapComponents)
-	{
-		// Clear previous cell renders for all level actors in game
-		UCellsUtilsLibrary::ClearDisplayedCells(MapComponentIt);
-
-		// Show new cell renders for specified level actors
-		MapComponentIt->TryDisplayOwnedCell();
-	}
-}
+// Override the percentage of items spawn from boxes
+TAutoConsoleVariable<FString> UMyCheatManager::CVarDisplayCells(
+	TEXT("Bomber.Debug.DisplayCells"),
+	TEXT(""),
+	TEXT("Shows coordinates of level actors of specified types (requires regeneration), e.g: Bomber.Debug.DisplayCells Bomb Player - show bombs and players"),
+	ECVF_Cheat);
 
 /*********************************************************************************************
  * Level
@@ -291,11 +259,21 @@ void UMyCheatManager::SetLevelSize(const FString& LevelSize)
 	FString Width = TEXT("");
 	FString Height = TEXT("");
 
-	if (LevelSize.Split(Delimiter, &Width, &Height, ESearchCase::IgnoreCase))
+	if (!LevelSize.Split(Delimiter, &Width, &Height, ESearchCase::IgnoreCase))
 	{
-		const FIntPoint NewLevelSize(FCString::Atoi(*Width), FCString::Atoi(*Height));
-		AGeneratedMap::Get().SetLevelSize(NewLevelSize);
+		return;
 	}
+
+	// Restart the level
+	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	{
+		MyGameState->SetGameState(ECurrentGameState::GameStarting);
+	}
+
+	// Update the level size
+	const FIntPoint NewLevelSize(FCString::Atoi(*Width), FCString::Atoi(*Height));
+	AGeneratedMap::Get().SetLevelSize(NewLevelSize);
 }
 
 // Spawns an actor by type on the level
@@ -308,18 +286,10 @@ void UMyCheatManager::SpawnActorByType(EActorType ActorType, int32 ColumnX, int3
 	GeneratedMap.DestroyLevelActorsOnCells({Cell});
 
 	// Spawn new actor on the cell
-	const TFunction<void(AActor*)>& OnSpawned = [RowIndex](const AActor* SpawnedActor)
-	{
-		UMapComponent* MapComponent = UMapComponent::GetMapComponent(SpawnedActor);
-		checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
-
-		const ULevelActorRow* Row = MapComponent->GetActorDataAssetChecked().GetRowByIndex(RowIndex);
-		if (ensureMsgf(Row, TEXT("ASSERT: [%i] %hs:\n'Row' was not found by '%i' index!"), __LINE__, __FUNCTION__, RowIndex))
-		{
-			MapComponent->SetCustomMeshAsset(Row->Mesh);
-		}
-	};
-	GeneratedMap.SpawnActorByType(ActorType, Cell, OnSpawned);
+	const ULevelActorDataAsset* DataAsset = UDataAssetsContainer::Get().GetDataAssetByActorType(ActorType);
+	checkf(DataAsset, TEXT("ERROR: [%i] %hs:\n'DataAsset' is null!"), __LINE__, __FUNCTION__);
+	const ULevelActorRow* Row = DataAsset->GetRowByIndex(RowIndex);
+	GeneratedMap.SpawnActorWithMesh(ActorType, Cell, {Row});
 }
 
 /*********************************************************************************************

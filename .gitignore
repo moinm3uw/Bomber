@@ -294,6 +294,8 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+*/Plugins/Developer/RiderLink/
+.run/
 
 # CodeRush personal settings
 .cr/personal
@@ -345,9 +347,6 @@ healthchecksdb
 # Documentation
 docs/
 doxygen.tag
-
-# Rider
-**/Plugins/Developer/RiderLink/
 
 # Visual Studio 2015 user specific files
 .vs/
@@ -422,6 +421,14 @@ Saved/*
 
 # Cache files for the editor to use
 DerivedDataCache
+
+# Ignore scripts unless force pushed
+*.sh
+*.bat
+*.cmd
+
+# Ignore auto-generated and dialogue-specific localization settings
+Config/Localization/*
 
 # Bomber specific
 Config/DefaultMetaCheatManager.ini

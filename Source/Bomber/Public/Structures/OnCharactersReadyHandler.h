@@ -32,6 +32,9 @@ public:
 	/** Should be called when player state is replicated. */
 	void Broadcast_OnPlayerStateInit(const AMyPlayerState& PlayerState);
 
+	/** Should be called when character is added to the Generated Map. */
+	void Broadcast_OnCharacterAdded(APlayerCharacter& Character);
+
 	/*********************************************************************************************
 	 * Public Helpers
 	 ********************************************************************************************* */
@@ -55,12 +58,17 @@ private:
 		TWeakObjectPtr<APlayerCharacter> Character = nullptr;
 		TWeakObjectPtr<const AMyPlayerState> PlayerState = nullptr;
 		bool bIsPossessed = false;
+		bool bIsAddedOnGeneratedMap = false;
 	};
 
 	/** All registered character ready handles. */
 	TArray<FOnCharacterReadyData> OnCharacterReadyHandles;
 
 	FOnCharacterReadyData& FindOrAdd(APlayerCharacter& Character);
+
+	/** Returns true if player controller is possessed and ready at this moment.*
+	 * It does not check any other conditions, only possession. */
+	static bool IsCharacterPossessed(const FOnCharacterReadyData& FoundHandle);
 
 	/** Is internal method, shouldn't be called directly, instead Broadcast_ methods should be used. */
 	void TryBroadcastOnReady_Internal(APlayerCharacter& Character);
@@ -69,9 +77,10 @@ private:
 /** Internal macro for binding and calling delegate methods. */
 #define INTERNAL_BIND_CHARACTER_READY(Delegate, Obj, Function, Arg, ID) \
 { \
-    UGlobalEventsSubsystem::Get().Delegate.AddUniqueDynamic(Obj, &Function); \
+	UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
+	EventsSubsystem.Delegate.AddUniqueDynamic(Obj, &Function); \
     auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(ID); \
-    if (UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.IsCharacterReady(Arg)) \
+    if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg)) \
     { \
         Obj->Function(Arg, ID); \
     } \

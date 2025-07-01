@@ -17,10 +17,9 @@
 #include "Subsystems/NMMSpotsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "MyUtilsLibraries/SaveUtilsLibrary.h"
 //---
 #include "Components/AudioComponent.h"
-#include "Engine/World.h"
-#include "Kismet/GameplayStatics.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMPlayerControllerComponent)
 
@@ -172,19 +171,12 @@ void UNMMPlayerControllerComponent::BeginPlay()
 		SpotsSubsystem.OnActiveMenuSpotReady.AddUniqueDynamic(this, &ThisClass::OnActiveMenuSpotReady);
 	}
 
-	// Listen Main Menu states
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(this, &ThisClass::OnNewMainMenuStateChanged);
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)
-	{
-		// State is already set, apply it
-		OnNewMainMenuStateChanged(BaseSubsystem.GetCurrentMenuState());
-	}
+	BIND_ON_MENU_STATE_CHANGED(this, ThisClass::OnNewMainMenuStateChanged);
 
 	// Load save game data of the Main Menu
-	FAsyncLoadGameFromSlotDelegate AsyncLoadGameFromSlotDelegate;
+	FAsyncLoadGameFromSlot AsyncLoadGameFromSlotDelegate;
 	AsyncLoadGameFromSlotDelegate.BindUObject(this, &ThisClass::OnAsyncLoadGameFromSlotCompleted);
-	UGameplayStatics::AsyncLoadGameFromSlot(UNMMSaveGameData::GetSaveSlotName(), UNMMSaveGameData::GetSaveSlotIndex(), AsyncLoadGameFromSlotDelegate);
+	USaveUtilsLibrary::AsyncLoadGameFromSlot(this, UNMMSaveGameData::GetSaveSlotName(), UNMMSaveGameData::GetSaveSlotIndex(), AsyncLoadGameFromSlotDelegate);
 
 	// Disable auto camera possess by default, so it can be controlled by the spot
 	UMyCameraComponent* LevelCamera = UMyBlueprintFunctionLibrary::GetLevelCamera();
@@ -254,7 +246,7 @@ void UNMMPlayerControllerComponent::OnGameStateChanged(ECurrentGameState Current
 }
 
 // Called wen the Main Menu state was changed
-void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState)
+void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewState, ENMMState PreviousState)
 {
 	AMyPlayerController& MyPC = GetPlayerControllerChecked();
 
@@ -289,7 +281,7 @@ void UNMMPlayerControllerComponent::OnActiveMenuSpotReady_Implementation(UNMMSpo
 }
 
 // Is called from AsyncLoadGameFromSlot once Save Game is loaded, or null if it failed to load
-void UNMMPlayerControllerComponent::OnAsyncLoadGameFromSlotCompleted_Implementation(const FString& SlotName, int32 UserIndex, USaveGame* SaveGame)
+void UNMMPlayerControllerComponent::OnAsyncLoadGameFromSlotCompleted_Implementation(USaveGame* SaveGame)
 {
 	UNMMSaveGameData* InSaveGameData = Cast<UNMMSaveGameData>(SaveGame);
 	if (!InSaveGameData)

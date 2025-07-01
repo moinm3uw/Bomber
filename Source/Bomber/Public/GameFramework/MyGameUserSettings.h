@@ -16,6 +16,11 @@ class BOMBER_API UMyGameUserSettings final : public UGameUserSettings
 {
 	GENERATED_BODY()
 
+public:
+	/** Returns the game user settings.
+	 * Is init once and can not be destroyed. */
+	static UMyGameUserSettings& Get();
+
 	/*********************************************************************************************
 	 * Delegates
 	 ********************************************************************************************* */
@@ -27,29 +32,13 @@ public:
 	FOnSaveSettings OnSaveSettings;
 
 	/*********************************************************************************************
-	 * Video settings
+	 * Resolution
+	 * In base class: GetScreenResolution()
 	 ********************************************************************************************* */
 public:
-	/** Returns the game user settings.
-	 * Is init once and can not be destroyed. */
-	static UMyGameUserSettings& Get();
-
-	/** Validates and resets bad user settings to default. Deletes stale user settings file if necessary. */
-	virtual void ValidateSettings() override;
-
-	/** Save the user settings to persistent storage (automatically happens as part of ApplySettings). */
-	virtual void SaveSettings() override;
-
-	/** Changes all scalability settings at once based on a single overall quality level, is declared in parent as UFUNCTION.
-	 * @param Value New quality level.
-	 * @see UMyGameUserSettings::OverallQualityInternal */
-	virtual void SetOverallScalabilityLevel(int32 Value) override;
-
-	/* Returns the overall scalability level, is declared in parent as UFUNCTION. */
-	virtual int32 GetOverallScalabilityLevel() const override;
-
-	/** Mark current video mode settings (fullscreenmode/resolution) as being confirmed by the user. */
-	virtual void ConfirmVideoMode() override;
+	/** Returns the index of chosen resolution*/
+	UFUNCTION(BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetResolutionIndex() const { return CurrentResolutionIndexInternal; }
 
 	/** Returns the min allowed resolution width. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -75,36 +64,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetResolutionByIndex(int32 Index);
 
-	/** Returns the index of chosen resolution*/
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE int32 GetResolutionIndex() const { return CurrentResolutionIndexInternal; }
-
-	/** Returns true if the game is in fullscreen mode. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE bool IsFullscreenEnabled() const { return GetFullscreenMode() == EWindowMode::Fullscreen; }
-
-	/** Set and apply fullscreen mode. If false, the windowed mode will be applied. */
+	/** Syncs the current resolution index with the actual resolution, is useful when it's changed outside (e.g. by Alt+Enter). */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetFullscreenEnabled(bool bIsFullscreen);
-
-	/** Update fullscreen mode on UI for cases when it's changed outside (e.g. by Alt+Enter). */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void UpdateFullscreenEnabled();
-
-	/** Returns the index of chosen fps lock in array. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE int32 GetFPSLockIndex() const { return FPSLockIndexInternal; }
-
-	/** Set the FPS cap by specified member index. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void SetFPSLockByIndex(int32 Index);
+	void TryUpdateCurrentResolution();
 
 protected:
-	/** The overall quality level, is config property.
-	 * 0:custom, 1:low, 2:medium, 3:high, 4:very high, 5:ultra. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overall Quality"))
-	int32 OverallQualityInternal;
-
 	/** The min allowed resolution width.
 	 * Is set on starting from game (not settings) config.
 	 * By default is 1280. */
@@ -129,9 +93,112 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Current Resolution Index"))
 	int32 CurrentResolutionIndexInternal = 0;
 
+	/*********************************************************************************************
+	 * Fullscreen
+	 * In base class: GetFullscreenMode()
+	 ********************************************************************************************* */
+public:
+	/** Returns the enum type of supported fullscreen mode.
+	 * Is expanded as a function to avoid usage of unsupported modes.
+	 * Never use directly EWindowMode type, but only this function. 
+	 * @param bReturnFullscreen If true, then EWindowMode::WindowedFullscreen will be returned, otherwise EWindowMode::Windowed.
+	 * @warning Native Fullscreen (EWindowMode::Fullscreen) is not supported at all because of various engine issues, WindowedFullscreen is used instead. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static FORCEINLINE EWindowMode::Type GetSupportedWindowModeType(bool bReturnFullscreen) { return bReturnFullscreen ? EWindowMode::WindowedFullscreen : EWindowMode::Windowed; }
+
+	/** Returns true if the game is in fullscreen mode. */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	FORCEINLINE bool IsFullscreenEnabled() const { return GetFullscreenMode() == GetSupportedWindowModeType(/*bReturnFullscreen*/true); }
+
+	/** Set and apply fullscreen mode. If false, the windowed mode will be applied. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetFullscreenEnabled(bool bIsFullscreen);
+
+	/** Syncs the current Fullscreen mode with the actual mode, is useful when it's changed outside (e.g. by Alt+Enter). */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void TryUpdateCurrentFullscreenMode();
+
+	/*********************************************************************************************
+	 * FPS Lock
+	 ********************************************************************************************* */
+protected:
+	/** Returns the index of chosen fps lock in array. */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetFPSLockIndex() const { return FPSLockIndexInternal; }
+
+	/** Set the FPS cap by specified member index. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetFPSLockByIndex(int32 Index);
+
+protected:
 	/** The index of chosen fps lock in array, is config property. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "FPS Lock Index"))
 	int32 FPSLockIndexInternal;
+
+	/*********************************************************************************************
+	 * Overall Quality (Scalability)
+	 ********************************************************************************************* */
+public:
+	/* Returns the overall scalability level, is declared in parent as UFUNCTION. */
+	virtual int32 GetOverallScalabilityLevel() const override;
+
+	/** Changes all scalability settings at once based on a single overall quality level, is declared in parent as UFUNCTION.
+	 * @param Value New quality level.
+	 * @see UMyGameUserSettings::OverallQualityInternal */
+	virtual void SetOverallScalabilityLevel(int32 Value) override;
+
+	/** Is called to apply the currently chosen overall quality level. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void ApplyOverallScalabilityLevel();
+
+protected:
+	/** The overall quality level, is config property.
+	 * 0:custom, 1:low, 2:medium, 3:high, 4:very high, 5:ultra. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overall Quality"))
+	int32 OverallQualityInternal;
+
+	/*********************************************************************************************
+	 * Language
+	 ********************************************************************************************* */
+public:
+	/** Returns the index of chosen language */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetLanguageIndex() const { return CurrentLanguageIndexInternal; }
+
+	/** Get all supported languages in text format. */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	void GetTextLanguages(TArray<FText>& OutTextLanguages) const { OutTextLanguages = DisplayLanguagesInternal; }
+
+	/** Set and apply a new language by index. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetLanguageByIndex(int32 Index);
+
+	/** Is called to apply the currently chosen language. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void ApplyCurrentLanguage();
+
+	/** Call to update supported languages in arrays. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void UpdateSupportedLanguages();
+
+protected:
+	/** Contains all available languages in their native names to display on UI.
+	 * Order is in sync with CulturesInternal. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Text Languages"))
+	TArray<FText> DisplayLanguagesInternal;
+
+	/** Contains all available cultures available to apply: en, ru, etc.
+	 * Order is in sync with TextLanguagesInternal. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Cultures"))
+	TArray<FName> CulturesInternal;
+
+	/** The index of chosen language. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Current Language Index"))
+	int32 CurrentLanguageIndexInternal = INDEX_NONE;
+
+	/** Is currently selected culture (e.g: 'en'), is config property. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, meta = (BlueprintProtected, DisplayName = "Applied Culture"))
+	FName AppliedCultureInternal;
 
 	/*********************************************************************************************
 	 * Overrides
@@ -139,4 +206,13 @@ protected:
 public:
 	/** Loads the user settings from persistent storage */
 	virtual void LoadSettings(bool bForceReload) override;
+
+	/** Validates and resets bad user settings to default. Deletes stale user settings file if necessary. */
+	virtual void ValidateSettings() override;
+
+	/** Save the user settings to persistent storage (automatically happens as part of ApplySettings). */
+	virtual void SaveSettings() override;
+
+	/** Mark current video mode settings (fullscreenmode/resolution) as being confirmed by the user. */
+	virtual void ConfirmVideoMode() override;
 };

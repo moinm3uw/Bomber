@@ -35,8 +35,45 @@ void FOnCharactersReadyHandler::Broadcast_OnPlayerStateInit(const AMyPlayerState
 	}
 }
 
+// Should be called when character is added to the Generated Map
+void FOnCharactersReadyHandler::Broadcast_OnCharacterAdded(APlayerCharacter& Character)
+{
+	if (UUtilsLibrary::HasWorldBegunPlay()
+	    && !IsCharacterReady(&Character)) // Skip if already ready
+	{
+		FindOrAdd(Character).bIsAddedOnGeneratedMap = true;
+		TryBroadcastOnReady_Internal(Character);
+	}
+}
+
 // Returns true if the character is ready at this moment
 bool FOnCharactersReadyHandler::IsCharacterReady(const APlayerCharacter* Character) const
+{
+	if (!Character)
+	{
+		return false;
+	}
+
+	const FOnCharacterReadyData* FoundHandle = OnCharacterReadyHandles.FindByPredicate([&Character](const FOnCharacterReadyData& It)
+	{
+		return It.Character == Character;
+	});
+
+	return FoundHandle
+	       && FoundHandle->Character.IsValid()
+	       && FoundHandle->PlayerState.IsValid()
+	       && FoundHandle->bIsAddedOnGeneratedMap
+	       && IsCharacterPossessed(*FoundHandle);
+}
+
+// Returns true if the player state is ready at this moment
+bool FOnCharactersReadyHandler::IsCharacterReady(const AMyPlayerState* PlayerState) const
+{
+	return PlayerState && IsCharacterReady(PlayerState->GetPawn<APlayerCharacter>());
+}
+
+// Returns true if player controller is possessed and ready at this moment
+bool FOnCharactersReadyHandler::IsCharacterPossessed(const FOnCharacterReadyData& FoundHandle)
 {
 	/*
 	| Row | Entity  | Details                         | Authority    | Possession   | Locally Controlled | Result |
@@ -48,36 +85,15 @@ bool FOnCharactersReadyHandler::IsCharacterReady(const APlayerCharacter* Charact
 	| 5   | Player  | Local Client (Autonomous Proxy) | No Authority | Not Possessed| Yes                | false  |
 	| 6   | Player  | Other Client or Remote Host     | No Authority | Not Possessed| No                 | true   |
 	*/
-	if (!Character)
-	{
-		return false;
-	}
 
-	const FOnCharacterReadyData* FoundHandle = OnCharacterReadyHandles.FindByPredicate([&Character](const FOnCharacterReadyData& It)
+	if (FoundHandle.bIsPossessed)
 	{
-		return It.Character == Character;
-	});
-
-	// Check general conditions
-	if (!FoundHandle
-	    || !FoundHandle->Character.IsValid()
-	    || !FoundHandle->PlayerState.IsValid())
-	{
-		return false;
-	}
-
-	if (FoundHandle->bIsPossessed)
-	{
-		// Is completely ready, all conditions are met: has character, player state, and is possessed
-		// Matches Row 1: Player (Local or Host)
-		// Matches Row 2: Bot (In Host World)
-		// Matches Row 3: Player - Local Client (Autonomous Proxy)
 		return true;
 	}
 
-	const bool bHasAuthority = FoundHandle->Character->HasAuthority();
-	const bool bIsBot = FoundHandle->PlayerState->IsABot();
-	const bool bIsLocallyControlled = FoundHandle->Character->IsLocallyControlled();
+	const bool bHasAuthority = FoundHandle.Character->HasAuthority();
+	const bool bIsBot = FoundHandle.PlayerState->IsABot();
+	const bool bIsLocallyControlled = FoundHandle.Character->IsLocallyControlled();
 
 	if (bHasAuthority)
 	{
@@ -93,7 +109,7 @@ bool FOnCharactersReadyHandler::IsCharacterReady(const APlayerCharacter* Charact
 	}
 
 	if (bIsLocallyControlled
-	    && !FoundHandle->bIsPossessed)
+	    && !FoundHandle.bIsPossessed)
 	{
 		// Matches Row 5: Player - Local Client (Autonomous Proxy) not possessed
 		return false;
@@ -108,13 +124,7 @@ bool FOnCharactersReadyHandler::IsCharacterReady(const APlayerCharacter* Charact
 
 	return ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\nUnhandled condition!\n"
 			"Character: '%s' | PlayerState: '%s' | bIsPossessed: %s | bIsBot: %s | bIsLocallyControlled: %s | HasAuthority: %s | ID: %i"),
-		__LINE__, __FUNCTION__, *Character->GetName(), *FoundHandle->PlayerState->GetName(), FoundHandle->bIsPossessed ? TEXT("true") : TEXT("false"), bIsBot ? TEXT("true") : TEXT("false"), bIsLocallyControlled ? TEXT("true") : TEXT("false"), FoundHandle->Character->HasAuthority() ? TEXT("true") : TEXT("false"), FoundHandle->PlayerState->GetPlayerId());
-}
-
-// Returns true if the player state is ready at this moment
-bool FOnCharactersReadyHandler::IsCharacterReady(const AMyPlayerState* PlayerState) const
-{
-	return PlayerState && IsCharacterReady(PlayerState->GetPawn<APlayerCharacter>());
+		__LINE__, __FUNCTION__, *GetNameSafe(FoundHandle.Character.Get()), *GetNameSafe(FoundHandle.PlayerState.Get()), FoundHandle.bIsPossessed ? TEXT("true") : TEXT("false"), bIsBot ? TEXT("true") : TEXT("false"), bIsLocallyControlled ? TEXT("true") : TEXT("false"), FoundHandle.Character->HasAuthority() ? TEXT("true") : TEXT("false"), FoundHandle.PlayerState->GetPlayerId());
 }
 
 // Broadcasts OnCharacterReady event if all conditions are met

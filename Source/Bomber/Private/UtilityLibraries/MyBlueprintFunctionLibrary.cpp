@@ -9,6 +9,7 @@
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/LevelActorDataAsset.h"
+#include "DataAssets/UIDataAsset.h"
 #include "Engine/MyGameViewportClient.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -18,7 +19,7 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
-#include "UtilityLibraries/CellsUtilsLibrary.h"
+#include "UI/SettingsWidget.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 //---
 #include "Engine/Engine.h"
@@ -31,9 +32,30 @@
  * --------------------------------------------------- */
 
 // Returns number of alive players
-int32 UMyBlueprintFunctionLibrary::GetAlivePlayersNum()
+int32 UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType InPlayerType)
 {
-	return UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Player)).Num();
+	FMapComponents AllPlayers;
+	ULevelActorsUtilsLibrary::GetLevelActors(/*out*/AllPlayers, TO_FLAG(EActorType::Player));
+
+	int32 PlayersNum = 0;
+	for (const UMapComponent* MapComponentIt : AllPlayers)
+	{
+		const APlayerCharacter* PlayerChar = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
+		const AMyPlayerState* PlayerState = PlayerChar ? PlayerChar->GetPlayerState<AMyPlayerState>() : nullptr;
+		if (!PlayerState)
+		{
+			continue;
+		}
+
+		const EPlayerType PlayerTypeIt = PlayerState->GetPlayerType();
+		if (InPlayerType == EPlayerType::Any
+		    || InPlayerType == PlayerTypeIt)
+		{
+			++PlayersNum;
+		}
+	}
+
+	return PlayersNum;
 }
 
 // Returns the type of the current level
@@ -126,7 +148,7 @@ UMyGameUserSettings* UMyBlueprintFunctionLibrary::GetMyGameUserSettings(const UO
 USettingsWidget* UMyBlueprintFunctionLibrary::GetSettingsWidget(const UObject* OptionalWorldContext/* = nullptr*/)
 {
 	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem(OptionalWorldContext);
-	return WidgetsSubsystem ? WidgetsSubsystem->GetSettingsWidget() : nullptr;
+	return WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag<USettingsWidget>(TAG_UI_WIDGET_SETTINGS) : nullptr;
 }
 
 // Returns the Camera Component used on level
