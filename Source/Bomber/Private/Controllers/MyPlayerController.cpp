@@ -20,6 +20,7 @@
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Components/GameFrameworkComponentManager.h"
 #include "Framework/Application/NavigationConfig.h"
 #include "Framework/Application/SlateApplication.h"
@@ -162,6 +163,12 @@ void AMyPlayerController::InitInputSystem()
 	if (WidgetsSubsystem.AreWidgetInitialized())
 	{
 		OnWidgetsInitialized();
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = UInputUtilsLibrary::GetEnhancedInputSubsystem(this);
+	if (ensureMsgf(InputSubsystem, TEXT("ASSERT: [%i] %hs:\n'InputSubsystem' is null!"), __LINE__, __FUNCTION__))
+	{
+		InputSubsystem->InitalizeUserSettings();
 	}
 
 	// Register gameplay mappings, so they can be remapped
