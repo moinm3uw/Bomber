@@ -247,6 +247,14 @@ void AMyPlayerController::PawnLeavingGame()
 	}
 }
 
+// Is overridden to perform cleanup of the controller when it is destroyed
+void AMyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UPlayerInputDataAsset::Get().EmptyGameplayInputContexts();
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */

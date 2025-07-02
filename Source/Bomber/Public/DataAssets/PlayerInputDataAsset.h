@@ -65,6 +65,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "WorldContext", DefaultToSelf = "WorldContext", AutoCreateRefTerm = "Key"))
 	bool IsMappedKey(const UObject* WorldContext, const FKey& Key) const;
 
+	/** Performs cleanup of transient data. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void EmptyGameplayInputContexts() const { GameplayInputContextsInternal.Empty(); }
+
 protected:
 	/** Enhanced Input Mapping Contexts of gameplay input actions where any selected input can be remapped by player.
 	 *  Are selectable classes instead of objects directly to solve next UE issues:

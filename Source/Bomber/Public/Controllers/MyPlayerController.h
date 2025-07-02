@@ -89,6 +89,9 @@ protected:
 	/** Is overridden to prevent destroyed possessed pawn, which is expected to be reused. */
 	virtual void PawnLeavingGame() override;
 
+	/** Is overridden to perform cleanup of the controller when it is destroyed. */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	/*********************************************************************************************
 	 * Events
 	 ********************************************************************************************* */
