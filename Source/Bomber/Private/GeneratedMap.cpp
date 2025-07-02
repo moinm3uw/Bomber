@@ -352,7 +352,7 @@ void AGeneratedMap::ResolveSpawnedMapComponent(UMapComponent& AddedComponent)
 		// The reference was replicated before the component was spawned
 		// Validate the reference to fixup broken reference
 		// It intentionally affects only this client, but not server and other players
-		FoundSpec->MapComponent = AddedComponent;
+		FoundSpec->MapComponent = &AddedComponent;
 		FoundSpec->PostReplicatedAdd(MapComponentsInternal);
 	}
 }

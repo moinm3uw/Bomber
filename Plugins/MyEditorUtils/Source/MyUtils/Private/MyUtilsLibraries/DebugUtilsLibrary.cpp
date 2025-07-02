@@ -13,10 +13,13 @@ const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI(int32 NumCallers)
 	static constexpr ANSICHAR UnavailableMsg[] = "None";
 	return UnavailableMsg;
 #else
-	constexpr int32 MaxDepth = 10;
-	constexpr int32 CallerFrameIndex = 3;
+	static constexpr int32 MaxDepth = 10;
+	static constexpr int32 CallerFrameIndex = 3;
+	static constexpr int32 FunctionNameSize = 1024;
+	static constexpr int32 TempFunctionSize = 256;
+	static constexpr ANSICHAR Arrow[] = " -> ";
 
-	static ANSICHAR FunctionName[1024] = "Unknown caller";
+	static ANSICHAR FunctionName[FunctionNameSize] = "Unknown caller";
 	uint64 StackTrace[MaxDepth] = {0};
 
 	const int32 Depth = FPlatformStackWalk::CaptureStackBackTrace(StackTrace, MaxDepth);
@@ -43,20 +46,21 @@ const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI(int32 NumCallers)
 			continue;
 		}
 
-		ANSICHAR TempFunction[256];
-		FCStringAnsi::Strncpy(TempFunction, SymbolInfo.FunctionName, sizeof(TempFunction) - 1);
-		TempFunction[sizeof(TempFunction) - 1] = '\0';
+		ANSICHAR TempFunction[TempFunctionSize];
+		FCStringAnsi::Strncpy(TempFunction, SymbolInfo.FunctionName, TempFunctionSize - 1);
+		TempFunction[TempFunctionSize - 1] = '\0';
 
-		if (ANSICHAR* BracketPos = FCStringAnsi::Strrchr(TempFunction, '('))
+		ANSICHAR* BracketPos = FCStringAnsi::Strrchr(TempFunction, '(');
+		if (BracketPos)
 		{
 			*BracketPos = '\0';
 		}
 
 		if (Index > 0)
 		{
-			FCStringAnsi::Strcat(FunctionName, sizeof(FunctionName), " -> ");
+			FCStringAnsi::StrncatTruncateDest(FunctionName, FunctionNameSize, Arrow);
 		}
-		FCStringAnsi::Strcat(FunctionName, sizeof(FunctionName), TempFunction);
+		FCStringAnsi::StrncatTruncateDest(FunctionName, FunctionNameSize, TempFunction);
 	}
 
 	return FunctionName;
