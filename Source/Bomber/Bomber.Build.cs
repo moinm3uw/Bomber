@@ -8,7 +8,7 @@ public class Bomber : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Latest;
-		bEnableNonInlinedGenCppWarnings = true;
+		CppCompileWarningSettings.NonInlinedGenCppWarningLevel = WarningLevel.Error;
 
 		// Network: enable Iris replication
 		const bool bAddAsPublicDependency = true; // Created FMapComponentsContainer
