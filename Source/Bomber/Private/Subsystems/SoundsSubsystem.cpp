@@ -12,9 +12,11 @@
 //---
 #include "Components/AudioComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/Level.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "UObject/Package.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SoundsSubsystem)
 
@@ -133,6 +135,27 @@ void USoundsSubsystem::DestroyAllSoundComponents()
 		}
 	}
 	SoundComponentsInternal.Empty();
+
+#if WITH_EDITOR
+	// Clean up all potentially leaked editor sounds (such as UScrubbedSound), firstly leaked in UE5.6.0 
+	const UWorld* World = GetWorld();
+	const ULevel* Level = World ? World->GetCurrentLevel() : nullptr;
+	if (Level)
+	{
+		TArray<UObject*> FoundObjects;
+		GetObjectsWithOuter(Level, FoundObjects, false, RF_NoFlags, EInternalObjectFlags::None);
+		for (UObject* ObjectIt : FoundObjects)
+		{
+			if (IsValid(ObjectIt)
+			    && ObjectIt->IsA<USoundBase>()
+			    && ObjectIt->HasAnyFlags(RF_Transient))
+			{
+				ObjectIt->ConditionalBeginDestroy();
+				ObjectIt->Rename(nullptr, GetTransientPackage(), REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors | REN_NonTransactional);
+			}
+		}
+	}
+#endif
 }
 
 /*********************************************************************************************
