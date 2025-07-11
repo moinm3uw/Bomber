@@ -4,6 +4,7 @@
 
 #include "GameFramework/PlayerState.h"
 //---
+#include "AbilitySystemInterface.h"
 #include "Bomber.h"
 //---
 #include "MyPlayerState.generated.h"
@@ -13,10 +14,10 @@ enum class EPlayerType : uint8;
 /**
  * Holds Player's data like nickname.
  * It's replicated to all clients and persists between matches.
- * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused like character.
+ * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused for both human and bot characters.
  */
 UCLASS(Config = "GameUserSettings", DefaultConfig)
-class BOMBER_API AMyPlayerState final : public APlayerState
+class BOMBER_API AMyPlayerState : public APlayerState, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -32,6 +33,19 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class APlayerCharacter* GetPlayerCharacter() const;
 	class APlayerCharacter& GetPlayerCharacterChecked() const;
+
+	/*********************************************************************************************
+	 * Gameplay Ability System (GAS)
+	 ********************************************************************************************* */
+public:
+	/** Returns ability system component that is used to manage abilities and attributes for owned player. */
+	virtual FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponentInternal; }
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+
+protected:
+	/** Ability System Component that is used to manage abilities (like place bomb) and attributes (like powerups) for owned player. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponentInternal = nullptr;
 
 	/*********************************************************************************************
 	 * End Game State
@@ -277,6 +291,10 @@ public:
 	 * Can be called multiple times on each player join due to reusing player states. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnPlayerStateInit();
+
+	/** Is called on server and clients when new owned pawn is possessed or changed. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
+	void OnPawnChanged(class APawn* NewPawn);
 
 	/** Listens game states to notify server about ending game for controlled player. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

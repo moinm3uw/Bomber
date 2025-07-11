@@ -16,6 +16,7 @@
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "AbilitySystemComponent.h"
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -27,6 +28,10 @@ AMyPlayerState::AMyPlayerState()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+
+	// Create ASC on player state, so even if different character is possessed (like from mod), it will still have the same attributes and abilities
+	AbilitySystemComponentInternal = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponentInternal->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	// Reset default value to -1 to avoid conflicts with first player of 0 ID
 	SetPlayerId(INDEX_NONE);
@@ -42,7 +47,7 @@ bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 // Returns owner human or bot character
 APlayerCharacter* AMyPlayerState::GetPlayerCharacter() const
 {
-	return Cast<APlayerCharacter>(GetPawn());
+	return GetPawn<APlayerCharacter>();
 }
 
 // Returns always valid owner (human or bot), or crash if nullptr
@@ -51,6 +56,13 @@ APlayerCharacter& AMyPlayerState::GetPlayerCharacterChecked() const
 	APlayerCharacter* PlayerCharacter = GetPlayerCharacter();
 	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
 	return *PlayerCharacter;
+}
+
+// Returns ability system component that is used to manage abilities and attributes for owned player, crash if nullptr
+UAbilitySystemComponent& AMyPlayerState::GetAbilitySystemComponentChecked() const
+{
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	return *AbilitySystemComponentInternal;
 }
 
 /*********************************************************************************************
@@ -413,6 +425,10 @@ void AMyPlayerState::OnRep_IsABot()
 // Applies and broadcasts IsABot status
 void AMyPlayerState::ApplyIsABot()
 {
+	// Depending on player type, set different replication mode for ASC: bots dont need to replicate all effects, so use Minimal mode
+	const EGameplayEffectReplicationMode ReplicationMode = IsABot() ? EGameplayEffectReplicationMode::Minimal : EGameplayEffectReplicationMode::Mixed;
+	GetAbilitySystemComponentChecked().SetReplicationMode(ReplicationMode);
+
 	if (OnPlayerTypeChanged.IsBound())
 	{
 		OnPlayerTypeChanged.Broadcast(GetPlayerType());
@@ -490,6 +506,12 @@ void AMyPlayerState::ApplyPlayerId()
 	}
 }
 
+// Is called on server and clients when new owned pawn is possessed or changed
+void AMyPlayerState::OnPawnChanged_Implementation(APawn* NewPawn)
+{
+	GetAbilitySystemComponentChecked().InitAbilityActorInfo(this, NewPawn);
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
@@ -502,6 +524,10 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 		// Apply bot ID here while Human ID is called from Game Session
 		SetDefaultBotId();
 	}
+
+	GetAbilitySystemComponentChecked().InitAbilityActorInfo(this, GetPawn());
+
+	ApplyIsABot();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnPlayerStateInit(*this);
 
@@ -564,6 +590,7 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, AbilitySystemComponentInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, EndGameStateInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, bIsCharacterDeadInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, OpponentsKilledNumInternal, Params);

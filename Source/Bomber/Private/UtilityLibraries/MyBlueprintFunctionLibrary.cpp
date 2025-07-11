@@ -105,9 +105,9 @@ AMyPlayerController* UMyBlueprintFunctionLibrary::GetLocalPlayerController(const
 }
 
 // Returns the Bomber Player State for specified player, nullptr otherwise
-AMyPlayerState* UMyBlueprintFunctionLibrary::GetMyPlayerState(int32 CharacterID)
+AMyPlayerState* UMyBlueprintFunctionLibrary::GetMyPlayerState(int32 CharacterID, const UObject* OptionalWorldContext/* = nullptr*/)
 {
-	const APlayerCharacter* PlayerChar = GetPlayerCharacter(CharacterID);
+	const APlayerCharacter* PlayerChar = GetPlayerCharacter(CharacterID, OptionalWorldContext);
 	return PlayerChar ? PlayerChar->GetPlayerState<AMyPlayerState>() : nullptr;
 }
 
@@ -186,6 +186,20 @@ APlayerCharacter* UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter(const UOb
 	}
 
 	return LocalPlayer;
+}
+
+// Returns specified Ability System Component
+class UAbilitySystemComponent* UMyBlueprintFunctionLibrary::GetAbilitySystemComponent(int32 CharacterID, const UObject* OptionalWorldContext)
+{
+	const AMyPlayerState* PlayerState = GetMyPlayerState(CharacterID, OptionalWorldContext);
+	return PlayerState ? PlayerState->GetAbilitySystemComponent() : nullptr;
+}
+
+// Returns the Ability System Component from the local Player State
+class UAbilitySystemComponent* UMyBlueprintFunctionLibrary::GetLocalAbilitySystemComponent(const UObject* OptionalWorldContext)
+{
+	const AMyPlayerState* PlayerState = GetLocalPlayerState(OptionalWorldContext);
+	return PlayerState ? PlayerState->GetAbilitySystemComponent() : nullptr;
 }
 
 // Returns implemented Game Viewport Client on the project side

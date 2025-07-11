@@ -198,6 +198,13 @@ const FPlayerTag& APlayerCharacter::GetPlayerTag() const
 	return PlayerRow ? PlayerRow->PlayerTag : FPlayerTag::None;
 }
 
+// Returns the Ability System Component from the Player State
+UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
+{
+	const AMyPlayerState* InPlayerState = GetPlayerState<AMyPlayerState>();
+	return InPlayerState ? InPlayerState->GetAbilitySystemComponent() : nullptr;
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */

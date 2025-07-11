@@ -53,8 +53,8 @@ public:
 	static class AMyPlayerController* GetLocalPlayerController(const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the Bomber Player State for specified player, nullptr otherwise. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static class AMyPlayerState* GetMyPlayerState(int32 CharacterID);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class AMyPlayerState* GetMyPlayerState(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the player state of current controller. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
@@ -83,6 +83,16 @@ public:
 	/** Returns controlled player character. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
 	static class APlayerCharacter* GetLocalPlayerCharacter(const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns specified Ability System Component.
+	 * @param CharacterID - Global ID of a character in session to find.
+	 * @param OptionalWorldContext - the world context object. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UAbilitySystemComponent* GetAbilitySystemComponent(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns the Ability System Component from the local Player State. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UAbilitySystemComponent* GetLocalAbilitySystemComponent(const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns implemented Game Viewport Client on the project side. */
 	UFUNCTION(BlueprintPure, Category = "C++")

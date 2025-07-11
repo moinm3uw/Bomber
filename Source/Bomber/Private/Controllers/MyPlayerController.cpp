@@ -184,14 +184,24 @@ void AMyPlayerController::InitInputSystem()
 // Is overriden to notify when this controller possesses new player character
 void AMyPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
+	if (HasAuthority())
+	{
+		Super::OnPossess(InPawn);
+	}
 
 	SetControlRotation(FRotator::ZeroRotator);
 
-	// Try to rebind inputs for possessed pawn on server
-	ApplyAllInputContexts();
+	// Try to rebind inputs for possessed pawn
+	if (IsLocalController())
+	{
+		ApplyAllInputContexts();
+	}
 
-	// Notify host about pawn change
+	if (AMyPlayerState* InPlayerState = GetPlayerState<AMyPlayerState>())
+	{
+		InPlayerState->OnPawnChanged(InPawn);
+	}
+
 	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
 	{
 		UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*PlayerCharacter);
@@ -203,14 +213,7 @@ void AMyPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
 
-	// Try to rebind inputs for possessed pawn on client
-	ApplyAllInputContexts();
-
-	// Notify client about pawn change
-	if (APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>())
-	{
-		UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*PlayerCharacter);
-	}
+	OnPossess(GetPawn());
 }
 
 // Is overridden to spawn player state or reuse existing one

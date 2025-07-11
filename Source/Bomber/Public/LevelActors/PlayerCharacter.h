@@ -4,6 +4,7 @@
 
 #include "GameFramework/Character.h"
 //---
+#include "AbilitySystemInterface.h"
 #include "Structures/BmrPowerUp.h"
 //---
 #include "PlayerCharacter.generated.h"
@@ -18,7 +19,7 @@ enum class EPlayerType : uint8;
  * @see Access AI's data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
  */
 UCLASS()
-class BOMBER_API APlayerCharacter final : public ACharacter
+class BOMBER_API APlayerCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -78,6 +79,9 @@ public:
 	/** Returns the Player Tag associated with player. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const struct FPlayerTag& GetPlayerTag() const;
+
+	/** Returns the Ability System Component from the Player State. */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
