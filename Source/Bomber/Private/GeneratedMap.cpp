@@ -751,9 +751,40 @@ void AGeneratedMap::GenerateLevelActors()
 	{
 		DestroyLevelActorByHandle(MapComponentsToDestroy[Idx].PoolObjectHandle);
 	}
-	checkf(MapComponentsToDestroy.IsEmpty(), TEXT("ERROR: [%i] %s:\n'MapComponentsToDestroy' is not empty after removing all!"), __LINE__, *FString(__FUNCTION__));
+	checkf(MapComponentsToDestroy.IsEmpty(), TEXT("ERROR: [%i] %hs:\n'MapComponentsToDestroy' is not empty after removing all!"), __LINE__, __FUNCTION__);
 
 	AdditionalDangerousCells.Reset();
+
+	// Compute cells on background thread and finish with spawning on the game thread (copy data for thread safety)
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WeakThis = TWeakObjectPtr(this), GenerationSettings = GetGenerationSetting(), LocalGridCells = LocalGridCellsInternal, DraggedCells = DraggedCellsInternal, MapScale = FIntVector(GetActorScale3D())]
+	{
+		TMap<FCell, EActorType> ActorsToSpawn = GenerateLevelActors_StartAsync(GenerationSettings, LocalGridCells, DraggedCells, MapScale);
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, InActorsToSpawn = MoveTemp(ActorsToSpawn)]() mutable -> void
+		{
+			if (AGeneratedMap* This = WeakThis.Get())
+			{
+				This->GenerateLevelActors_Finish(MoveTemp(InActorsToSpawn));
+			}
+		});
+	});
+}
+
+// Internal method to compute cells on background thread
+TMap<FCell, EActorType> AGeneratedMap::GenerateLevelActors_StartAsync(const FGeneratedMapSettings& GenerationSettings, const FCellsArr& LocalGridCells, const TMap<FCell, EActorType>& DraggedCellsInternal, const FIntVector& MapScale)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::GenerateLevelActors_StartAsync);
+
+	/* Steps:
+	*
+	* Part 0: Actors random filling to the ArrayToGenerate.
+	* 0.1) Finding all symmetrical cells for each iterated cell;
+	*
+	* Part 1: Checking if there is a path to the each bone. If not, go to the 0 step.
+	*
+	* Part 2: Spawning these actors
+	*/
+
+	TMap<FCell, EActorType> ActorsToSpawn;
 
 	// Calls before generation preview actors to updating of all dragged to the Generated Map actors
 	FCells DraggedCells = FCell::EmptyCells;
@@ -764,7 +795,7 @@ void AGeneratedMap::GenerateLevelActors()
 		const FCell& Cell = It.Key;
 		const EActorType ActorType = It.Value;
 
-		SpawnActorByType(ActorType, Cell);
+		ActorsToSpawn.Emplace(Cell, ActorType);
 
 		// Store to avoid generation on their cells
 		DraggedCells.Emplace(Cell);
@@ -778,20 +809,8 @@ void AGeneratedMap::GenerateLevelActors()
 		}
 	}
 
-	/* Steps:
-	*
-	* Part 0: Actors random filling to the ArrayToGenerate.
-	* 0.1) Finding all symmetrical cells for each iterated cell;
-	*
-	* Part 1: Checking if there is a path to the each bone. If not, go to the 0 step.
-	*
-	* Part 2: Spawning these actors
-	*/
-
-	const FGeneratedMapSettings& GenerationSettings = GetGenerationSetting();
 	float WallsChance = GenerationSettings.WallsChance; // Copy to decrease chance after each failed generation
 	int32 BoxesChance = GenerationSettings.BoxesChance;
-	TMap<FCell, EActorType> ActorsToSpawn;
 	int32 Counter = 0;
 	bool bFoundPath = false;
 	while (WallsChance > KINDA_SMALL_NUMBER // exit if there is no chance to generate level
@@ -800,10 +819,9 @@ void AGeneratedMap::GenerateLevelActors()
 		// Set Loop Locals
 		FCells LDraggedCells{DraggedCells};
 		FCells LCellsToFind{DraggedItems};
-		TMap<FCell, EActorType> LActorsToSpawn;
+		TMap LActorsToSpawn{ActorsToSpawn};
 
 		// Locals
-		const FIntVector MapScale(GetActorScale3D());
 		const FIntVector MapHalfScale(MapScale / 2);
 		FCells WallsToSpawn;
 
@@ -816,7 +834,7 @@ void AGeneratedMap::GenerateLevelActors()
 				const bool bIsSafeA = X == 0 && Y == 1;
 				const bool bIsSafeB = X == 1 && Y == 0;
 				const bool IsSafeZone = bIsSafeA || bIsSafeB;
-				FCell CellIt = LocalGridCellsInternal[MapScale.X * Y + X];
+				FCell CellIt = LocalGridCells[MapScale.X * Y + X];
 
 				// --- Part 0: Actors random filling to the ArrayToGenerate._ ---
 
@@ -871,7 +889,7 @@ void AGeneratedMap::GenerateLevelActors()
 								break;
 						}
 
-						CellIt = LocalGridCellsInternal[MapScale.X * Yi + Xi];
+						CellIt = LocalGridCells[MapScale.X * Yi + Xi];
 					}
 
 					if (!LDraggedCells.Contains(CellIt)) // the cell is free
@@ -913,6 +931,12 @@ void AGeneratedMap::GenerateLevelActors()
 		ActorsToSpawn = LActorsToSpawn;
 	}
 
+	return ActorsToSpawn;
+}
+
+// Internal method to finish with spawning on the game thread
+void AGeneratedMap::GenerateLevelActors_Finish(TMap<FCell, EActorType>&& ActorsToSpawn)
+{
 	// --- Part 2: Spawning ---
 
 	const TFunction<void(const TArray<UMapComponent*>&)> OnSpawned = [WeakThis = TWeakObjectPtr(this)](const TArray<UMapComponent*>& MapComponents)

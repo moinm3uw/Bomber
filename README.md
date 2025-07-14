@@ -1,5 +1,5 @@
 <a href="https://github.com/JanSeliv/Bomber/blob/main/LICENSE">![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)</a>
-<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.5-dea309?style=flat&logo=unrealengine)</a>
+<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.6-dea309?style=flat&logo=unrealengine)</a>
 
 <br/>
 <p align="center">
@@ -59,7 +59,7 @@ git submodule update --init --recursive
 
 ## 💻 Unreal Project Requirements
 
-- **Unreal Engine 5.5**
+- **Unreal Engine 5.6**
 - **Project Size:** ~30GB (build ~3GB)
 
 The project has been tested and launching the editor on the following platforms:
@@ -105,6 +105,10 @@ Next [plugins](https://github.com/JanSeliv/Bomber/tree/master/Plugins) were deve
 Stay updated with the current progress and plans on the [Trello board](https://trello.com/b/1jbKvyeh/bomber-kanban).
 
 ## 📅 Changelog
+#### `XXXX-XX-XX:`
+- Updated to **Unreal Engine 5.6**.
+- Moved level generation to background thread, reducing main thread time from 60ms to 13ms
+ ---
 #### `2025-06-30:`
 - Updated to **Unreal Engine 5.5**.
 - Uploaded the game to the **Steam** for public testing: [store page](https://store.steampowered.com/app/1873240/Bomberrage/).
@@ -197,7 +201,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
  - Fori and Hugo characters got additional second skins by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/106404153-23ff2c00-6432-11eb-8cb1-d3a7bc33b51b.gif)
  ---
-#### `2025-10-25`:
+#### `2020-10-25`:
  - Updated to **Unreal Engine 4.25**.
  - Added the Hugo and Fori characters by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/97118032-125a0a00-1708-11eb-8256-4bec419b1d48.gif)
