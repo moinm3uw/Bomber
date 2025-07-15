@@ -5,8 +5,10 @@
 #include "AdvancedIdentityLibrary.h"
 #include "AdvancedSteamFriendsLibrary.h"
 #include "GeneratedMap.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
@@ -31,7 +33,10 @@ AMyPlayerState::AMyPlayerState()
 
 	// Create ASC on player state, so even if different character is possessed (like from mod), it will still have the same attributes and abilities
 	AbilitySystemComponentInternal = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponentInternal->SetIsReplicated(true);
 	AbilitySystemComponentInternal->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+
+	PowerupsSetInternal = CreateDefaultSubobject<UBmrPowerupsAttributeSet>(TEXT("PowerupsAttributeSet"));
 
 	// Reset default value to -1 to avoid conflicts with first player of 0 ID
 	SetPlayerId(INDEX_NONE);
@@ -550,6 +555,11 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 // Listen game states to notify server about ending game for controlled player
 void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	switch (CurrentGameState)
 	{
 		case ECGS::Menu:         // Fallthrough
@@ -602,15 +612,25 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_OVERRIDE_CONDITION(Super, UniqueId, COND_None);
 }
 
+// This is called only in the gameplay before calling begin play
+void AMyPlayerState::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	const UDataTable* PowerupAttributeDefaults = UPlayerDataAsset::Get().GetPowerupAttributeDefaults();
+	if (ensureMsgf(PowerupAttributeDefaults, TEXT("ASSERT: [%i] %hs:\n'PowerupAttributeDefaults' is not set!"), __LINE__, __FUNCTION__))
+	{
+		checkf(PowerupsSetInternal, TEXT("ERROR: [%i] %hs:\n'PowerupsSetInternal' is null!"), __LINE__, __FUNCTION__);
+		PowerupsSetInternal->InitFromMetaDataTable(PowerupAttributeDefaults);
+	}
+}
+
 // Called when the game starts
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	{
-		BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-	}
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 }
 
 // Is overridden to prevent the player state from being destroyed to be able to reuse it by bots

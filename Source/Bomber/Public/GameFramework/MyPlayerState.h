@@ -47,6 +47,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponentInternal = nullptr;
 
+	/** Attribute set for powerup-related attributes (items pick-up, character stats, etc.).
+	 * For read access, can be obtained with UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrPowerupsAttributeSet> PowerupsSetInternal = nullptr;
+
 	/*********************************************************************************************
 	 * End Game State
 	 * Is personal for each player: Win, Lose or Draw.
@@ -310,6 +316,9 @@ public:
 protected:
 	/** Returns properties that are replicated for the lifetime of the actor channel. */
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** This is called only in the gameplay before calling begin play. */
+	virtual void PostInitializeComponents() override;
 
 	/** Called when the game starts. */
 	virtual void BeginPlay() override;
