@@ -8,6 +8,7 @@
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/GeneratedMapDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
@@ -759,7 +760,7 @@ void AGeneratedMap::GenerateLevelActors()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WeakThis = TWeakObjectPtr(this), GenerationSettings = GetGenerationSetting(), LocalGridCells = LocalGridCellsInternal, DraggedCells = DraggedCellsInternal, MapScale = FIntVector(GetActorScale3D())]
 	{
 		TMap<FCell, EActorType> ActorsToSpawn = GenerateLevelActors_StartAsync(GenerationSettings, LocalGridCells, DraggedCells, MapScale);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis, InActorsToSpawn = MoveTemp(ActorsToSpawn)]() mutable -> void
+		AsyncTaskGameThread(WeakThis.Get(), [WeakThis, InActorsToSpawn = MoveTemp(ActorsToSpawn)]() mutable -> void
 		{
 			if (AGeneratedMap* This = WeakThis.Get())
 			{

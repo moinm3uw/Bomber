@@ -5,6 +5,7 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 //---
 #include "GameFeaturesSubsystem.h"
+#include "TimerManager.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CurveTable.h"
@@ -215,4 +216,39 @@ void UGameplayUtilsLibrary::SetGameFeaturesEnabled(bool bEnable, const TArray<FN
 			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, UUtilsLibrary::IsEditor());
 		}
 	}
+}
+
+/*********************************************************************************************
+ * Global functions
+ ********************************************************************************************* */
+
+void AsyncTaskGameThread(const UObject* WorldContextObject, TFunction<void()> Function)
+{
+	const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull) : nullptr;
+	if (!ensureMsgf(World, TEXT("ASSERT: [%i] %hs:\n'World' is not valid!"), __LINE__, __FUNCTION__)
+		|| !ensureMsgf(Function, TEXT("ASSERT: [%i] %hs:\n'Function' is not bound!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+#if WITH_EDITOR
+	if (UUtilsLibrary::IsEditor())
+	{
+		// In editor, redirect the callback to the correct world context to avoid issues with PIE multiplayer
+		AsyncTask(ENamedThreads::GameThread, [WeakWorld = TWeakObjectPtr(World), Function = MoveTemp(Function)]() mutable -> void
+		{
+			if (const UWorld* InWorld = WeakWorld.Get())
+			{
+				InWorld->GetTimerManager().SetTimerForNextTick([Function = MoveTemp(Function)]() mutable -> void
+				{
+					Function();
+				});
+			}
+		});
+		return;
+	}
+#endif
+
+	// Direct dispatch in non-editor builds
+	AsyncTask(ENamedThreads::GameThread, MoveTemp(Function));
 }
