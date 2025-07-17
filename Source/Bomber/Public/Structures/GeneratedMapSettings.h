@@ -24,4 +24,11 @@ struct BOMBER_API FGeneratedMapSettings
 	 * Disable to allow the Generated Map to be moved around the scene. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ShowOnlyInnerProperties))
 	bool LockOnZero = true;
+
+	/** Determines main generation logic (e.g., Symmetrical, Classic etc).
+	 * Contains additional settings per selected generator. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced, meta = (ShowOnlyInnerProperties))
+	TObjectPtr<class UBmrCellsGenerator_Base> Generator = nullptr;
+
+	bool FORCEINLINE IsValid() const { return Generator != nullptr; }
 };

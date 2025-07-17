@@ -263,7 +263,7 @@ protected:
 	void GenerateLevelActors();
 
 	/** Internal methods to compute cells on background thread and finish with spawning on the game thread. */
-	static TMap<FCell, EActorType> GenerateLevelActors_StartAsync(const FGeneratedMapSettings& GenerationSettings, const FCellsArr& LocalGridCells, const TMap<FCell, EActorType>& DraggedCellsInternal, const FIntVector& MapScale);
+	static TMap<FCell, EActorType> GenerateLevelActors_StartAsync(struct FBmrGeneratorData&& GeneratorData);
 	void GenerateLevelActors_Finish(TMap<FCell, EActorType>&& ActorsToSpawn);
 
 	/** Listen game states to generate level actors. */

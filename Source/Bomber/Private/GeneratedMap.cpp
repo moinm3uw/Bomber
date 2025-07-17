@@ -8,6 +8,7 @@
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/GeneratedMapDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "Generators/BmrCellsGenerator_Base.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
@@ -86,7 +87,8 @@ AGeneratedMap* AGeneratedMap::GetGeneratedMap(const UObject* OptionalWorldContex
 // Returns the settings used for generating the map
 const FGeneratedMapSettings& AGeneratedMap::GetGenerationSetting() const
 {
-	if (bOverrideGenerationSettingsInternal)
+	if (bOverrideGenerationSettingsInternal
+	    && OverriddenGenerationSettingsInternal.IsValid())
 	{
 		return OverriddenGenerationSettingsInternal;
 	}
@@ -96,7 +98,7 @@ const FGeneratedMapSettings& AGeneratedMap::GetGenerationSetting() const
 		return GeneratedMapDataAsset->GetGenerationSettings();
 	}
 
-	static constexpr FGeneratedMapSettings DefaultSettings{};
+	static const FGeneratedMapSettings DefaultSettings{};
 	return DefaultSettings;
 }
 
@@ -640,6 +642,13 @@ void AGeneratedMap::OnConstructionGeneratedMap_Implementation(const FTransform& 
 		CollisionComponentInternal->CreateChildActor();
 	}
 
+	// If generation settings are overridden, validate the generator
+	if (bOverrideGenerationSettingsInternal
+	    && !OverriddenGenerationSettingsInternal.Generator)
+	{
+		OverriddenGenerationSettingsInternal.Generator = UGeneratedMapDataAsset::Get().GetGenerationSettings().Generator;
+	}
+
 	// Align transform and build cells
 	BuildGridCells(Transform);
 
@@ -756,10 +765,17 @@ void AGeneratedMap::GenerateLevelActors()
 
 	AdditionalDangerousCells.Reset();
 
+	FBmrGeneratorData GeneratorData;
+	GeneratorData.AllCells = LocalGridCellsInternal;
+	GeneratorData.MapScale = FIntPoint(GetActorScale3D().X, GetActorScale3D().Y);
+	GeneratorData.AllCellPositions = FCell::GetPositionsByCellsOnGrid(LocalGridCellsInternal, GeneratorData.MapScale.X);
+	GeneratorData.GenerationSettings = GetGenerationSetting();
+	GeneratorData.DraggedCells = DraggedCellsInternal;
+
 	// Compute cells on background thread and finish with spawning on the game thread (copy data for thread safety)
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WeakThis = TWeakObjectPtr(this), GenerationSettings = GetGenerationSetting(), LocalGridCells = LocalGridCellsInternal, DraggedCells = DraggedCellsInternal, MapScale = FIntVector(GetActorScale3D())]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WeakThis = TWeakObjectPtr(this), InData = MoveTemp(GeneratorData)]() mutable -> void
 	{
-		TMap<FCell, EActorType> ActorsToSpawn = GenerateLevelActors_StartAsync(GenerationSettings, LocalGridCells, DraggedCells, MapScale);
+		TMap<FCell, EActorType> ActorsToSpawn = GenerateLevelActors_StartAsync(MoveTemp(InData));
 		AsyncTaskGameThread(WeakThis.Get(), [WeakThis, InActorsToSpawn = MoveTemp(ActorsToSpawn)]() mutable -> void
 		{
 			if (AGeneratedMap* This = WeakThis.Get())
@@ -771,168 +787,13 @@ void AGeneratedMap::GenerateLevelActors()
 }
 
 // Internal method to compute cells on background thread
-TMap<FCell, EActorType> AGeneratedMap::GenerateLevelActors_StartAsync(const FGeneratedMapSettings& GenerationSettings, const FCellsArr& LocalGridCells, const TMap<FCell, EActorType>& DraggedCellsInternal, const FIntVector& MapScale)
+TMap<FCell, EActorType> AGeneratedMap::GenerateLevelActors_StartAsync(FBmrGeneratorData&& GeneratorData)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::GenerateLevelActors_StartAsync);
 
-	/* Steps:
-	*
-	* Part 0: Actors random filling to the ArrayToGenerate.
-	* 0.1) Finding all symmetrical cells for each iterated cell;
-	*
-	* Part 1: Checking if there is a path to the each bone. If not, go to the 0 step.
-	*
-	* Part 2: Spawning these actors
-	*/
-
-	TMap<FCell, EActorType> ActorsToSpawn;
-
-	// Calls before generation preview actors to updating of all dragged to the Generated Map actors
-	FCells DraggedCells = FCell::EmptyCells;
-	FCells DraggedWalls = FCell::EmptyCells;
-	FCells DraggedItems = FCell::EmptyCells;
-	for (const TTuple<FCell, EActorType>& It : DraggedCellsInternal)
-	{
-		const FCell& Cell = It.Key;
-		const EActorType ActorType = It.Value;
-
-		ActorsToSpawn.Emplace(Cell, ActorType);
-
-		// Store to avoid generation on their cells
-		DraggedCells.Emplace(Cell);
-		if (ActorType == EActorType::Wall)
-		{
-			DraggedWalls.Emplace(Cell);
-		}
-		else if (ActorType == EActorType::Item)
-		{
-			DraggedItems.Emplace(Cell);
-		}
-	}
-
-	float WallsChance = GenerationSettings.WallsChance; // Copy to decrease chance after each failed generation
-	int32 BoxesChance = GenerationSettings.BoxesChance;
-	int32 Counter = 0;
-	bool bFoundPath = false;
-	while (WallsChance > KINDA_SMALL_NUMBER // exit if there is no chance to generate level
-	       && !bFoundPath)                  // exit if level was generated
-	{
-		// Set Loop Locals
-		FCells LDraggedCells{DraggedCells};
-		FCells LCellsToFind{DraggedItems};
-		TMap LActorsToSpawn{ActorsToSpawn};
-
-		// Locals
-		const FIntVector MapHalfScale(MapScale / 2);
-		FCells WallsToSpawn;
-
-		// --- Part 0: Cells filling ---
-
-		for (int32 Y = 0; Y <= MapHalfScale.Y; ++Y) // Strings
-		{
-			for (int32 X = 0; X <= MapHalfScale.X; ++X) // Columns
-			{
-				const bool bIsSafeA = X == 0 && Y == 1;
-				const bool bIsSafeB = X == 1 && Y == 0;
-				const bool IsSafeZone = bIsSafeA || bIsSafeB;
-				FCell CellIt = LocalGridCells[MapScale.X * Y + X];
-
-				// --- Part 0: Actors random filling to the ArrayToGenerate._ ---
-
-				// In case all next conditions will be false
-				EActorType ActorTypeToSpawn = EAT::None;
-
-				// Player condition
-				if (X == 0 && Y == 0) // is first corner
-				{
-					ActorTypeToSpawn = EAT::Player;
-				}
-
-				// Wall condition
-				if (ActorTypeToSpawn == EAT::None                           // all previous conditions are false
-				    && !IsSafeZone && FMath::RandHelper(100) < WallsChance) // chance of walls
-				{
-					ActorTypeToSpawn = EAT::Wall;
-				}
-
-				// Box condition
-				if (ActorTypeToSpawn == EAT::None                           // all previous conditions are false
-				    && !IsSafeZone && FMath::RandHelper(100) < BoxesChance) // Chance of boxes
-				{
-					ActorTypeToSpawn = EAT::Box;
-				}
-
-				if (ActorTypeToSpawn == EAT::None) // There is no types to spawn
-				{
-					continue;
-				}
-
-				// 0.1) Array symmetrization
-				const int32 Xs = MapScale.X - 1 - X, Ys = MapScale.Y - 1 - Y; // Symmetrized cell position
-				for (int32 I = 0; I < 4; ++I)                                 // 4 sides of symmetry
-				{
-					if (I > 0) // the 0 index is always current CellIt, otherwise needs to find symmetry
-					{
-						int32 Xi = X, Yi = Y; // Keeping the current coordinates
-						switch (I)
-						{
-							case 1: // (X1 = Xs; Y1 = Y)
-								Xi = Xs;
-								break;
-							case 2: // (X2 = X; Y2 = Ys)
-								Yi = Ys;
-								break;
-							case 3: // (X3 = Xs; Y3 = Ys)
-								Xi = Xs;
-								Yi = Ys;
-								break;
-							default:
-								break;
-						}
-
-						CellIt = LocalGridCells[MapScale.X * Yi + Xi];
-					}
-
-					if (!LDraggedCells.Contains(CellIt)) // the cell is free
-					{
-						LActorsToSpawn.Emplace(CellIt, ActorTypeToSpawn);
-						if (ActorTypeToSpawn == EAT::Wall)
-						{
-							WallsToSpawn.Emplace(CellIt);
-						}
-						else if (ActorTypeToSpawn == EAT::Player
-						         || ActorTypeToSpawn == EAT::Box)
-						{
-							LCellsToFind.Emplace(CellIt);
-						}
-					}
-				} // Symmetry iterations
-			}     // X iterations
-		}         // Y iterations
-
-		// --- Part 1 : Checking if there is a path to the bottom and side edges. If not, go to the 0 step._ ---
-
-		FCells PathBreakers = WallsToSpawn.Union(DraggedWalls);
-		if (PathBreakers.IsEmpty())
-		{
-			// Include walls to prevent finding way through their cells
-			PathBreakers = UCellsUtilsLibrary::GetAllCellsWithActors(TO_FLAG(EAT::Wall));
-		}
-		bFoundPath = UCellsUtilsLibrary::DoesPathExistToCellsOnLevel(LCellsToFind, PathBreakers);
-
-		// Go to the step 0 if don't found
-		if (!bFoundPath)
-		{
-			++Counter;
-			WallsChance -= WallsChance * 0.01f; // decrease local chance of walls to avoid forever loop
-			continue;
-		}
-
-		// Paths were found, exit-loop condition (bFoundPath == true)
-		ActorsToSpawn = LActorsToSpawn;
-	}
-
-	return ActorsToSpawn;
+	UBmrCellsGenerator_Base* Generator = GeneratorData.GenerationSettings.Generator;
+	ensureMsgf(Generator, TEXT("ASSERT: [%i] %hs:\n'Generator' is not set in the Data Asset!"), __LINE__, __FUNCTION__);
+	return Generator ? Generator->GenerateLevel(MoveTemp(GeneratorData)) : TMap<FCell, EActorType>{};
 }
 
 // Internal method to finish with spawning on the game thread

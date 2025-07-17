@@ -108,6 +108,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 #### `XXXX-XX-XX:`
 - Updated to **Unreal Engine 5.6**.
 - Moved level generation to background thread, reducing main thread time from 60ms to 13ms
+- Optimized level generation with a single-pass algorithm for large level support, reducing 40x40 map creation time from >1000ms to under 1ms.
  ---
 #### `2025-06-30:`
 - Updated to **Unreal Engine 5.5**.

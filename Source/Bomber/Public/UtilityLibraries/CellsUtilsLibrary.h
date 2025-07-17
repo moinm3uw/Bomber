@@ -608,8 +608,7 @@ public:
 
 	/** Returns true if any player is able to reach all specified cells by any path.
 	 * @param CellsToFind Cells to which needs to find any path.
-	 * @param OptionalPathBreakers Unreachable cells, where path will stop (e.g: walls), can be empty.
-	 * @TODO JanSeliv twoZAVVk Improve algorithm to be more efficient and faster. */
+	 * @param OptionalPathBreakers Unreachable cells, where path will stop (e.g: walls), can be empty. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "OptionalPathBreakers"))
 	static bool DoesPathExistToCellsOnLevel(const TSet<FCell>& CellsToFind, const TSet<FCell>& OptionalPathBreakers);
 
@@ -640,7 +639,7 @@ public:
 public:
 	/** Remove all text renders of the Owner, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly, DefaultToSelf = "Owner"))
-	static void ClearDisplayedCells(const UObject* Owner);
+	static void ClearDisplayedCells(const UObject* Owner = nullptr);
 
 	/** Display coordinates of specified cells on the level, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly, DefaultToSelf = "Owner", AdvancedDisplay = 2, AutoCreateRefTerm = "Params"))
