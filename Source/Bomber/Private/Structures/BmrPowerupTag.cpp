@@ -18,12 +18,16 @@ const FBmrPowerupTag FBmrPowerupTag::Bomb = TAG_Powerup_Bomb.GetTag();
 UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Powerup_Fire, "Powerup.Fire", "Increases the explosion radius of bombs");
 const FBmrPowerupTag FBmrPowerupTag::Fire = TAG_Powerup_Fire.GetTag();
 
-// Contains all powerup tags
-const FGameplayTagContainer FBmrPowerupTag::All = FGameplayTagContainer::CreateFromArray(TArray<FGameplayTag>{
-	Skate,
-	Bomb,
-	Fire
-});
+// Returns all powerup tags, useful for iterating, wrapped in a function for deferred allocation on first call
+const FGameplayTagContainer& FBmrPowerupTag::GetAll()
+{
+	static const FGameplayTagContainer AllTags = FGameplayTagContainer::CreateFromArray(TArray<FGameplayTag>{
+		Skate,
+		Bomb,
+		Fire
+	});
+	return AllTags;
+}
 
 // Custom constructor to set all members values
 FBmrPowerupTag::FBmrPowerupTag(const FGameplayTag& Tag)

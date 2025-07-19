@@ -64,7 +64,7 @@ bool FBmrPowerUp::operator==(const FBmrPowerUp& Other) const
 // Constructor to set all powerup levels to the specified one
 FBmrPowerUpsContainer::FBmrPowerUpsContainer(int32 NewLevel, class APlayerCharacter& InOwner)
 {
-	for (FBmrPowerupTag ItemIt : FBmrPowerupTag::All)
+	for (FBmrPowerupTag ItemIt : FBmrPowerupTag::GetAll())
 	{
 		PowerUps.Add({ItemIt, NewLevel});
 	}

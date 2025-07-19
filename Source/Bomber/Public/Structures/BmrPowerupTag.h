@@ -26,8 +26,8 @@ struct BOMBER_API FBmrPowerupTag : public FGameplayTag
 	/** Increases the explosion radius of bombs. */
 	static const FBmrPowerupTag Fire;
 
-	/** Contains all powerup tags. */
-	static const FGameplayTagContainer All;
+	/** Returns all powerup tags, useful for iterating, wrapped in a function for deferred allocation on first call. */
+	static const FGameplayTagContainer& GetAll();
 
 	/** Default constructor. */
 	FBmrPowerupTag() = default;

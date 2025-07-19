@@ -88,8 +88,8 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	// Rand the item type if not set yet
 	if (ItemTypeInternal == FBmrPowerupTag::None)
 	{
-		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::All.Num() - 1);
-		const FBmrPowerupTag NewItemType = FBmrPowerupTag::All.GetByIndex(RandomIndex);
+		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::GetAll().Num() - 1);
+		const FBmrPowerupTag NewItemType = FBmrPowerupTag::GetAll().GetByIndex(RandomIndex);
 		SetItemType(NewItemType);
 	}
 

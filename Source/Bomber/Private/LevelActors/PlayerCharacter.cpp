@@ -49,7 +49,7 @@ void APlayerCharacter::SetPowerups(int32 NewLevel)
 	}
 
 	// Go through each powerup type and set its new level
-	for (const FBmrPowerupTag ItemTypeIt : FBmrPowerupTag::All)
+	for (const FBmrPowerupTag ItemTypeIt : FBmrPowerupTag::GetAll())
 	{
 		PowerupsInternal.SetLevel(NewLevel, ItemTypeIt);
 	}
@@ -72,9 +72,9 @@ void APlayerCharacter::SetDefaultPowerups()
 	if (DefaultItemLevelsCurve)
 	{
 		// Go through each powerup type and set its level from the curve table
-		for (int32 Idx = 0; Idx < FBmrPowerupTag::All.Num(); ++Idx)
+		for (int32 Idx = 0; Idx < FBmrPowerupTag::GetAll().Num(); ++Idx)
 		{
-			const FBmrPowerupTag ItemTypeIt = FBmrPowerupTag::All.GetByIndex(Idx);
+			const FBmrPowerupTag ItemTypeIt = FBmrPowerupTag::GetAll().GetByIndex(Idx);
 			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(Idx + 1)));
 			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
 		}
