@@ -8,7 +8,6 @@
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
-#include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
@@ -19,6 +18,8 @@
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "GameplayAbilitiesModule.h"
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -617,11 +618,13 @@ void AMyPlayerState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	const UDataTable* PowerupAttributeDefaults = UPlayerDataAsset::Get().GetPowerupAttributeDefaults();
-	if (ensureMsgf(PowerupAttributeDefaults, TEXT("ASSERT: [%i] %hs:\n'PowerupAttributeDefaults' is not set!"), __LINE__, __FUNCTION__))
+	// Initialize all attributes with default values
+	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
+	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
+	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'Attribu' condition is FALSE"), __LINE__, __FUNCTION__))
 	{
-		checkf(PowerupsSetInternal, TEXT("ERROR: [%i] %hs:\n'PowerupsSetInternal' is null!"), __LINE__, __FUNCTION__);
-		PowerupsSetInternal->InitFromMetaDataTable(PowerupAttributeDefaults);
+		static const FName GroupName = TEXT("Default");
+		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
 	}
 }
 

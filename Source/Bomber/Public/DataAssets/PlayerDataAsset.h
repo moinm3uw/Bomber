@@ -107,11 +107,6 @@ public:
 	/** Returns the player data asset. */
 	static const UPlayerDataAsset& Get();
 
-	/** Returns the powerup attribute defaults data table.
-	 * @see UPlayerDataAsset::PowerupAttributeDefaultsInternal. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE class UDataTable* GetPowerupAttributeDefaults() const { return PowerupAttributeDefaultsInternal; }
-
 	/** The num of nameplate materials.  */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetNameplateMaterialsNum() const { return NameplateMaterialsInternal.Num(); }
@@ -141,10 +136,6 @@ public:
 	const UPlayerRow* GetRowByPlayerTag(const FPlayerTag& PlayerTag) const;
 
 protected:
-	/** Initializes powerup attributes with given values. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (BlueprintProtected, DisplayName = "Powerup Attribute Defaults", RequiredAssetDataTags = "RowStructure=/Script/GameplayAbilities.AttributeMetaData"))
-	TObjectPtr<const class UDataTable> PowerupAttributeDefaultsInternal = nullptr;
-
 	/** All materials that are used by nameplate meshes. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Nameplate Materials", ShowOnlyInnerProperties))
 	TArray<TObjectPtr<class UMaterialInterface>> NameplateMaterialsInternal;

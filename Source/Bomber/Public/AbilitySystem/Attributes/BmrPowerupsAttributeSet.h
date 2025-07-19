@@ -90,6 +90,6 @@ protected:
 	/** Called just before any modification happens to an attribute. */
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 
-	/** Called just after a GameplayEffect is executed to modify the base value of an attribute. No more changes can be made. */
-	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
+	/** Is overridden to reclamp after changing dynamic max attributes. */
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 };

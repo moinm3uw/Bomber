@@ -69,6 +69,7 @@ void UBmrPowerupsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_Always;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, Powerup_Fire, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, Powerup_MaxFire, Params);
@@ -83,6 +84,7 @@ void UBmrPowerupsAttributeSet::PreAttributeChange(const FGameplayAttribute& Attr
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
+	// E.g: if base attribute became larger than max, then clamp the base attribute to its max
 	constexpr float MinPowerup = 0.f;
 	if (Attribute == GetPowerup_FireAttribute())
 	{
@@ -98,22 +100,28 @@ void UBmrPowerupsAttributeSet::PreAttributeChange(const FGameplayAttribute& Attr
 	}
 }
 
-// Called just after a GameplayEffect is executed to modify the base value of an attribute. No more changes can be made
-void UBmrPowerupsAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
+// Is overridden to reclamp after changing dynamic max attributes
+void UBmrPowerupsAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
 {
-	Super::PostGameplayEffectExecute(Data);
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 
-	constexpr float MinPowerup = 0.f;
-	if (Data.EvaluatedData.Attribute == GetPowerup_FireAttribute())
+	UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
+	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
+
+	// E.g: if max attribute was dynamically decreased, so base attribute became larger than max, then clamp the base attribute to new max
+	if (Attribute == GetPowerup_MaxFireAttribute()
+	    && GetPowerup_Fire() > NewValue)
 	{
-		SetPowerup_Fire(FMath::Clamp(GetPowerup_Fire(), MinPowerup, GetPowerup_MaxFire()));
+		ASC->ApplyModToAttribute(GetPowerup_FireAttribute(), EGameplayModOp::Override, NewValue);
 	}
-	else if (Data.EvaluatedData.Attribute == GetPowerup_SkateAttribute())
+	else if (Attribute == GetPowerup_MaxSkateAttribute()
+	         && GetPowerup_Skate() > NewValue)
 	{
-		SetPowerup_Skate(FMath::Clamp(GetPowerup_Skate(), MinPowerup, GetPowerup_MaxSkate()));
+		ASC->ApplyModToAttribute(GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewValue);
 	}
-	else if (Data.EvaluatedData.Attribute == GetPowerup_BombsAvailableAttribute())
+	else if (Attribute == GetPowerup_MaxBombsAttribute()
+	         && GetPowerup_BombsAvailable() > NewValue)
 	{
-		SetPowerup_BombsAvailable(FMath::Clamp(GetPowerup_BombsAvailable(), MinPowerup, GetPowerup_MaxBombs()));
+		ASC->ApplyModToAttribute(GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewValue);
 	}
 }
