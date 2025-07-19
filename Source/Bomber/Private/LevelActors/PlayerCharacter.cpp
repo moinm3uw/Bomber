@@ -49,7 +49,7 @@ void APlayerCharacter::SetPowerups(int32 NewLevel)
 	}
 
 	// Go through each powerup type and set its new level
-	for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
+	for (const FBmrPowerupTag ItemTypeIt : FBmrPowerupTag::All)
 	{
 		PowerupsInternal.SetLevel(NewLevel, ItemTypeIt);
 	}
@@ -72,9 +72,10 @@ void APlayerCharacter::SetDefaultPowerups()
 	if (DefaultItemLevelsCurve)
 	{
 		// Go through each powerup type and set its level from the curve table
-		for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
+		for (int32 Idx = 0; Idx < FBmrPowerupTag::All.Num(); ++Idx)
 		{
-			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(ItemTypeIt)));
+			const FBmrPowerupTag ItemTypeIt = FBmrPowerupTag::All.GetByIndex(Idx);
+			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(Idx + 1)));
 			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
 		}
 	}
@@ -93,7 +94,7 @@ void APlayerCharacter::ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups)
 	{
 		static constexpr float SpeedMultiplier = 100.F;
 		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = PowerupsInternal.Get(EIT::Skate) * SpeedMultiplier + SkateAdditiveStrength;
+		const int32 SkateN = PowerupsInternal.Get(FBmrPowerupTag::Skate) * SpeedMultiplier + SkateAdditiveStrength;
 		MovementComponent->MaxWalkSpeed = SkateN;
 	}
 
@@ -733,10 +734,10 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 
 	if (!bForce)
 	{
-		if (UUtilsLibrary::IsEditorNotPieWorld()        // Should not spawn bomb in PIE
-		    || PowerupsInternal.Get(EIT::Fire).IsZero() // Null length of explosion
-		    || PowerupsInternal.Get(EIT::Bomb).IsZero() // No more bombs
-		    || OwnedController->IsMoveInputIgnored())   // controller is blocked
+		if (UUtilsLibrary::IsEditorNotPieWorld()                   // Should not spawn bomb in PIE
+		    || PowerupsInternal.Get(FBmrPowerupTag::Fire).IsZero() // Null length of explosion
+		    || PowerupsInternal.Get(FBmrPowerupTag::Bomb).IsZero() // No more bombs
+		    || OwnedController->IsMoveInputIgnored())              // controller is blocked
 		{
 			return;
 		}
@@ -753,7 +754,7 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 			return;
 		}
 
-		PlayerCharacter->PowerupsInternal.AddCurrentLevel(-1, EIT::Bomb);
+		PlayerCharacter->PowerupsInternal.AddCurrentLevel(-1, FBmrPowerupTag::Bomb);
 
 		// Init Bomb
 		ABombActor& BombActor = *CastChecked<ABombActor>(MapComponent.GetOwner());
@@ -780,5 +781,5 @@ void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponen
 	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
 
 	// Increment current bomb count back
-	PowerupsInternal.AddCurrentLevel(1, EIT::Bomb);
+	PowerupsInternal.AddCurrentLevel(1, FBmrPowerupTag::Bomb);
 }

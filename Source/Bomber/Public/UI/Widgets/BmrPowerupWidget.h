@@ -19,7 +19,7 @@ class BOMBER_API UBmrPowerupWidget : public UUserWidget
 protected:
 	/** Exposed property to be set in Details Panel of the type of item this UI or data element is associated with (e.g., Speed, BombCount, etc.) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Item Type", ExposeOnSpawn="true"))
-	EItemType ItemTypeInternal = EItemType::None;
+	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
 
 	/** Exposed property to be set in Details Panel of the duration of the interpolation when updating visual feedback (e.g., slider value change) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Lerp Duration", ClampMin="0.01"))

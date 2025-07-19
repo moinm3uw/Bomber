@@ -20,7 +20,7 @@ const UItemDataAsset& UItemDataAsset::Get()
 }
 
 // Return row by specified item type
-const UItemRow* UItemDataAsset::GetRowByItemType(EItemType ItemType, ELevelType LevelType) const
+const UItemRow* UItemDataAsset::GetRowByItemType(FBmrPowerupTag ItemType, ELevelType LevelType) const
 {
 	TArray<ULevelActorRow*> OutRows;
 	GetRowsByLevelType(OutRows, TO_FLAG(LevelType));

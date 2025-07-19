@@ -20,7 +20,7 @@ void UBmrPowerupWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (!ensureMsgf(ItemTypeInternal != EItemType::None, TEXT("ASSERT: [%i] %hs:\n'ItemType' is not set!"), __LINE__, __FUNCTION__))
+	if (!ensureMsgf(ItemTypeInternal != FBmrPowerupTag::None, TEXT("ASSERT: [%i] %hs:\n'ItemType' is not set!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}

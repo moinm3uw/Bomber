@@ -2,32 +2,11 @@
 
 #pragma once
 
-#include "Misc/EnumRange.h"
+#include "BmrPowerupTag.h"
 //---
 #include "BmrPowerUp.generated.h"
 
-// @todo JanSeliv UGi56jhn Use GAS attributes for picked up items instead of enum and struct.
-
-/**
- * Types of items.
- */
-UENUM(BlueprintType)
-enum class EItemType : uint8
-{
-	///< The type was not selected
-	None,
-	///< Increases speed
-	Skate,
-	///< increases the amount of bombs
-	Bomb,
-	///< Increases the range of explosion
-	Fire
-};
-
-using EIT = EItemType;
-#define EIT_FIRST_FLAG TO_FLAG(EIT::Skate)
-#define EIT_LAST_FLAG TO_FLAG(EIT::Fire)
-ENUM_RANGE_BY_FIRST_AND_LAST(EIT, EIT::Skate, EIT::Fire);
+// @todo JanSeliv UGi56jhn Use GAS attributes for picked up items instead of struct.
 
 /**
  * Numbers of power-ups that affect the abilities of a player during gameplay.
@@ -41,7 +20,7 @@ struct BOMBER_API FBmrPowerUp
 	FBmrPowerUp() = default;
 
 	/** Constructor to set powerup levels to the specified one. */
-	FBmrPowerUp(EItemType InItemType, int32 NewLevel);
+	FBmrPowerUp(FBmrPowerupTag InItemType, int32 NewLevel);
 
 	/** Returns the level of the powerup, e.g: 1, 2, 3 */
 	FORCEINLINE int32 GetMaxLevel() const { return MaxLevel; }
@@ -69,13 +48,13 @@ struct BOMBER_API FBmrPowerUp
 
 	/** Compares powerup max and current levels. */
 	bool operator==(const FBmrPowerUp& Other) const;
-	friend BOMBER_API bool operator==(const FBmrPowerUp& A, EItemType B) { return A.ItemType == B; }
+	friend BOMBER_API bool operator==(const FBmrPowerUp& A, FBmrPowerupTag B) { return A.ItemType == B; }
 	FORCEINLINE operator int32() const { return CurrentLevel; }
 
 private:
 	/** The item type associated with this powerup */
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	EItemType ItemType = EItemType::None;
+	FBmrPowerupTag ItemType = FBmrPowerupTag::None;
 
 	/** The number of items, that increases the attribute of the character */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -101,17 +80,17 @@ struct BOMBER_API FBmrPowerUpsContainer
 	FBmrPowerUpsContainer(int32 NewLevel, class APlayerCharacter& InOwner);
 
 	/** Returns the powerup by its type */
-	const FBmrPowerUp& Get(EItemType ItemType) const;
+	const FBmrPowerUp& Get(FBmrPowerupTag ItemType) const;
 
 	/** Assigns and clamps the powerup level in valid range. */
-	void SetLevel(int32 NewLevel, EItemType ItemType);
-	void SetMaxLevel(int32 NewMaxLevel, EItemType ItemType);
-	void SetCurrentLevel(int32 NewCurrentLevel, EItemType ItemType);
+	void SetLevel(int32 NewLevel, FBmrPowerupTag ItemType);
+	void SetMaxLevel(int32 NewMaxLevel, FBmrPowerupTag ItemType);
+	void SetCurrentLevel(int32 NewCurrentLevel, FBmrPowerupTag ItemType);
 
 	/** Adds the specified number of items to the current and max levels. */
-	void AddLevel(int32 AdditionalLevel, EItemType ItemType);
-	void AddMaxLevel(int32 AdditionalLevel, EItemType ItemType);
-	void AddCurrentLevel(int32 AdditionalLevel, EItemType ItemType);
+	void AddLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType);
+	void AddMaxLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType);
+	void AddCurrentLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType);
 
 	/** Marks this container as dirty to push changes for replication, if valid. */
 	void MarkDirty(const FBmrPowerUpsContainer& PrevPowerups);

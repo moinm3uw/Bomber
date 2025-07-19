@@ -19,7 +19,7 @@ class BOMBER_API UItemRow final : public ULevelActorRow
 public:
 	/** Of each type this item is. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
-	EItemType ItemType = EItemType::None;
+	FBmrPowerupTag ItemType = FBmrPowerupTag::None;
 };
 
 /**
@@ -44,7 +44,7 @@ public:
 
 	/** Return row by specified item type. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const UItemRow* GetRowByItemType(EItemType ItemType, ELevelType LevelType) const;
+	const UItemRow* GetRowByItemType(FBmrPowerupTag ItemType, ELevelType LevelType) const;
 
 	/** Returns max possible items to be picked up by player.
 	  * @see UItemDataAsset::MaxAllowedItemNumInternal */

@@ -4,7 +4,7 @@
 
 #include "GameFramework/Actor.h"
 //---
-#include "Structures/BmrPowerUp.h"
+#include "Structures/BmrPowerupTag.h"
 //---
 #include "ItemActor.generated.h"
 
@@ -23,11 +23,11 @@ public:
 
 	/** Return current item type. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE EItemType GetItemType() const { return ItemTypeInternal; }
+	FORCEINLINE FBmrPowerupTag GetItemType() const { return ItemTypeInternal; }
 
 	/** Set new item type, can be called on the server-only. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetItemType(EItemType NewItemType);
+	void SetItemType(FBmrPowerupTag NewItemType);
 
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
@@ -40,7 +40,7 @@ protected:
 	* Fire: Increase the bomb blast radius.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Item Type"))
-	EItemType ItemTypeInternal = EItemType::None;
+	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
 
 	/*********************************************************************************************
 	 * Overrides

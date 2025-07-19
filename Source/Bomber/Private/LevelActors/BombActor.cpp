@@ -63,7 +63,7 @@ void ABombActor::InitBomb(const UObject* OptionalBombPlacer/* = nullptr*/)
 	// Is bomb placer is a player character, then apply its fire radius and player type
 	if (const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(OptionalBombPlacer))
 	{
-		InFireRadius = OwnerCharacter->GetPowerUp(EIT::Fire);
+		InFireRadius = OwnerCharacter->GetPowerUp(FBmrPowerupTag::Fire);
 
 		// Override default mesh with one with the player type (each character has own bomb)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);

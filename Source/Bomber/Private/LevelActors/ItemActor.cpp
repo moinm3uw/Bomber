@@ -36,7 +36,7 @@ AItemActor::AItemActor()
 }
 
 // Set new item type, can be called on the server-only
-void AItemActor::SetItemType(EItemType NewItemType)
+void AItemActor::SetItemType(FBmrPowerupTag NewItemType)
 {
 	if (!HasAuthority()
 	    || ItemTypeInternal == NewItemType)
@@ -86,10 +86,10 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	OnActorBeginOverlap.AddUniqueDynamic(this, &AItemActor::OnItemBeginOverlap);
 
 	// Rand the item type if not set yet
-	if (ItemTypeInternal == EItemType::None)
+	if (ItemTypeInternal == FBmrPowerupTag::None)
 	{
-		const int32 RandomIndex = FMath::RandRange(EIT_FIRST_FLAG, EIT_LAST_FLAG);
-		const EItemType NewItemType = static_cast<EItemType>(RandomIndex);
+		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::All.Num() - 1);
+		const FBmrPowerupTag NewItemType = FBmrPowerupTag::All.GetByIndex(RandomIndex);
 		SetItemType(NewItemType);
 	}
 
@@ -123,5 +123,5 @@ void AItemActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 
 	OnActorBeginOverlap.RemoveAll(this);
 
-	SetItemType(EItemType::None);
+	SetItemType(FBmrPowerupTag::None);
 }

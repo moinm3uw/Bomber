@@ -10,7 +10,7 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerUp)
 
 // Constructor to set powerup levels to the specified one
-FBmrPowerUp::FBmrPowerUp(EItemType InItemType, int32 NewLevel)
+FBmrPowerUp::FBmrPowerUp(FBmrPowerupTag InItemType, int32 NewLevel)
 {
 	ItemType = InItemType;
 	SetLevel(NewLevel);
@@ -64,7 +64,7 @@ bool FBmrPowerUp::operator==(const FBmrPowerUp& Other) const
 // Constructor to set all powerup levels to the specified one
 FBmrPowerUpsContainer::FBmrPowerUpsContainer(int32 NewLevel, class APlayerCharacter& InOwner)
 {
-	for (const EItemType ItemIt : TEnumRange<EItemType>())
+	for (FBmrPowerupTag ItemIt : FBmrPowerupTag::All)
 	{
 		PowerUps.Add({ItemIt, NewLevel});
 	}
@@ -73,7 +73,7 @@ FBmrPowerUpsContainer::FBmrPowerUpsContainer(int32 NewLevel, class APlayerCharac
 }
 
 // Returns the powerup by its type
-const FBmrPowerUp& FBmrPowerUpsContainer::Get(EItemType ItemType) const
+const FBmrPowerUp& FBmrPowerUpsContainer::Get(FBmrPowerupTag ItemType) const
 {
 	const FBmrPowerUp* PowerUpPtr = PowerUps.FindByKey(ItemType);
 	checkf(PowerUpPtr, TEXT("ERROR: [%i] %hs:\n'PowerupPtr' is null!"), __LINE__, __FUNCTION__);
@@ -81,7 +81,7 @@ const FBmrPowerUp& FBmrPowerUpsContainer::Get(EItemType ItemType) const
 }
 
 // Assigns and clamps the powerup level in valid range
-void FBmrPowerUpsContainer::SetLevel(int32 NewLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::SetLevel(int32 NewLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
@@ -94,7 +94,7 @@ void FBmrPowerUpsContainer::SetLevel(int32 NewLevel, EItemType ItemType)
 	}
 }
 
-void FBmrPowerUpsContainer::SetMaxLevel(int32 NewMaxLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::SetMaxLevel(int32 NewMaxLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
@@ -107,7 +107,7 @@ void FBmrPowerUpsContainer::SetMaxLevel(int32 NewMaxLevel, EItemType ItemType)
 	}
 }
 
-void FBmrPowerUpsContainer::SetCurrentLevel(int32 NewCurrentLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::SetCurrentLevel(int32 NewCurrentLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
@@ -121,7 +121,7 @@ void FBmrPowerUpsContainer::SetCurrentLevel(int32 NewCurrentLevel, EItemType Ite
 }
 
 // Adds the specified number of items to the current and max levels
-void FBmrPowerUpsContainer::AddLevel(int32 AdditionalLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::AddLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
@@ -134,7 +134,7 @@ void FBmrPowerUpsContainer::AddLevel(int32 AdditionalLevel, EItemType ItemType)
 	}
 }
 
-void FBmrPowerUpsContainer::AddMaxLevel(int32 AdditionalLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::AddMaxLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
@@ -147,7 +147,7 @@ void FBmrPowerUpsContainer::AddMaxLevel(int32 AdditionalLevel, EItemType ItemTyp
 	}
 }
 
-void FBmrPowerUpsContainer::AddCurrentLevel(int32 AdditionalLevel, EItemType ItemType)
+void FBmrPowerUpsContainer::AddCurrentLevel(int32 AdditionalLevel, FBmrPowerupTag ItemType)
 {
 	const APlayerCharacter* InPlayerCharacter = OwnerInternal.Get();
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())

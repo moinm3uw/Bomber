@@ -36,7 +36,7 @@ public:
 
 	/** Returns current powerup levels */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE FBmrPowerUp& GetPowerUp(EItemType ItemType) const { return PowerupsInternal.Get(ItemType); }
+	const FORCEINLINE FBmrPowerUp& GetPowerUp(FBmrPowerupTag ItemType) const { return PowerupsInternal.Get(ItemType); }
 
 	/** Set powerups levels all at once, can be called only on the server. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "NewPowerups"))
