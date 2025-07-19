@@ -164,10 +164,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	bool SetNearestCell(UMapComponent* MapComponent);
 
-	/** Returns true if specified map component has non-generated owner that is manually dragged to the scene. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	bool IsDraggedMapComponent(const UMapComponent* MapComponent) const;
-
 	/** Takes transform and returns aligned copy allowed to be used as actor transform for this map.
 	 * @param ActorTransform The transform to align.
 	 * @return Aligned transform, where:
@@ -217,11 +213,6 @@ protected:
 	 * Client monitors updates and confirms when tokens match to broadcast the On Generated Level Actors event. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Generate Level Actors Token"))
 	int32 GenerateLevelActorsTokenInternal = 0;
-
-	/** Contains map components that were dragged to the scene
-	 * Is set in editor by adding and dragging actors, but can be changed during the game. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Dragged Cells"))
-	TMap<FCell, EActorType> DraggedCellsInternal;
 
 	/** Attached camera component. */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Camera Component"))
@@ -276,23 +267,36 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void BuildGridCells(const FTransform& Transform);
 
+	/*********************************************************************************************
+	 * Dragged Level Actors
+	 ********************************************************************************************* */
+public:
+	/** Returns true if specified map component has non-generated owner that is manually dragged to the scene. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	bool IsDraggedMapComponent(const UMapComponent* MapComponent) const;
+
 	/** Scales dragged cells according new grid if sizes are different. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void ScaleDraggedCellsOnGrid(const TSet<FCell>& OriginalGrid, const TSet<FCell>& NewGrid);
-
-	/* ---------------------------------------------------
-	 *					Editor development
-	 * --------------------------------------------------- */
 
 	/** The dragged version of the Add To Grid function to add the dragged actor on the level. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
 	void AddToGridDragged(UMapComponent* AddedComponent);
 
-	/** The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly, AutoCreateRefTerm = "NewCell"))
-	void SetNearestCellDragged(const UMapComponent* MapComponent, const FCell& NewCell);
+	/** The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor.
+	 * @param MapComponent The Map Component of the dragged level actor.
+	 * @param InOutCell Takes suggested cell and performs additional snaps; or the same cell if not dragged.
+	 * @return true if the cell handled dragged actor, false otherwise. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
+	bool SetNearestCellDragged(const UMapComponent* MapComponent, UPARAM(ref) FCell& InOutCell);
 
 	/** The dragged version of the Destroy Level Actor function to hide the dragged actor from the level. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
 	void DestroyLevelActorDragged(const UMapComponent* MapComponent);
+
+protected:
+	/** Contains map components that were dragged to the scene
+	 * Is set in editor by adding and dragging actors, but can be changed during the game. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Dragged Cells"))
+	TMap<FCell, EActorType> DraggedCellsInternal;
 };

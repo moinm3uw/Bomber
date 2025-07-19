@@ -270,23 +270,28 @@ void AGeneratedMap::AddToGrid(UMapComponent* AddedComponent)
 		return;
 	}
 
-	if (MapComponentsInternal.Contains(AddedComponent))
+	// Snap to the nearest cell
+	const bool bSnapped = SetNearestCell(AddedComponent);
+
+	if (!bSnapped
+	    && MapComponentsInternal.Contains(AddedComponent))
 	{
+		// Is already on the same cell and registered
 		return;
 	}
 
 	// First, add it to the Pool Manager if level actor was spawned manually
 	UPoolManagerSubsystem& PoolManager = UPoolManagerSubsystem::Get();
-	const FPoolObjectHandle& Handle = PoolManager.FindPoolHandleByObject(ComponentOwner);
+	FPoolObjectHandle Handle = PoolManager.FindPoolHandleByObject(ComponentOwner);
 	if (!Handle.IsValid())
 	{
-		FPoolObjectData ObjectData(Owner);
+		FPoolObjectData ObjectData(ComponentOwner);
 		ObjectData.bIsActive = true;
-		PoolManager.RegisterObjectInPool(ObjectData);
+		ObjectData.Handle = FPoolObjectHandle::NewHandle(ComponentOwner->GetClass());
+		const bool bRegistered = PoolManager.RegisterObjectInPool(ObjectData);
+		ensureMsgf(bRegistered, TEXT("ASSERT: [%i] %hs:\n'Failed to registered '%s' in the Pool Manager!"), __LINE__, __FUNCTION__, *GetNameSafe(ComponentOwner));
+		Handle = ObjectData.Handle;
 	}
-
-	// Snap to the nearest cell
-	SetNearestCell(AddedComponent);
 
 	const FCell& Cell = AddedComponent->GetCell();
 	if (!ensureMsgf(Cell.IsValid(), TEXT("ASSERT: 'Cell' is zero")))
@@ -512,25 +517,19 @@ bool AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
 		return false;
 	}
 
-	// Snap the actor to the current cell (even if the cell is occupied by others)
+	// In game, snap the actor to the current cell (even if the cell is occupied by others)
 	const FCell& LastCell = MapComponent->GetCell();
 	FCell FoundFreeCell = UCellsUtilsLibrary::SnapActorOnLevel(LevelActor);
-	if (LastCell.IsValid()
-	    && FoundFreeCell == LastCell)
+	const bool bIsSnappedGame = FoundFreeCell != LastCell;
+
+	/// In editor world, always perform additional snaps 
+	const bool bIsSnappedDragged = SetNearestCellDragged(MapComponent, /*InOut*/FoundFreeCell);
+
+	if (!bIsSnappedGame && !bIsSnappedDragged)
 	{
 		// The actor is already aligned on the level
 		return false;
 	}
-
-#if WITH_EDITOR //[IsEditorNotPieWorld]
-	if (UUtilsLibrary::IsEditorNotPieWorld())
-	{
-		// In editor world, always move to the free cell without any actors, so dragged actor will never overlap
-		FoundFreeCell = UCellsUtilsLibrary::GetNearestFreeCell(LevelActor->GetActorLocation());
-
-		SetNearestCellDragged(MapComponent, FoundFreeCell);
-	}
-#endif //WITH_EDITOR [IsEditorNotPieWorld]
 
 	MapComponent->SetCell(FoundFreeCell);
 
@@ -543,26 +542,6 @@ bool AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
 	}
 
 	return true;
-}
-
-// Returns true if specified map component has non-generated owner that is manually dragged to the scene
-bool AGeneratedMap::IsDraggedMapComponent(const UMapComponent* MapComponent) const
-{
-	if (!MapComponent)
-	{
-		return false;
-	}
-
-	const EActorType ActorType = MapComponent->GetActorType();
-	const FCell& Cell = MapComponent->GetCell();
-	if (MapComponent->GetActorType() == EAT::None
-	    || Cell.IsInvalidCell())
-	{
-		return false;
-	}
-
-	const EActorType* FoundCell = DraggedCellsInternal.Find(Cell);
-	return FoundCell && *FoundCell == ActorType;
 }
 
 // Takes transform and returns aligned copy allowed to be used as actor transform for this map
@@ -878,6 +857,30 @@ void AGeneratedMap::BuildGridCells(const FTransform& Transform)
 	LocalGridCellsInternal = NewGridCells.Array();
 }
 
+/*********************************************************************************************
+ * Dragged Level Actors
+ ********************************************************************************************* */
+
+// Returns true if specified map component has non-generated owner that is manually dragged to the scene
+bool AGeneratedMap::IsDraggedMapComponent(const UMapComponent* MapComponent) const
+{
+	if (!MapComponent)
+	{
+		return false;
+	}
+
+	const EActorType ActorType = MapComponent->GetActorType();
+	const FCell& Cell = MapComponent->GetCell();
+	if (MapComponent->GetActorType() == EAT::None
+	    || Cell.IsInvalidCell())
+	{
+		return false;
+	}
+
+	const EActorType* FoundCell = DraggedCellsInternal.Find(Cell);
+	return FoundCell && *FoundCell == ActorType;
+}
+
 // Scales dragged cells according new grid if sizes are different
 void AGeneratedMap::ScaleDraggedCellsOnGrid(const FCells& OriginalGrid, const FCells& NewGrid)
 {
@@ -898,10 +901,6 @@ void AGeneratedMap::ScaleDraggedCellsOnGrid(const FCells& OriginalGrid, const FC
 		CurrentCellRef = FCell::GetCellArrayNearest(NewGridWithoutCorners, ScaledCell);
 	}
 }
-
-/* ---------------------------------------------------
- *					Editor development
- * --------------------------------------------------- */
 
 // The dragged version of the Add To Grid function to add the dragged actor on the level
 void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
@@ -940,25 +939,32 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 }
 
 // The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor
-void AGeneratedMap::SetNearestCellDragged(const UMapComponent* MapComponent, const FCell& NewCell)
+bool AGeneratedMap::SetNearestCellDragged(const UMapComponent* MapComponent, FCell& InOutCell)
 {
-#if WITH_EDITOR // [IsEditorNotPieWorld]
+#if !WITH_EDITOR
+	return false;
+#else // WITH_EDITOR [IsEditorNotPieWorld]
 	if (!FEditorUtilsLibrary::IsEditorNotPieWorld()
 	    || !MapComponent
-	    || !IsDraggedMapComponent(MapComponent)
-	    || NewCell.IsInvalidCell())
+	    || InOutCell.IsInvalidCell())
 	{
-		return;
+		return false;
 	}
 
 	const FCell& CurrentCell = MapComponent->GetCell();
-	if (CurrentCell == NewCell)
+	if (CurrentCell != InOutCell)
 	{
-		return;
+		// Is dragged to new cell, find free cell without any actors, so dragged actor will never overlap
+		InOutCell = UCellsUtilsLibrary::GetNearestFreeCell(InOutCell);
 	}
 
-	DraggedCellsInternal.Remove(CurrentCell);
-	DraggedCellsInternal.Emplace(NewCell, MapComponent->GetActorType());
+	if (IsDraggedMapComponent(MapComponent))
+	{
+		DraggedCellsInternal.Remove(CurrentCell);
+		DraggedCellsInternal.Emplace(InOutCell, MapComponent->GetActorType());
+	}
+
+	return true;
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 }
 
