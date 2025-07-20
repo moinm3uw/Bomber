@@ -50,11 +50,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const UItemRow* GetRowByItemType(FBmrPowerupTag ItemType, ELevelType LevelType) const;
 
-	/** Returns max possible items to be picked up by player.
-	  * @see UItemDataAsset::MaxAllowedItemNumInternal */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE int32 GetMaxAllowedItemsNum() const { return MaxAllowedItemsNumInternal; }
-
 	/** Returns the default powerups curve table that is used to set the default powerups levels for each character.
 	 * @see UItemDataAsset::DefaultPowerupsCurveTableInternal */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -64,10 +59,6 @@ protected:
 	/** The speed additive value when player takes the skate item. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Skate Additive Strength", ShowOnlyInnerProperties))
 	float SkateAdditiveStrengthInternal = 500.f;
-
-	/** Max possible items to be picked up by player. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Max Allowed Items Num", ShowOnlyInnerProperties, ClampMin = "1", UIMin = "1"))
-	int32 MaxAllowedItemsNumInternal = 5;
 
 	/** The default powerups curve table that is used to set the default powerups levels for each character.
 	 * Columns (Item Type): Skate, Bomb, Fire

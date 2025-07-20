@@ -2,8 +2,9 @@
 
 #include "UI/Widgets/BmrPowerupWidget.h"
 //---
-#include "DataAssets/ItemDataAsset.h"
-#include "LevelActors/PlayerCharacter.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "GameFramework/MyPlayerState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -15,6 +16,26 @@
  * Overrides
  ********************************************************************************************* */
 
+// Updates the blends slider target to which widget will interpolate
+void UBmrPowerupWidget::SetTargetValue(float NewValue, float MaxValue, bool bImmediateUpdate)
+{
+	NewValue = FMath::Max(NewValue, 0.f);
+	MaxValue = FMath::Max(MaxValue, NewValue);
+	TargetValueInternal = NewValue / MaxValue;
+
+	if (bImmediateUpdate)
+	{
+		checkf(RadialSlider, TEXT("ERROR: [%i] %hs:\n'RadialSlider' is null!"), __LINE__, __FUNCTION__);
+		RadialSlider->SetValue(TargetValueInternal);
+	}
+	else
+	{
+		// Start the blend
+		bNeedsUpdateInternal = true;
+		ElapsedLerpTimeInternal = 0.f;
+	}
+}
+
 // Called after the underlying slate widget is constructed
 void UBmrPowerupWidget::NativeConstruct()
 {
@@ -25,7 +46,7 @@ void UBmrPowerupWidget::NativeConstruct()
 		return;
 	}
 
-	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
+	BIND_ON_LOCAL_PLAYER_STATE_READY(this, ThisClass::OnLocalPlayerStateReady);
 }
 
 // Is executed every tick when widget is enabled
@@ -59,30 +80,61 @@ void UBmrPowerupWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
  * Events
  ********************************************************************************************* */
 
-// Called when the local player character is spawned, possessed, and replicated
-void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(class APlayerCharacter* PlayerCharacter, int32 CharacterID)
+// Called when the local player state is initialized and its assigned character is ready
+void UBmrPowerupWidget::OnLocalPlayerStateReady_Implementation(AMyPlayerState* PlayerState, int32 CharacterID)
 {
-	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
-	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-	TargetValueInternal = PlayerCharacter->GetPowerUp(ItemTypeInternal).GetCurrentLevelPercent();
-
-	// Set the initial values
-	checkf(RadialSlider, TEXT("ERROR: [%i] %hs:\n'' is null!"), __LINE__, __FUNCTION__);
-	RadialSlider->SetValue(TargetValueInternal);
-}
-
-// Called when the power-up data is updated and the UI should reflect new values
-void UBmrPowerupWidget::OnPowerUpsChanged_Implementation(const FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps)
-{
-	if (NewPowerUps.Get(ItemTypeInternal) == PrevPowerUps.Get(ItemTypeInternal))
+	if (GetOwningPlayerState() != PlayerState)
 	{
-		// No change in current powerup
 		return;
 	}
 
-	bNeedsUpdateInternal = true;
-	ElapsedLerpTimeInternal = 0.f;
+	// Bind to the attribute change and set the initial values
+	constexpr bool bImmediateUpdate = true;
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(PlayerState);
+	UAbilitySystemComponent& ASC = PlayerState->GetAbilitySystemComponentChecked();
+	if (ItemTypeInternal == FBmrPowerupTag::Skate)
+	{
+		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_SkateAttribute()).AddUObject(this, &ThisClass::OnSkateAttributeChanged);
+		SetTargetValue(PowerupsAttributeSet.GetPowerup_Skate(), PowerupsAttributeSet.GetPowerup_MaxSkate(), bImmediateUpdate);
+	}
+	else if (ItemTypeInternal == FBmrPowerupTag::Fire)
+	{
+		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_FireAttribute()).AddUObject(this, &ThisClass::OnFireAttributeChanged);
+		SetTargetValue(PowerupsAttributeSet.GetPowerup_Fire(), PowerupsAttributeSet.GetPowerup_MaxFire(), bImmediateUpdate);
+	}
+	else if (ItemTypeInternal == FBmrPowerupTag::Bomb)
+	{
+		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_BombsAvailableAttribute()).AddUObject(this, &ThisClass::OnBombAttributeChanged);
+		SetTargetValue(PowerupsAttributeSet.GetPowerup_BombsAvailable(), PowerupsAttributeSet.GetPowerup_MaxBombs(), bImmediateUpdate);
+	}
+}
 
-	// Set the new target value
-	TargetValueInternal = NewPowerUps.Get(ItemTypeInternal).GetCurrentLevelPercent();
+// Called when the power-up data is updated and the UI should reflect new values
+void UBmrPowerupWidget::OnPowerUpsChanged_Implementation(float NewValue, float MaxValue, FBmrPowerupTag PowerupType)
+{
+	SetTargetValue(NewValue, MaxValue);
+}
+
+// Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
+void UBmrPowerupWidget::OnSkateAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
+{
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxSkate();
+	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Skate);
+}
+
+// Is called when the Fire attribute is changed, e.g: when player picked up a Fire item
+void UBmrPowerupWidget::OnFireAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
+{
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxFire();
+	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Fire);
+}
+
+// Is called when the Bomb attribute is changed, e.g: when player picked up a Bomb item
+void UBmrPowerupWidget::OnBombAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
+{
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxBombs();
+	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Bomb);
 }

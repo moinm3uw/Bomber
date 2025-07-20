@@ -22,6 +22,7 @@
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 //---
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
@@ -101,32 +102,17 @@ void APlayerCharacter::SetDefaultPowerups()
 	}
 }
 
-// Apply effect of picked up powerups, can be called both on server and clients
-void APlayerCharacter::ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups)
+// Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
+void APlayerCharacter::OnSkateAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData) const
 {
 	// Apply speed
 	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
 	{
 		static constexpr float SpeedMultiplier = 100.F;
 		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = PowerupsInternal.Get(FBmrPowerupTag::Skate) * SpeedMultiplier + SkateAdditiveStrength;
+		const int32 SkateN = OnAttributeChangeData.NewValue * SpeedMultiplier + SkateAdditiveStrength;
 		MovementComponent->MaxWalkSpeed = SkateN;
 	}
-
-	// Here you might to apply others types of powerups
-	// ...
-
-	// Notify listeners
-	if (OnPowerUpsChanged.IsBound())
-	{
-		OnPowerUpsChanged.Broadcast(PowerupsInternal, PrevPowerups);
-	}
-}
-
-// Is called on clients to apply powerups
-void APlayerCharacter::OnRep_Powerups(const FBmrPowerUpsContainer& PrevPowerups)
-{
-	ApplyPowerups(PrevPowerups);
 }
 
 /** ---------------------------------------------------
@@ -490,6 +476,16 @@ void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlaye
 
 	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	PlayerName3DWidgetComponentInternal->Init(InPlayerState);
+
+	// Listen when the skate powerup is picked up to change the speed
+	UAbilitySystemComponent& ASC = InPlayerState->GetAbilitySystemComponentChecked();
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(&ASC);
+	ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_SkateAttribute()).AddUObject(this, &ThisClass::OnSkateAttributeChanged);
+
+	// Apply initial skate speed
+	FOnAttributeChangeData InitialSkateData;
+	InitialSkateData.NewValue = PowerupsAttributeSet.GetPowerup_Skate();
+	OnSkateAttributeChanged(InitialSkateData);
 }
 
 /*********************************************************************************************

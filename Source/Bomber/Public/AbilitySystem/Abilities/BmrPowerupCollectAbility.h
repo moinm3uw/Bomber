@@ -4,13 +4,13 @@
 
 #include "Abilities/GameplayAbility.h"
 //---
-#include "BmrPowerupCollect.generated.h"
+#include "BmrPowerupCollectAbility.generated.h"
 
 /**
  * Is activated when player collects a powerup item.
  */
 UCLASS()
-class BOMBER_API UBmrPowerupCollect : public UGameplayAbility
+class BOMBER_API UBmrPowerupCollectAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 

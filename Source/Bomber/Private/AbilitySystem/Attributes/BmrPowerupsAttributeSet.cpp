@@ -11,15 +11,19 @@
 // Returns the powerups attribute set for the specified owner. It will return nullptr if can't be obtained
 const UBmrPowerupsAttributeSet* UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(const UObject* InOwner)
 {
-	const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Cast<AActor>(InOwner));
+	const UAbilitySystemComponent* ASC = Cast<UAbilitySystemComponent>(InOwner);
+	if (!ASC)
+	{
+		ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Cast<AActor>(InOwner));
+	}
 	const UAttributeSet* AttributeSet = ASC ? ASC->GetAttributeSet(StaticClass()) : nullptr;
 	return Cast<UBmrPowerupsAttributeSet>(AttributeSet);
 }
 
 // Returns the powerups attribute set for the specified owner. It will crash if can't be obtained
-const UBmrPowerupsAttributeSet& UBmrPowerupsAttributeSet::Get(const UObject& InOwner)
+const UBmrPowerupsAttributeSet& UBmrPowerupsAttributeSet::Get(const UObject* InOwner)
 {
-	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = GetPowerupsAttributeSet(&InOwner);
+	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = GetPowerupsAttributeSet(InOwner);
 	checkf(PowerupsAttributeSet, TEXT("ERROR: [%i] %hs:\n'PowerupsAttributeSet' is null!"), __LINE__, __FUNCTION__);
 	return *PowerupsAttributeSet;
 }

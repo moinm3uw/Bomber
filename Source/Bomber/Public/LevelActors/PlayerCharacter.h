@@ -28,12 +28,6 @@ class BOMBER_API APlayerCharacter : public ACharacter, public IAbilitySystemInte
 	 * @todo JanSeliv UGi56jhn Replace all powerup-related logic by GAS attributes (delegates, setters, getters, etc.)
 	 ********************************************************************************************* */
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPowerUpsChanged, const struct FBmrPowerUpsContainer&, NewPowerUps, const FBmrPowerUpsContainer&, PrevPowerUps);
-
-	/** Called when this character picked up any power-up or they were reset.*/
-	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
-	FOnPowerUpsChanged OnPowerUpsChanged;
-
 	/** Returns current powerup levels */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE FBmrPowerUp& GetPowerUp(FBmrPowerupTag ItemType) const { return PowerupsInternal.Get(ItemType); }
@@ -49,21 +43,15 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void SetDefaultPowerups();
 
-	/** Apply effect of picked up powerups, can be called both on server and clients.
-	 * @param PrevPowerups - previous powerups levels before applying new ones (assuming new ones are already set). */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (AutoCreateRefTerm = "PrevPowerups"))
-	void ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups);
-
 protected:
 	friend FBmrPowerUpsContainer;
 
 	/** Count of items that affect on a player during gameplay. Can be overriden by the Cheat Manager. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_Powerups", Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups", ShowOnlyInnerProperties))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups", ShowOnlyInnerProperties))
 	FBmrPowerUpsContainer PowerupsInternal;
 
-	/** Is called on clients to apply powerups for this character. */
-	UFUNCTION()
-	void OnRep_Powerups(const FBmrPowerUpsContainer& PrevPowerups);
+	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
+	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const;
 
 	/** ---------------------------------------------------
 	 *		Public functions

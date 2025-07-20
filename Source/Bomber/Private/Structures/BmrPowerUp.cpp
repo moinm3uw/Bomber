@@ -26,7 +26,7 @@ void FBmrPowerUp::SetLevel(int32 NewLevel)
 void FBmrPowerUp::SetMaxLevel(int32 NewMaxLevel)
 {
 	constexpr int32 ClampMin = 0;
-	const int32 MaxAllowedItemsNum = UItemDataAsset::Get().GetMaxAllowedItemsNum();
+	constexpr int32 MaxAllowedItemsNum = 5;
 	MaxLevel = FMath::Clamp(NewMaxLevel, ClampMin, MaxAllowedItemsNum);
 }
 
@@ -47,7 +47,7 @@ void FBmrPowerUp::AddLevel(int32 AdditionalLevel)
 float FBmrPowerUp::Conv_PowerUpLevelToPercent(int32 ItemLevel)
 {
 	constexpr float MinPowerUps = 1.f;
-	const float MaxPowerUps = FMath::Max(static_cast<float>(UItemDataAsset::Get().GetMaxAllowedItemsNum()), MinPowerUps);
+	constexpr float MaxPowerUps = FMath::Max(5.f, MinPowerUps);
 
 	const int32 CurrentItemLevel = static_cast<float>(ItemLevel);
 	return CurrentItemLevel / MaxPowerUps;
@@ -167,8 +167,6 @@ void FBmrPowerUpsContainer::MarkDirty(const FBmrPowerUpsContainer& PrevPowerups)
 	if (InPlayerCharacter && InPlayerCharacter->HasAuthority())
 	{
 		MARK_PROPERTY_DIRTY_FROM_NAME(APlayerCharacter, PowerupsInternal, InPlayerCharacter);
-
-		InPlayerCharacter->ApplyPowerups(PrevPowerups);
 	}
 }
 

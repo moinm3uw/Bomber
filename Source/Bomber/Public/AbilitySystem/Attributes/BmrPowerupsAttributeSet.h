@@ -22,12 +22,12 @@ public:
 	static const UBmrPowerupsAttributeSet* GetPowerupsAttributeSet(const UObject* InOwner);
 
 	/** Returns the powerups attribute set for the specified owner. It will crash if can't be obtained. */
-	static const UBmrPowerupsAttributeSet& Get(const UObject& InOwner);
+	static const UBmrPowerupsAttributeSet& Get(const UObject* InOwner);
 
 	/*********************************************************************************************
 	 * Data attributes
 	 ********************************************************************************************* */
-protected:
+public:
 	/** Current explosion radius enhancement from fire powerups. */
 	UPROPERTY(BlueprintReadOnly, Transient, ReplicatedUsing = "OnRep_Powerup_Fire", Category = "C++")
 	FGameplayAttributeData Powerup_Fire;

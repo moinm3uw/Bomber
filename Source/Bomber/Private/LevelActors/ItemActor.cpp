@@ -114,17 +114,10 @@ void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AAct
 		return;
 	}
 
-	// Activate the powerup ability
-	if (ASC->AbilityActorInfo && ASC->AbilityActorInfo->IsLocallyControlled())
-	{
-		FGameplayEventData EventData;
-		EventData.Instigator = this;
-		EventData.InstigatorTags.AddTag(ItemTypeInternal);
-		ASC->HandleGameplayEvent(TAG_EVENT_POWERUP_COLLECTED, &EventData);
-	}
-
-	// Destroy itself on overlapping
-	AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, OtherActor);
+	FGameplayEventData EventData;
+	EventData.Instigator = this;
+	EventData.InstigatorTags.AddTag(ItemTypeInternal);
+	ASC->HandleGameplayEvent(TAG_EVENT_POWERUP_COLLECTED, &EventData);
 }
 
 // Called when this level actor is destroyed from the Generated Map

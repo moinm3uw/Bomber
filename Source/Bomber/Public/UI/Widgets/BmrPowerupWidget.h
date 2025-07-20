@@ -16,6 +16,14 @@ class BOMBER_API UBmrPowerupWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
+public:
+	/** Updates the blends slider target to which widget will interpolate.
+	 * @param NewValue The new value to set the slider to, should be in range [0, MaxValue].
+	 * @param MaxValue The maximum value for the slider, used to display the percentage of the powerup level.
+	 * @param bImmediateUpdate If true, the slider will be updated immediately without interpolation. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetTargetValue(float NewValue, float MaxValue, bool bImmediateUpdate = false);
+
 protected:
 	/** Exposed property to be set in Details Panel of the type of item this UI or data element is associated with (e.g., Speed, BombCount, etc.) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Item Type", ExposeOnSpawn="true"))
@@ -56,11 +64,20 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 protected:
-	/** Called when the local player character is spawned, possessed, and replicated. */
+	/** Called when the local player state is initialized and its assigned character is ready. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
+	void OnLocalPlayerStateReady(class AMyPlayerState* PlayerState, int32 CharacterID);
 
 	/** Called when the power-up data is updated and the UI should reflect new values */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Powerups", meta = (BlueprintProtected))
-	void OnPowerUpsChanged(const FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps);
+	void OnPowerUpsChanged(float NewValue, float MaxValue, struct FBmrPowerupTag PowerupType);
+
+	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
+	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
+
+	/** Is called when the Fire attribute is changed, e.g: when player picked up a Fire item. */
+	void OnFireAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
+
+	/** Is called when the Bomb attribute is changed, e.g: when player picked up a Bomb item. */
+	void OnBombAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
 };
