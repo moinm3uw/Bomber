@@ -20,6 +20,10 @@ public:
 	/** Of each type this item is. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
 	FBmrPowerupTag ItemType = FBmrPowerupTag::None;
+
+	/** Gameplay effect to apply on collecting this powerup to change the attributes. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
+	TSubclassOf<class UGameplayEffect> CollectGameplayEffect = nullptr;
 };
 
 /**

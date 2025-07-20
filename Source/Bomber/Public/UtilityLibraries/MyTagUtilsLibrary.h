@@ -7,6 +7,7 @@
 #include "MyTagUtilsLibrary.generated.h"
 
 struct FPlayerTag;
+struct FBmrPowerupTag;
 struct FGameplayTag;
 
 /**
@@ -19,10 +20,18 @@ class BOMBER_API UMyTagUtilsLibrary : public UBlueprintFunctionLibrary
 
 public:
 	/** Converts a PlayerTag to a GameplayTag. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InGameplayTag", DisplayName = "To PlayerTag (GameplayTag)", CompactNodeTitle = "->", BlueprintAutocast))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InGameplayTag", DisplayName = "To PlayerTag (GameplayTag)", CompactNodeTitle = "->", BlueprintAutocast))
 	static FPlayerTag Conv_GameplayTagToPlayerTag(FGameplayTag InGameplayTag);
 
 	/** Converts a GameplayTag to a PlayerTag. */
-	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InPlayerTag", DisplayName = "To GameplayTag (PlayerTag)", CompactNodeTitle = "->", BlueprintAutocast))
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InPlayerTag", DisplayName = "To GameplayTag (PlayerTag)", CompactNodeTitle = "->", BlueprintAutocast))
 	static FGameplayTag Conv_PlayerTagToGameplayTag(FPlayerTag InPlayerTag);
+
+	/** Converts a PowerupTag to a GameplayTag. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InGameplayTag", DisplayName = "To PowerupTag (GameplayTag)", CompactNodeTitle = "->", BlueprintAutocast))
+	static FBmrPowerupTag Conv_GameplayTagToPowerupTag(FGameplayTag InGameplayTag);
+
+	/** Converts a GameplayTag to a PowerupTag. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InPowerupTag", DisplayName = "To GameplayTag (PowerupTag)", CompactNodeTitle = "->", BlueprintAutocast))
+	static FGameplayTag Conv_PowerupTagToGameplayTag(FBmrPowerupTag InPowerupTag);
 };

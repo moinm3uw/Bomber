@@ -2,6 +2,7 @@
 
 #include "UtilityLibraries/MyTagUtilsLibrary.h"
 //---
+#include "Structures/BmrPowerupTag.h"
 #include "Structures/PlayerTag.h"
 //---
 #include "GameplayTagContainer.h"
@@ -18,4 +19,16 @@ FPlayerTag UMyTagUtilsLibrary::Conv_GameplayTagToPlayerTag(FGameplayTag InGamepl
 FGameplayTag UMyTagUtilsLibrary::Conv_PlayerTagToGameplayTag(FPlayerTag InPlayerTag)
 {
 	return InPlayerTag;
+}
+
+// Converts a PowerupTag to a GameplayTag
+FBmrPowerupTag UMyTagUtilsLibrary::Conv_GameplayTagToPowerupTag(FGameplayTag InGameplayTag)
+{
+	return FBmrPowerupTag(InGameplayTag);
+}
+
+// Converts a GameplayTag to a PowerupTag
+FGameplayTag UMyTagUtilsLibrary::Conv_PowerupTagToGameplayTag(FBmrPowerupTag InPowerupTag)
+{
+	return InPowerupTag;
 }

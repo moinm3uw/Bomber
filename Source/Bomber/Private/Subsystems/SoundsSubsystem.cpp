@@ -249,21 +249,6 @@ void USoundsSubsystem::PlayExplosionSFX()
 	}
 }
 
-// Play the sound of the picked power-up
-void USoundsSubsystem::PlayItemPickUpSFX()
-{
-	if (!CanPlaySounds()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame)
-	{
-		return;
-	}
-
-	if (USoundBase* ItemPickUpSFX = USoundsDataAsset::Get().GetItemPickUpSFX())
-	{
-		UGameplayStatics::PlaySound2D(GetWorld(), ItemPickUpSFX);
-	}
-}
-
 /** Play the sound that is played right before the match ends. */
 void USoundsSubsystem::PlayEndGameCountdownSFX()
 {

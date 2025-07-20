@@ -2,17 +2,21 @@
 
 #include "LevelActors/ItemActor.h"
 //---
-#include "Bomber.h"
 #include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/ItemDataAsset.h"
-#include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
+#include "NativeGameplayTags.h"
+#include "Abilities/GameplayAbilityTypes.h"
 #include "Net/UnrealNetwork.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemActor)
+
+UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_EVENT_POWERUP_COLLECTED, "Event.Powerup.Collected", "Event that activates collecting powerup ability.");
 
 // Sets default values
 AItemActor::AItemActor()
@@ -86,7 +90,8 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	OnActorBeginOverlap.AddUniqueDynamic(this, &AItemActor::OnItemBeginOverlap);
 
 	// Rand the item type if not set yet
-	if (ItemTypeInternal == FBmrPowerupTag::None)
+	if (HasAuthority()
+		&& ItemTypeInternal == FBmrPowerupTag::None)
 	{
 		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::GetAll().Num() - 1);
 		const FBmrPowerupTag NewItemType = FBmrPowerupTag::GetAll().GetByIndex(RandomIndex);
@@ -103,13 +108,20 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 // Triggers when this item starts overlap a player character to destroy itself
 void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if (!OtherActor
-	    || !OtherActor->IsA(UDataAssetsContainer::GetActorClassByType(EAT::Player)))
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor);
+	if (!ASC)
 	{
 		return;
 	}
 
-	USoundsSubsystem::Get().PlayItemPickUpSFX();
+	// Activate the powerup ability
+	if (ASC->AbilityActorInfo && ASC->AbilityActorInfo->IsLocallyControlled())
+	{
+		FGameplayEventData EventData;
+		EventData.Instigator = this;
+		EventData.InstigatorTags.AddTag(ItemTypeInternal);
+		ASC->HandleGameplayEvent(TAG_EVENT_POWERUP_COLLECTED, &EventData);
+	}
 
 	// Destroy itself on overlapping
 	AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, OtherActor);

@@ -8,6 +8,7 @@
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
@@ -618,6 +619,8 @@ void AMyPlayerState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+
 	// Initialize all attributes with default values
 	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
 	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
@@ -625,6 +628,17 @@ void AMyPlayerState::PostInitializeComponents()
 	{
 		static const FName GroupName = TEXT("Default");
 		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
+	}
+
+	if (HasAuthority())
+	{
+		const UPlayerDataAsset& PlayerDataAsset = UPlayerDataAsset::Get();
+		const int32 StartupAbilitiesNum = PlayerDataAsset.GetStartupAbilitiesNum();
+		for (int32 Idx = 0; Idx < StartupAbilitiesNum; ++Idx)
+		{
+			const FGameplayAbilitySpec AbilitySpec = PlayerDataAsset.GetStartupAbility(Idx);
+			AbilitySystemComponentInternal->GiveAbility(AbilitySpec);
+		}
 	}
 }
 

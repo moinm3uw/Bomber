@@ -127,10 +127,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void PlayExplosionSFX();
 
-	/** Play the sound of the picked power-up. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void PlayItemPickUpSFX();
-
 	/** Play the sound that is played right before the match ends. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void PlayEndGameCountdownSFX();

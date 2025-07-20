@@ -23,6 +23,8 @@
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
+#include "AbilitySystemComponent.h"
+#include "GameplayEffect.h"
 #include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
@@ -58,7 +60,8 @@ void APlayerCharacter::SetPowerups(int32 NewLevel)
 // Resets powerups levels to the default ones, can be called only on the server
 void APlayerCharacter::SetDefaultPowerups()
 {
-	if (!HasAuthority())
+	if (!HasAuthority()
+		|| !UUtilsLibrary::HasWorldBegunPlay())
 	{
 		return;
 	}
@@ -83,6 +86,18 @@ void APlayerCharacter::SetDefaultPowerups()
 	{
 		// If the curve table is not set for the character (like bot), reset all powerups to first level by default 
 		SetPowerups(1);
+	}
+
+	// Apply the Restart Effect to reset attributes
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent()) // Might be null before Player State is initialized
+	{
+		const TSubclassOf<UGameplayEffect> RestartGameplayEffect = UPlayerDataAsset::Get().GetRestartGameplayEffect();
+		ensureMsgf(RestartGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'RestartGameplayEffect' condition is FALSE"), __LINE__, __FUNCTION__);
+		const FGameplayEffectSpecHandle RestartSpecHandle = ASC->MakeOutgoingSpec(RestartGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext());
+		if (const FGameplayEffectSpec* RestartSpec = RestartSpecHandle.Data.Get())
+		{
+			ASC->ApplyGameplayEffectSpecToSelf(*RestartSpec);
+		}
 	}
 }
 
