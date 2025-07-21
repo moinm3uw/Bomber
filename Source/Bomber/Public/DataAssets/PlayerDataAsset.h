@@ -25,7 +25,7 @@ struct BOMBER_API FAttachedMesh
 	FName Socket = NAME_None;
 
 	/** Prop animation is loop played all the time, starts playing on attaching to the owner. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ShowOnlyInnerProperties))
 	TObjectPtr<class UAnimSequence> MeshAnimation = nullptr;
 };
 
@@ -41,6 +41,10 @@ public:
 	/** The tag of this player character to be used for association of this player with other data. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Row", meta = (ShowOnlyInnerProperties))
 	FPlayerTag PlayerTag = FPlayerTag::None;
+
+	/** Gameplay effect to apply on changing the character from one to another. */ 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
+	TSubclassOf<class UGameplayEffect> ConfigGameplayEffect = nullptr;
 
 	/** All meshes that will be attached to the player. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))

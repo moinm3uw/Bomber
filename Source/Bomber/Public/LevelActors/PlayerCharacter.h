@@ -5,7 +5,6 @@
 #include "GameFramework/Character.h"
 //---
 #include "AbilitySystemInterface.h"
-#include "Structures/BmrPowerUp.h"
 //---
 #include "PlayerCharacter.generated.h"
 
@@ -23,39 +22,6 @@ class BOMBER_API APlayerCharacter : public ACharacter, public IAbilitySystemInte
 {
 	GENERATED_BODY()
 
-	/*********************************************************************************************
-	 * Powerups
-	 * @todo JanSeliv UGi56jhn Replace all powerup-related logic by GAS attributes (delegates, setters, getters, etc.)
-	 ********************************************************************************************* */
-public:
-	/** Returns current powerup levels */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE FBmrPowerUp& GetPowerUp(FBmrPowerupTag ItemType) const { return PowerupsInternal.Get(ItemType); }
-
-	/** Set powerups levels all at once, can be called only on the server. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "NewPowerups"))
-	void SetPowerups(int32 NewLevel);
-
-	/** Resets powerups levels to the default ones, can be called only on the server.
-	 * Gathers all default levels from the Curve Table by current player type, where:
-	 * - Columns (Item Type): Skate, Bomb, Fire
-	 * - Rows (Player Tag): 'Player.Bastet' etc */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetDefaultPowerups();
-
-protected:
-	friend FBmrPowerUpsContainer;
-
-	/** Count of items that affect on a player during gameplay. Can be overriden by the Cheat Manager. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Transient, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Powerups", ShowOnlyInnerProperties))
-	FBmrPowerUpsContainer PowerupsInternal;
-
-	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
-	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const;
-
-	/** ---------------------------------------------------
-	 *		Public functions
-	 * --------------------------------------------------- */
 public:
 	/** Sets default values for this character's properties */
 	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
@@ -70,6 +36,7 @@ public:
 
 	/** Returns the Ability System Component from the Player State. */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
 
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
@@ -88,9 +55,6 @@ protected:
 
 	/** Called every frame, is disabled on start, tick interval is decreased. */
 	virtual void Tick(float DeltaTime) override;
-
-	/** Returns properties that are replicated for the lifetime of the actor channel. */
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Is overriden to handle the client login when is set new player state. */
 	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
@@ -117,13 +81,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnActorTypeChanged(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow);
 
-	/**
-	 * Triggers when this player character starts something overlap.
-	 * With item overlapping Increases +1 to numbers of character's powerups (Skate/Bomb/Fire).
-	 */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPlayerBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
-
 	/** Listen to manage the tick. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
@@ -146,6 +103,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPlayerStateReady(class AMyPlayerState* InPlayerState, int32 CharacterID);
 
+	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
+	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const;
+
 	/*********************************************************************************************
 	 * Protected functions
 	 ********************************************************************************************* */
@@ -153,6 +113,10 @@ protected:
 	/** Updates collision object type by current character ID. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void UpdateCollisionObjectType();
+
+	/** Sets current config: each character has its own configuration, like different starting attributes. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void ApplyCharacterConfig();
 
 	/*********************************************************************************************
 	 * Controller (AI/Player)

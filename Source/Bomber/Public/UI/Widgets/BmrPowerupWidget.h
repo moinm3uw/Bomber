@@ -4,7 +4,7 @@
 
 #include "Blueprint/UserWidget.h"
 //---
-#include "Structures/BmrPowerUp.h" // ItemType
+#include "Structures/BmrPowerupTag.h" // ItemType
 //---
 #include "BmrPowerupWidget.generated.h"
 

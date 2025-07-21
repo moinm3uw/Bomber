@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "GeneratedMap.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "Controllers/MyAIController.h"
@@ -158,9 +159,13 @@ TAutoConsoleVariable<int32> UMyCheatManager::CVarBombRadius(
 // Override the level of each powerup for a controlled player
 void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 {
-	if (APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter())
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+	if (ASC)
 	{
-		PlayerCharacter->SetPowerups(NewLevel);
+		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewLevel);
+		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_FireAttribute(), EGameplayModOp::Override, NewLevel);
+		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewLevel);
 	}
 }
 
@@ -200,11 +205,13 @@ void UMyCheatManager::SetAIPowerups(int32 NewLevel)
 	// Override the level of each powerup for bots
 	for (const UMapComponent* MapComponentIt : MapComponents)
 	{
-		APlayerCharacter* Character = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
-		if (Character
-		    && Character->IsBotControlled())
+		const APlayerCharacter* PlayerCharacter = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
+		UAbilitySystemComponent* ASC = PlayerCharacter && PlayerCharacter->IsBotControlled() ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+		if (ASC)
 		{
-			Character->SetPowerups(NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_FireAttribute(), EGameplayModOp::Override, NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewLevel);
 		}
 	}
 }

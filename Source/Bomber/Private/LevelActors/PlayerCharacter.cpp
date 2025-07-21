@@ -2,8 +2,8 @@
 
 #include "LevelActors/PlayerCharacter.h"
 //---
-#include "Bomber.h"
 #include "GeneratedMap.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/BmrPlayerNameWidgetComponent.h"
 #include "Components/MapComponent.h"
 #include "Components/MySkeletalMeshComponent.h"
@@ -15,105 +15,20 @@
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
 #include "LevelActors/BombActor.h"
-#include "LevelActors/ItemActor.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 //---
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/WidgetComponent.h"
-#include "Engine/CurveTable.h"
-#include "Engine/StaticMesh.h"
-#include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Net/UnrealNetwork.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerCharacter)
-
-/*********************************************************************************************
- * Powerups
- ********************************************************************************************* */
-
-// Set powerups levels all at once, can be called only on the server
-void APlayerCharacter::SetPowerups(int32 NewLevel)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	// Go through each powerup type and set its new level
-	for (const FBmrPowerupTag ItemTypeIt : FBmrPowerupTag::GetAll())
-	{
-		PowerupsInternal.SetLevel(NewLevel, ItemTypeIt);
-	}
-}
-
-// Resets powerups levels to the default ones, can be called only on the server
-void APlayerCharacter::SetDefaultPowerups()
-{
-	if (!HasAuthority()
-		|| !UUtilsLibrary::HasWorldBegunPlay())
-	{
-		return;
-	}
-
-	const FBmrPowerUpsContainer PrevPowerups = PowerupsInternal;
-
-	// Attempt to get defaults from the Curve Table by current Player Tag
-	const UCurveTable* DefaultPowerupsCurveTable = UItemDataAsset::Get().GetDefaultPowerupsCurveTable();
-	ensureMsgf(DefaultPowerupsCurveTable, TEXT("ASSERT: [%i] %hs:\n'DefaultPowerupsCurveTable' is not set, 1 will be used as default!"), __LINE__, __FUNCTION__);
-	const FRealCurve* DefaultItemLevelsCurve = DefaultPowerupsCurveTable ? DefaultPowerupsCurveTable->FindCurve(GetPlayerTag().GetTagName(), __FUNCTION__, /*bWarnIfNotFound*/false) : nullptr;
-	if (DefaultItemLevelsCurve)
-	{
-		// Go through each powerup type and set its level from the curve table
-		for (int32 Idx = 0; Idx < FBmrPowerupTag::GetAll().Num(); ++Idx)
-		{
-			const FBmrPowerupTag ItemTypeIt = FBmrPowerupTag::GetAll().GetByIndex(Idx);
-			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(Idx + 1)));
-			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
-		}
-	}
-	else
-	{
-		// If the curve table is not set for the character (like bot), reset all powerups to first level by default 
-		SetPowerups(1);
-	}
-
-	// Apply the Restart Effect to reset attributes
-	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent()) // Might be null before Player State is initialized
-	{
-		const TSubclassOf<UGameplayEffect> RestartGameplayEffect = UPlayerDataAsset::Get().GetRestartGameplayEffect();
-		ensureMsgf(RestartGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'RestartGameplayEffect' condition is FALSE"), __LINE__, __FUNCTION__);
-		const FGameplayEffectSpecHandle RestartSpecHandle = ASC->MakeOutgoingSpec(RestartGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext());
-		if (const FGameplayEffectSpec* RestartSpec = RestartSpecHandle.Data.Get())
-		{
-			ASC->ApplyGameplayEffectSpecToSelf(*RestartSpec);
-		}
-	}
-}
-
-// Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
-void APlayerCharacter::OnSkateAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData) const
-{
-	// Apply speed
-	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
-	{
-		static constexpr float SpeedMultiplier = 100.F;
-		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = OnAttributeChangeData.NewValue * SpeedMultiplier + SkateAdditiveStrength;
-		MovementComponent->MaxWalkSpeed = SkateN;
-	}
-}
 
 /** ---------------------------------------------------
  *		Public functions
@@ -140,9 +55,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// Initialize MapComponent
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
-
-	// Initialize default powerup attributes
-	PowerupsInternal = FBmrPowerUpsContainer(1, *this);
 
 	// Initialize skeletal mesh
 	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
@@ -207,6 +119,14 @@ UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
 	return InPlayerState ? InPlayerState->GetAbilitySystemComponent() : nullptr;
 }
 
+// Returns the Ability System Component from the Player State, crash if nullptr
+UAbilitySystemComponent& APlayerCharacter::GetAbilitySystemComponentChecked() const
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponent' is null!"), __LINE__, __FUNCTION__);
+	return *ASC;
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
@@ -254,17 +174,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 	UpdateLocation();
 }
 
-// Returns properties that are replicated for the lifetime of the actor channel
-void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	FDoRepLifetimeParams Params;
-	Params.bIsPushBased = true;
-
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PowerupsInternal, Params);
-}
-
 // Is overriden to handle the client login when is set new player state
 void APlayerCharacter::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
 {
@@ -288,8 +197,6 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 	MapComponent->OnCellChanged.AddUniqueDynamic(this, &ThisClass::OnCellChanged);
 	MapComponent->OnActorTypeChanged.AddUniqueDynamic(this, &ThisClass::OnActorTypeChanged);
-
-	OnActorBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnPlayerBeginOverlap);
 
 	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
@@ -335,26 +242,26 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
-	SetDefaultPowerups();
+	// Apply the Restart Effect to reset attributes
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent()) // Might be null before Player State is initialized
+	{
+		const TSubclassOf<UGameplayEffect> RestartGameplayEffect = UPlayerDataAsset::Get().GetRestartGameplayEffect();
+		ensureMsgf(RestartGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'RestartGameplayEffect' condition is FALSE"), __LINE__, __FUNCTION__);
+		const FGameplayEffectSpecHandle RestartSpecHandle = ASC->MakeOutgoingSpec(RestartGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext());
+		if (const FGameplayEffectSpec* RestartSpec = RestartSpecHandle.Data.Get())
+		{
+			ASC->ApplyGameplayEffectSpecToSelf(*RestartSpec);
+		}
+	}
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
 }
 
 // Is called when the Row from current Data Asset is changed for owner on the level, on both server and clients
-void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow)
+void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapComponent, const ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow)
 {
-	// Update powerup attributes based on changed player type
-	SetDefaultPowerups();
-}
-
-// Triggers when this player character starts something overlap.
-void APlayerCharacter::OnPlayerBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
-{
-	const AItemActor* OverlappedItem = Cast<AItemActor>(OtherActor);
-	if (OverlappedItem)
-	{
-		PowerupsInternal.AddLevel(1, OverlappedItem->GetItemType());
-	}
+	// Handle character change: apply new config to update attributes
+	ApplyCharacterConfig();
 }
 
 // Listen to manage the tick
@@ -450,8 +357,6 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 	{
 		Controller->SetIgnoreMoveInput(true);
 	}
-
-	SetDefaultPowerups();
 }
 
 // Is called for everytime when character changed its cell on the Generated Map
@@ -486,6 +391,22 @@ void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlaye
 	FOnAttributeChangeData InitialSkateData;
 	InitialSkateData.NewValue = PowerupsAttributeSet.GetPowerup_Skate();
 	OnSkateAttributeChanged(InitialSkateData);
+
+	ApplyCharacterConfig();
+}
+
+// Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
+void APlayerCharacter::OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const
+{
+	// Apply speed
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (ensureMsgf(MovementComponent, TEXT("ASSERT: [%i] %hs:\n'MovementComponent' condition is FALSE"), __LINE__, __FUNCTION__))
+	{
+		static constexpr float SpeedMultiplier = 100.f;
+		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
+		const int32 SkateN = OnAttributeChangeData.NewValue * SpeedMultiplier + SkateAdditiveStrength;
+		MovementComponent->MaxWalkSpeed = SkateN;
+	}
 }
 
 /*********************************************************************************************
@@ -524,6 +445,19 @@ void APlayerCharacter::UpdateCollisionObjectType()
 	}
 
 	CapsuleComp->SetCollisionObjectType(CollisionObjectType);
+}
+
+// Sets current config: each character has its own configuration, like different starting attributes
+void APlayerCharacter::ApplyCharacterConfig()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	const UPlayerRow* PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(GetPlayerTag());
+	const TSubclassOf<UGameplayEffect> ConfigGameplayEffect = PlayerRow ? PlayerRow->ConfigGameplayEffect : nullptr;
+	const FGameplayEffectSpecHandle ConfigSpecHandle = ASC && ConfigGameplayEffect ? ASC->MakeOutgoingSpec(ConfigGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext()) : FGameplayEffectSpecHandle();
+	if (const FGameplayEffectSpec* ConfigSpec = ConfigSpecHandle.Data.Get())
+	{
+		ASC->ApplyGameplayEffectSpecToSelf(*ConfigSpec);
+	}
 }
 
 /*********************************************************************************************
@@ -745,10 +679,9 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 
 	if (!bForce)
 	{
-		if (UUtilsLibrary::IsEditorNotPieWorld()                   // Should not spawn bomb in PIE
-		    || PowerupsInternal.Get(FBmrPowerupTag::Fire).IsZero() // Null length of explosion
-		    || PowerupsInternal.Get(FBmrPowerupTag::Bomb).IsZero() // No more bombs
-		    || OwnedController->IsMoveInputIgnored())              // controller is blocked
+		if (UUtilsLibrary::IsEditorNotPieWorld()
+		    || UBmrPowerupsAttributeSet::Get(this).GetPowerup_BombsAvailable() <= 0
+		    || OwnedController->IsMoveInputIgnored())
 		{
 			return;
 		}
@@ -765,7 +698,9 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 			return;
 		}
 
-		PlayerCharacter->PowerupsInternal.AddCurrentLevel(-1, FBmrPowerupTag::Bomb);
+		// @todo JanSeliv aW0hdfky Replace with effect application
+		constexpr float SubtractBombValue = -1.f;
+		PlayerCharacter->GetAbilitySystemComponentChecked().ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, SubtractBombValue);
 
 		// Init Bomb
 		ABombActor& BombActor = *CastChecked<ABombActor>(MapComponent.GetOwner());
@@ -791,6 +726,8 @@ void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponen
 	// Stop listening this bomb
 	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
 
+	// @todo JanSeliv aW0hdfky Replace with effect application
 	// Increment current bomb count back
-	PowerupsInternal.AddCurrentLevel(1, FBmrPowerupTag::Bomb);
+	constexpr float AddBombValue = 1.f;
+	GetAbilitySystemComponentChecked().ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, AddBombValue);
 }

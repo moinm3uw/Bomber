@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "GeneratedMap.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/BombDataAsset.h"
 #include "GameFramework/MyCheatManager.h"
@@ -63,7 +64,7 @@ void ABombActor::InitBomb(const UObject* OptionalBombPlacer/* = nullptr*/)
 	// Is bomb placer is a player character, then apply its fire radius and player type
 	if (const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(OptionalBombPlacer))
 	{
-		InFireRadius = OwnerCharacter->GetPowerUp(FBmrPowerupTag::Fire);
+		InFireRadius = UBmrPowerupsAttributeSet::Get(OwnerCharacter).GetPowerup_Fire();
 
 		// Override default mesh with one with the player type (each character has own bomb)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);

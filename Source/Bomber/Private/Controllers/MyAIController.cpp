@@ -3,6 +3,7 @@
 #include "Controllers/MyAIController.h"
 //---
 #include "Bomber.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/AIDataAsset.h"
 #include "DataAssets/GameStateDataAsset.h"
@@ -360,7 +361,8 @@ void AMyAIController::UpdateAI()
 	    && !bIsFilteringFailed // filtering was not failed
 	    && !bIsItemInDirect)   // was not found direct items
 	{
-		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, OwnerInternal->GetPowerUp(FBmrPowerupTag::Fire), TO_FLAG(EAT::Box | EAT::Player));
+		const float Fire = UBmrPowerupsAttributeSet::Get(OwnerInternal).GetPowerup_Fire();
+		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, Fire, TO_FLAG(EAT::Box | EAT::Player));
 		BoxesAndPlayers.Remove(MapComponent->GetCell());
 		if (BoxesAndPlayers.Num() > 0) // Are bombs or players in own bomb radius
 		{

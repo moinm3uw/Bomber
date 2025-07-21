@@ -624,7 +624,7 @@ void AMyPlayerState::PostInitializeComponents()
 	// Initialize all attributes with default values
 	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
 	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
-	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'Attribu' condition is FALSE"), __LINE__, __FUNCTION__))
+	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'AttributeSetInitter' is null!"), __LINE__, __FUNCTION__))
 	{
 		static const FName GroupName = TEXT("Default");
 		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
