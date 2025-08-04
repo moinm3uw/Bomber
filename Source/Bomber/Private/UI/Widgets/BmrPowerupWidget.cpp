@@ -83,11 +83,6 @@ void UBmrPowerupWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 // Called when the local player state is initialized and its assigned character is ready
 void UBmrPowerupWidget::OnLocalPlayerStateReady_Implementation(AMyPlayerState* PlayerState, int32 CharacterID)
 {
-	if (GetOwningPlayerState() != PlayerState)
-	{
-		return;
-	}
-
 	// Bind to the attribute change and set the initial values
 	constexpr bool bImmediateUpdate = true;
 	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(PlayerState);
