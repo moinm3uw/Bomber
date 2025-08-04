@@ -4,7 +4,7 @@
 
 #include "InputAction.h"
 //---
-#include "FunctionPickerData/FunctionPicker.h"
+#include "Structures/BmrInputActionBinding.h"
 //---
 #include "BmrInputAction.generated.h"
 
@@ -17,36 +17,23 @@ class BOMBER_API UBmrInputAction final : public UInputAction
 	GENERATED_BODY()
 
 public:
-	/** Returns the chosen state when function has to be called.
-	 * @see UMyInputAction::TriggerEventInternal */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE ETriggerEvent GetTriggerEvent() const { return TriggerEventInternal; }
+	/** Returns the number of input action bindings configured for this action
+	 * @see ::InputActionBindingsInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetInputActionBindingsNum() const { return InputActionBindingsInternal.Num(); }
 
-	/** Returns the data about static function object getter of a function to bind.
-	 * @see UMyInputAction::StaticContextInternal */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	const FORCEINLINE FFunctionPicker& GetStaticContext() const { return StaticContextInternal; }
-
-	/** Returns the function data that is used to be called when input will be triggered.
-	 * @see UMyInputAction::FunctionToBindInternal */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	const FORCEINLINE FFunctionPicker& GetFunctionToBind() const { return FunctionToBindInternal; }
+	/** Returns the input action binding by index
+	 * @see ::InputActionBindingsInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const FORCEINLINE FBmrInputActionBinding& GetInputActionBinding(int32 Index) const { return InputActionBindingsInternal.IsValidIndex(Index) ? InputActionBindingsInternal[Index] : FBmrInputActionBinding::Empty; }
 
 #if WITH_EDITOR
 	/** Validates bound functions to this input action. */
 	virtual EDataValidationResult IsDataValid(class FDataValidationContext& Context) const override;
 #endif // WITH_EDITOR
-	
+
 protected:
-	/** Choose for which state the bound function has to be called. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Trigger Event", ShowOnlyInnerProperties))
-	ETriggerEvent TriggerEventInternal = ETriggerEvent::Triggered;
-
-	/** Contains data about static function object getter of a function to bind. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Static Context", ShowOnlyInnerProperties, FunctionContextTemplate = "/Script/FunctionPicker.FunctionPickerTemplate::OnGetterObject__DelegateSignature"))
-	FFunctionPicker StaticContextInternal = FFunctionPicker::Empty;
-
-	/** Allows to set function that is used to be called when input will be triggered. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Function To Bind", ShowOnlyInnerProperties))
-	FFunctionPicker FunctionToBindInternal = FFunctionPicker::Empty;
+	/** Contains all input action binding configurations for this action */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Input Action Bindings", ShowOnlyInnerProperties))
+	TArray<FBmrInputActionBinding> InputActionBindingsInternal;
 };

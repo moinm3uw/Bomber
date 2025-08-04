@@ -487,29 +487,38 @@ void AMyPlayerController::BindInputActionsInContext(const UMyInputMappingContext
 	for (const UInputAction* InputActionIt : InputActions)
 	{
 		const UBmrInputAction* ActionIt = Cast<UBmrInputAction>(InputActionIt);
-		const FName FunctionName = ActionIt ? ActionIt->GetFunctionToBind().FunctionName : NAME_None;
-		if (!ensureAlwaysMsgf(!FunctionName.IsNone(), TEXT("ASSERT: %s: 'FunctionName' is none, can not bind the action '%s'!"), *FString(__FUNCTION__), *GetNameSafe(ActionIt)))
+		if (!ActionIt)
 		{
 			continue;
 		}
 
-		const FFunctionPicker& StaticContext = ActionIt->GetStaticContext();
-		if (!ensureAlwaysMsgf(StaticContext.IsValid(), TEXT("ASSERT: [%i] %s:\n'StaticContext' is not valid: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+		for (int32 Index = 0; Index < ActionIt->GetInputActionBindingsNum(); ++Index)
 		{
-			continue;
-		}
+			const FBmrInputActionBinding CurrentBinding = ActionIt->GetInputActionBinding(Index);
+			const FName FunctionName = CurrentBinding.FunctionToBind.FunctionName;
+			if (!ensureAlwaysMsgf(!FunctionName.IsNone(), TEXT("ASSERT: %s: 'FunctionName' is none, can not bind the action '%s'!"), *FString(__FUNCTION__), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
 
-		UFunctionPickerTemplate::FOnGetterObject GetOwnerFunc;
-		GetOwnerFunc.BindUFunction(StaticContext.FunctionClass->GetDefaultObject(), StaticContext.FunctionName);
-		UObject* FoundContextObj = GetOwnerFunc.Execute(GetWorld());
-		if (!ensureAlwaysMsgf(FoundContextObj, TEXT("ASSERT: [%i] %s:\n'FoundContextObj' is not found, next function returns nullptr: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
-		{
-			continue;
-		}
+			const FFunctionPicker& StaticContext = CurrentBinding.StaticContext;
+			if (!ensureAlwaysMsgf(StaticContext.IsValid(), TEXT("ASSERT: [%i] %s:\n'StaticContext' is not valid: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
 
-		const ETriggerEvent TriggerEvent = ActionIt->GetTriggerEvent();
-		EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
-		UE_LOG(LogBomber, Log, TEXT("Input bound: [%s][%s] %s()->%s()"), *GetNameSafe(InInputContext), *GetNameSafe(InputActionIt), *StaticContext.ToDisplayString(), *FunctionName.ToString());
+			UFunctionPickerTemplate::FOnGetterObject GetOwnerFunc;
+			GetOwnerFunc.BindUFunction(StaticContext.FunctionClass->GetDefaultObject(), StaticContext.FunctionName);
+			UObject* FoundContextObj = GetOwnerFunc.Execute(GetWorld());
+			if (!ensureAlwaysMsgf(FoundContextObj, TEXT("ASSERT: [%i] %s:\n'FoundContextObj' is not found, next function returns nullptr: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
+
+			const ETriggerEvent TriggerEvent = CurrentBinding.TriggerEvent;
+			EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
+			UE_LOG(LogBomber, Log, TEXT("Input bound: [%s][%s] %s()->%s()"), *GetNameSafe(InInputContext), *GetNameSafe(InputActionIt), *StaticContext.ToDisplayString(), *FunctionName.ToString());
+		}
 	}
 }
 

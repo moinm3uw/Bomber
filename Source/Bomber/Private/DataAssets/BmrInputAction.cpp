@@ -8,24 +8,38 @@
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrInputAction)
 
+// Contains no binding data
+const FBmrInputActionBinding FBmrInputActionBinding::Empty = FBmrInputActionBinding();
+
 #if WITH_EDITOR
 // Validates bound functions to this input action
 EDataValidationResult UBmrInputAction::IsDataValid(FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
 
-	const EDataValidationResult StaticContextResult = StaticContextInternal.IsDataValid(Context);
-	Result = CombineDataValidationResults(Result, StaticContextResult);
-	if (StaticContextResult == EDataValidationResult::Invalid)
+	for (int32 Index = 0; Index < InputActionBindingsInternal.Num(); ++Index)
 	{
-		Context.AddError(FText::FromString(FString::Printf(TEXT("ERROR: 'Static Context' is invalid for next Input Action: '%s'"), *GetName())));
-	}
+		const FBmrInputActionBinding& CurrentBinding = InputActionBindingsInternal[Index];
 
-	const EDataValidationResult FunctionToBindResult = FunctionToBindInternal.IsDataValid(Context);
-	Result = CombineDataValidationResults(Result, FunctionToBindResult);
-	if (FunctionToBindResult == EDataValidationResult::Invalid)
-	{
-		Context.AddError(FText::FromString(FString::Printf(TEXT("ERROR: 'Function To Bind' is invalid for next Input Action: '%s'"), *GetName())));
+		const EDataValidationResult StaticContextResult = CurrentBinding.StaticContext.IsDataValid(Context);
+		Result = CombineDataValidationResults(Result, StaticContextResult);
+		if (StaticContextResult == EDataValidationResult::Invalid)
+		{
+			Result = EDataValidationResult::Invalid;
+			static const FString StaticContextTemplated = TEXT("ERROR: 'Static Context' is invalid for Input Action Binding [{0}] in Input Action: '{1}'");
+			const FString StaticContextFormatted = FString::Format(*StaticContextTemplated, {Index, *GetName()});
+			Context.AddError(FText::FromString(StaticContextFormatted));
+		}
+
+		const EDataValidationResult FunctionToBindResult = CurrentBinding.FunctionToBind.IsDataValid(Context);
+		Result = CombineDataValidationResults(Result, FunctionToBindResult);
+		if (FunctionToBindResult == EDataValidationResult::Invalid)
+		{
+			Result = EDataValidationResult::Invalid;
+			static const FString FunctionToBindTemplated = TEXT("ERROR: 'Function To Bind' is invalid for Input Action Binding [{0}] in Input Action: '{1}'");
+			const FString FunctionToBindFormatted = FString::Format(*FunctionToBindTemplated, {Index, *GetName()});
+			Context.AddError(FText::FromString(FunctionToBindFormatted));
+		}
 	}
 
 	return Result;
