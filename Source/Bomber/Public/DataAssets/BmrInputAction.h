@@ -6,13 +6,13 @@
 //---
 #include "FunctionPickerData/FunctionPicker.h"
 //---
-#include "MyInputAction.generated.h"
+#include "BmrInputAction.generated.h"
 
 /**
   * Is inherited data asset, has additional data to setup input action.
   */
 UCLASS(Blueprintable, Const, AutoExpandCategories=("C++"))
-class BOMBER_API UMyInputAction final : public UInputAction
+class BOMBER_API UBmrInputAction final : public UInputAction
 {
 	GENERATED_BODY()
 

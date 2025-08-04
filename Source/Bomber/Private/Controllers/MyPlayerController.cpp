@@ -4,7 +4,7 @@
 //---
 #include "Bomber.h"
 #include "Components/MouseActivityComponent.h"
-#include "DataAssets/MyInputAction.h"
+#include "DataAssets/BmrInputAction.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "FunctionPickerData/FunctionPickerTemplate.h"
@@ -486,7 +486,7 @@ void AMyPlayerController::BindInputActionsInContext(const UMyInputMappingContext
 	// --- Bind input actions
 	for (const UInputAction* InputActionIt : InputActions)
 	{
-		const UMyInputAction* ActionIt = Cast<UMyInputAction>(InputActionIt);
+		const UBmrInputAction* ActionIt = Cast<UBmrInputAction>(InputActionIt);
 		const FName FunctionName = ActionIt ? ActionIt->GetFunctionToBind().FunctionName : NAME_None;
 		if (!ensureAlwaysMsgf(!FunctionName.IsNone(), TEXT("ASSERT: %s: 'FunctionName' is none, can not bind the action '%s'!"), *FString(__FUNCTION__), *GetNameSafe(ActionIt)))
 		{

@@ -1,16 +1,16 @@
 // Copyright (c) Yevhenii Selivanov
 
-#include "DataAssets/MyInputAction.h"
+#include "DataAssets/BmrInputAction.h"
 //---
 #if WITH_EDITOR
 #include "Misc/DataValidation.h" // IsDataValid func
 #endif // WITH_EDITOR
 //---
-#include UE_INLINE_GENERATED_CPP_BY_NAME(MyInputAction)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(BmrInputAction)
 
 #if WITH_EDITOR
 // Validates bound functions to this input action
-EDataValidationResult UMyInputAction::IsDataValid(FDataValidationContext& Context) const
+EDataValidationResult UBmrInputAction::IsDataValid(FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(Context), EDataValidationResult::Valid);
 
