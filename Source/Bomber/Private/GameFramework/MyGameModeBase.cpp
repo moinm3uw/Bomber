@@ -63,8 +63,12 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	// When new player joins, return everyone to the menu: joining running match and spectating are not supported at this moment
-	AMyGameStateBase::Get().SetGameState(ECGS::Menu);
+	// When new player joins to running game (any state is set), return everyone to the menu: joining running match and spectating are not supported at this moment
+	if (AMyGameStateBase::GetCurrentGameState() != ECGS::None)
+	{
+		AMyGameStateBase::Get().SetGameState(ECGS::Menu);
+	}
+
 	if (APlayerState* PlayerState = MyPC->GetPlayerState<APlayerState>())
 	{
 		// Disabled to allow start the game in 'Simulate in Editor' (F6) and then press 'Possess or eject player' button
