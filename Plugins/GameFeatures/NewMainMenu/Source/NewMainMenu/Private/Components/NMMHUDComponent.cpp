@@ -2,6 +2,8 @@
 
 #include "Components/NMMHUDComponent.h"
 //---
+#include "NMMUtils.h"
+#include "Components/NMMPlayerControllerComponent.h"
 #include "Data/NMMDataAsset.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
@@ -65,4 +67,11 @@ void UNMMHUDComponent::OnLocalCharacterReady_Implementation(class APlayerCharact
 {
 	UWidgetsSubsystem::Get().CreateManageableWidgetChecked(UNMMDataAsset::Get().GetMainMenuWidgetData());
 	UWidgetsSubsystem::Get().CreateManageableWidgetChecked(UNMMDataAsset::Get().GetInCinematicStateWidgetData());
+
+	// Once HUD is displayed, set the Menu state OnLocalCharacterReady
+	// It guarantee that game enters the Menu state only when the character is ready and HUD is displayed 
+	if (UNMMPlayerControllerComponent* ControllerComponent = UNMMUtils::GetPlayerControllerComponent())
+	{
+		ControllerComponent->TrySetMenuState();
+	}
 }

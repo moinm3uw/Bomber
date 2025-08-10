@@ -156,8 +156,6 @@ void UNMMPlayerControllerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
-
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
 	// Listen to set Menu game state once active spot is ready
@@ -221,13 +219,6 @@ void UNMMPlayerControllerComponent::OnUnregister()
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
-
-// Called when the local player character is spawned, possessed, and replicated
-void UNMMPlayerControllerComponent::OnLocalCharacterReady_Implementation(class APlayerCharacter* PlayerCharacter, int32 CharacterID)
-{
-	// Set the Menu state OnLocalCharacterReady to guarantee that game enters the Menu state only when the character is initialized 
-	TrySetMenuState();
-}
 
 // Listen to react when entered the Menu state
 void UNMMPlayerControllerComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)

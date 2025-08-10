@@ -53,9 +53,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetManagedInputContextsEnabled(ENMMState NewState);
 
-protected:
 	/** Tries to set the Menu game state on initializing the Main Menu system. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void TrySetMenuState();
 
 	/*********************************************************************************************
@@ -92,10 +91,6 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 protected:
-	/** Called when the local player character is spawned, possessed, and replicated. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
-
 	/** Listen to react when entered the Menu state. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
