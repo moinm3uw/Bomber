@@ -142,23 +142,21 @@ void FOnCharactersReadyHandler::TryBroadcastOnReady_Internal(APlayerCharacter& C
 	const int32 CharacterID = PlayerState->GetPlayerId();
 	const bool bIsLocalPlayer = PlayerState->IsPlayerStateLocallyControlled();
 
-	if (EventsSubsystem.BP_OnCharacterReady.IsBound())
-	{
-		EventsSubsystem.BP_OnCharacterReady.Broadcast(&Character, CharacterID);
-	}
+	EventsSubsystem.OnCharacterReadyNative.Broadcast(&Character, CharacterID);
+	EventsSubsystem.BP_OnCharacterReady.Broadcast(&Character, CharacterID);
 
-	if (bIsLocalPlayer && EventsSubsystem.BP_OnLocalCharacterReady.IsBound())
+	if (bIsLocalPlayer)
 	{
+		EventsSubsystem.OnLocalCharacterReadyNative.Broadcast(&Character, CharacterID);
 		EventsSubsystem.BP_OnLocalCharacterReady.Broadcast(&Character, CharacterID);
 	}
 
-	if (EventsSubsystem.BP_OnPlayerStateReady.IsBound())
-	{
-		EventsSubsystem.BP_OnPlayerStateReady.Broadcast(PlayerState, CharacterID);
-	}
+	EventsSubsystem.OnPlayerStateReadyNative.Broadcast(PlayerState, CharacterID);
+	EventsSubsystem.BP_OnPlayerStateReady.Broadcast(PlayerState, CharacterID);
 
-	if (bIsLocalPlayer && EventsSubsystem.BP_OnLocalPlayerStateReady.IsBound())
+	if (bIsLocalPlayer)
 	{
+		EventsSubsystem.OnLocalPlayerStateReadyNative.Broadcast(PlayerState, CharacterID);
 		EventsSubsystem.BP_OnLocalPlayerStateReady.Broadcast(PlayerState, CharacterID);
 	}
 }

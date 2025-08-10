@@ -6,6 +6,7 @@
 #include "CreateSessionCallbackProxyAdvanced.h"
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/GameStateDataAsset.h"
+#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"

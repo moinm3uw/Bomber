@@ -153,7 +153,7 @@ void APlayerCharacter::BeginPlay()
 		FGameModeEvents::GameModePostLoginEvent.AddUObject(this, &ThisClass::OnPostLogin);
 	}
 
-	BIND_ON_PLAYER_STATE_READY(this, ThisClass::OnPlayerStateReady, GetPlayerId());
+	BIND_ON_PLAYER_STATE_READY_ID(this, ThisClass::OnPlayerStateReady, GetPlayerId());
 }
 
 // Called when an instance of this class is placed (in editor) or spawned
@@ -373,11 +373,7 @@ void APlayerCharacter::OnCellChanged_Implementation(UMapComponent* MapComponent,
 // Is called when the player state is fully initialized
 void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlayerState, int32 CharacterID)
 {
-	if (GetPlayerId() != CharacterID)
-	{
-		// Is not this character
-		return;
-	}
+	checkf(InPlayerState == GetPlayerState(), TEXT("ERROR: [%i] %hs:\n'InPlayerState' is different than owned!"), __LINE__, __FUNCTION__);
 
 	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	PlayerName3DWidgetComponentInternal->Init(InPlayerState);

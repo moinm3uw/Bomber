@@ -73,15 +73,3 @@ private:
 	/** Is internal method, shouldn't be called directly, instead Broadcast_ methods should be used. */
 	void TryBroadcastOnReady_Internal(APlayerCharacter& Character);
 };
-
-/** Internal macro for binding and calling delegate methods. */
-#define INTERNAL_BIND_CHARACTER_READY(Delegate, Obj, Function, Arg, ID) \
-{ \
-	UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
-	EventsSubsystem.Delegate.AddUniqueDynamic(Obj, &Function); \
-    auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(ID); \
-    if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg)) \
-    { \
-        Obj->Function(Arg, ID); \
-    } \
-}

@@ -6,6 +6,7 @@
 #include "Components/GameDifficultyManagerComponent.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
+#include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"

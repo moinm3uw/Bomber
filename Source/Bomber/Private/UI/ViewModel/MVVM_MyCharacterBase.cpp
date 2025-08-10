@@ -85,7 +85,7 @@ void UMVVM_MyCharacterBase::OnViewModelConstruct_Implementation(const UUserWidge
 {
 	Super::OnViewModelConstruct_Implementation(UserWidget);
 
-	BIND_ON_PLAYER_STATE_READY(this, ThisClass::OnPlayerStateReady, GetCharacterId());
+	BIND_ON_PLAYER_STATE_READY_ID(this, ThisClass::OnPlayerStateReady, GetCharacterId());
 }
 
 // Is called when this View Model is destructed
@@ -103,11 +103,7 @@ void UMVVM_MyCharacterBase::OnViewModelDestruct_Implementation()
 // Called when any player state is initialized and its assigned character is ready
 void UMVVM_MyCharacterBase::OnPlayerStateReady_Implementation(AMyPlayerState* PlayerState, int32 CharacterID)
 {
-	if (CharacterID != GetCharacterId())
-	{
-		// This View Model is not for this character
-		return;
-	}
+	checkf(CharacterID == GetCharacterId(), TEXT("ERROR: [%i] %hs:\n'CharacterID' is different than owned!"), __LINE__, __FUNCTION__);
 
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);
 
