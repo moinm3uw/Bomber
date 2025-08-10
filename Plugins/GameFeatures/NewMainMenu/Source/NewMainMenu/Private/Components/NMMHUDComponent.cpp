@@ -5,7 +5,9 @@
 #include "NMMUtils.h"
 #include "Components/NMMPlayerControllerComponent.h"
 #include "Data/NMMDataAsset.h"
+#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
+#include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 #include "Widgets/NewMainMenuWidget.h"
@@ -73,5 +75,6 @@ void UNMMHUDComponent::OnLocalCharacterReady_Implementation(class APlayerCharact
 	if (UNMMPlayerControllerComponent* ControllerComponent = UNMMUtils::GetPlayerControllerComponent())
 	{
 		ControllerComponent->TrySetMenuState();
+		ControllerComponent->SetManagedInputContextsEnabled(UNMMBaseSubsystem::Get().GetCurrentMenuState());
 	}
 }

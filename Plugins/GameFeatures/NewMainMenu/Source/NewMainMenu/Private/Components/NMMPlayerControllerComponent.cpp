@@ -11,13 +11,13 @@
 #include "Data/NMMSaveGameData.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/SaveUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMCameraSubsystem.h"
 #include "Subsystems/NMMSpotsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "MyUtilsLibraries/SaveUtilsLibrary.h"
 //---
 #include "Components/AudioComponent.h"
 //---
@@ -86,6 +86,12 @@ void UNMMPlayerControllerComponent::SetCinematicMouseVisibilityEnabled(bool bEna
 // Enables or disables the input context according to new menu state
 void UNMMPlayerControllerComponent::SetManagedInputContextsEnabled(ENMMState NewState)
 {
+	if (UNMMUtils::GetMainMenuWidget() == nullptr)
+	{
+		// Widgets are not initialized yet, it will be handled later
+		return;
+	}
+
 	AMyPlayerController& PC = GetPlayerControllerChecked();
 
 	// Remove all previous input contexts managed by Controller
@@ -111,10 +117,7 @@ void UNMMPlayerControllerComponent::TrySetMenuState()
 		return;
 	}
 
-	if (UNMMSpotsSubsystem::Get().IsActiveMenuSpotReady())
-	{
-		GetPlayerControllerChecked().SetMenuState();
-	}
+	GetPlayerControllerChecked().SetMenuState();
 }
 
 /*********************************************************************************************
