@@ -4,12 +4,12 @@
 //---
 #include "GeneratedMap.h"
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Components/BmrMoverComponent.h"
 #include "Components/BmrPlayerNameWidgetComponent.h"
 #include "Components/MapComponent.h"
 #include "Components/MySkeletalMeshComponent.h"
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyPlayerController.h"
-#include "DataAssets/ItemDataAsset.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -23,20 +23,13 @@
 //---
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "InputActionValue.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 //---
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerCharacter)
 
-/** ---------------------------------------------------
- *		Public functions
- * --------------------------------------------------- */
-
 // Sets default values
-APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMySkeletalMeshComponent>(MeshComponentName)) // Init UMySkeletalMeshComponent instead of USkeletalMeshComponent
+APlayerCharacter::APlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
@@ -44,7 +37,6 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	// Replicate an actor
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	SetReplicatingMovement(true);
 
 	// Set the default AI controller class
 	AIControllerClass = AMyAIController::StaticClass();
@@ -53,49 +45,45 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	// Do not rotate player by camera
 	bUseControllerRotationYaw = false;
 
+	RootComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CollisionCylinder"));
+
 	// Initialize MapComponent
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
 
 	// Initialize skeletal mesh
-	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
-	checkf(SkeletalMeshComponent, TEXT("ERROR: [%i] %hs:\n'SkeletalMeshComponent' is null!"), __LINE__, __FUNCTION__);
+	MeshComponentInternal = CreateDefaultSubobject<UMySkeletalMeshComponent>(TEXT("MeshComponent"));
+	MeshComponentInternal->SetupAttachment(RootComponent);
 	static const FVector MeshRelativeLocation(0, 0, -90.f);
-	SkeletalMeshComponent->SetRelativeLocation_Direct(MeshRelativeLocation);
+	MeshComponentInternal->SetRelativeLocation_Direct(MeshRelativeLocation);
 	static const FRotator MeshRelativeRotation(0, -90.f, 0);
-	SkeletalMeshComponent->SetRelativeRotation_Direct(MeshRelativeRotation);
-	SkeletalMeshComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+	MeshComponentInternal->SetRelativeRotation_Direct(MeshRelativeRotation);
+	MeshComponentInternal->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	// Enable all lighting channels, so it's clearly visible in the dark
-	SkeletalMeshComponent->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
-	MapComponentInternal->SetMeshComponent(SkeletalMeshComponent);
+	MeshComponentInternal->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
+	MapComponentInternal->SetMeshComponent(MeshComponentInternal);
 
 	// Initialize 3D widget component for the player name
 	PlayerName3DWidgetComponentInternal = CreateDefaultSubobject<UBmrPlayerNameWidgetComponent>(TEXT("PlayerName3DWidgetComponent"));
 	PlayerName3DWidgetComponentInternal->SetupAttachment(RootComponent);
 
-	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
-	{
-		// Rotate player by movement
-		MovementComponent->bOrientRotationToMovement = true;
-		static const FRotator RotationRate(0.f, 540.f, 0.f);
-		MovementComponent->RotationRate = RotationRate;
+	// Initialize Mover Component: most setup is done in Details Panel as it is full of instanced properties
+	MoverComponentInternal = CreateDefaultSubobject<UBmrMoverComponent>(TEXT("MoverComponent"));
+	SetReplicatingMovement(false); // Mover requires to disable to handle on its own
 
-		// Do not push out clients from collision
-		MovementComponent->MaxDepenetrationWithGeometryAsProxy = 0.f;
-	}
-
-	if (UCapsuleComponent* RootCapsuleComponent = GetCapsuleComponent())
-	{
-		// Setup collision to allow overlap players with each other, but block all other actors
-		RootCapsuleComponent->CanCharacterStepUpOn = ECB_Yes;
-		RootCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player0, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player1, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player2, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
-	}
+	// @TODO JanSeliv zxo17R0K - Add capsules collision support in level actor data assets
+	UCapsuleComponent* RootCapsuleComponent = CastChecked<UCapsuleComponent>(RootComponent);
+	RootCapsuleComponent->InitCapsuleSize(34.0f, 88.0f);
+	// Setup collision to allow overlap players with each other, but block all other actors
+	RootCapsuleComponent->CanCharacterStepUpOn = ECB_Yes;
+	RootCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);           // Pawn+Custom profile (both required)
+	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName); // Pawn+Custom profile (both required)
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player0, ECR_Overlap);
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player1, ECR_Overlap);
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player2, ECR_Overlap);
+	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
 }
 
 // Returns level type associated with player, e.g: Water level type for Roger character
@@ -138,7 +126,7 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Set the animation blueprint on very first character spawn
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	if (UMySkeletalMeshComponent* MeshComp = GetMeshComponent())
 	{
 		const TSubclassOf<UAnimInstance> AnimInstanceClass = UPlayerDataAsset::Get().GetAnimInstanceClass();
 		MeshComp->SetAnimInstanceClass(AnimInstanceClass);
@@ -198,7 +186,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	MapComponent->OnCellChanged.AddUniqueDynamic(this, &ThisClass::OnCellChanged);
 	MapComponent->OnActorTypeChanged.AddUniqueDynamic(this, &ThisClass::OnActorTypeChanged);
 
-	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMeshComponentChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	if (!MapComponentInternal->GetReplicatedMeshData().IsValid())
@@ -351,7 +339,7 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 
 	UGlobalEventsSubsystem::Get().BP_OnGameStateChanged.RemoveAll(this);
 
-	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMeshComponentChecked().SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if (Controller)
 	{
@@ -378,31 +366,7 @@ void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlaye
 	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	PlayerName3DWidgetComponentInternal->Init(InPlayerState);
 
-	// Listen when the skate powerup is picked up to change the speed
-	UAbilitySystemComponent& ASC = InPlayerState->GetAbilitySystemComponentChecked();
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(&ASC);
-	ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_SkateAttribute()).AddUObject(this, &ThisClass::OnSkateAttributeChanged);
-
-	// Apply initial skate speed
-	FOnAttributeChangeData InitialSkateData;
-	InitialSkateData.NewValue = PowerupsAttributeSet.GetPowerup_Skate();
-	OnSkateAttributeChanged(InitialSkateData);
-
 	ApplyCharacterConfig();
-}
-
-// Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
-void APlayerCharacter::OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const
-{
-	// Apply speed
-	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-	if (ensureMsgf(MovementComponent, TEXT("ASSERT: [%i] %hs:\n'MovementComponent' condition is FALSE"), __LINE__, __FUNCTION__))
-	{
-		static constexpr float SpeedMultiplier = 100.f;
-		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = OnAttributeChangeData.NewValue * SpeedMultiplier + SkateAdditiveStrength;
-		MovementComponent->MaxWalkSpeed = SkateN;
-	}
 }
 
 /*********************************************************************************************
@@ -413,14 +377,13 @@ void APlayerCharacter::OnSkateAttributeChanged(const struct FOnAttributeChangeDa
 void APlayerCharacter::UpdateCollisionObjectType()
 {
 	const int32 PlayerId = GetPlayerId();
-	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
-	if (!ensureMsgf(CapsuleComp, TEXT("ASSERT: [%i] %hs:\n'CapsuleComp' is not valid!"), __LINE__, __FUNCTION__)
-	    || PlayerId < 0) // Might be replicating yet
+	if (PlayerId < 0) // Might be replicating yet
 	{
 		return;
 	}
 
 	// Set the object collision type
+	UCapsuleComponent* CapsuleComp = CastChecked<UCapsuleComponent>(RootComponent);
 	ECollisionChannel CollisionObjectType = CapsuleComp->GetCollisionObjectType();
 	switch (PlayerId)
 	{
@@ -542,32 +505,6 @@ void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 	ControllerToPossess->Possess(this);
 }
 
-// Move the player character
-void APlayerCharacter::MovePlayer(const FInputActionValue& ActionValue)
-{
-	const AController* OwnedController = GetController();
-	if (!OwnedController
-	    || OwnedController->IsMoveInputIgnored())
-	{
-		return;
-	}
-
-	// input is a Vector2D
-	const FVector2D MovementVector = ActionValue.Get<FVector2D>();
-
-	// Find out which way is forward
-	const FRotator ForwardRotation = UCellsUtilsLibrary::GetLevelGridRotation();
-
-	// Get forward vector
-	const FVector ForwardDirection = FRotationMatrix(ForwardRotation).GetUnitAxis(EAxis::X);
-
-	// Get right vector
-	const FVector RightDirection = FRotationMatrix(ForwardRotation).GetUnitAxis(EAxis::Y);
-
-	AddMovementInput(ForwardDirection, MovementVector.Y);
-	AddMovementInput(RightDirection, MovementVector.X);
-}
-
 // Takes the player current vector location and updates it on the level as a cell
 void APlayerCharacter::UpdateLocation()
 {
@@ -583,6 +520,21 @@ void APlayerCharacter::UpdateLocation()
 		const FCell SnappedCell = UCellsUtilsLibrary::SnapActorOnLevel(this);
 		MapComponentInternal->SetCell(SnappedCell);
 	}
+}
+
+/*********************************************************************************************
+ * Movement
+ ********************************************************************************************* */
+
+// Is overridden to return the velocity from Mover Component instead
+FVector APlayerCharacter::GetVelocity() const
+{
+	if (MoverComponentInternal)
+	{
+		return MoverComponentInternal->GetVelocity();
+	}
+
+	return Super::GetVelocity();
 }
 
 /*********************************************************************************************
@@ -605,15 +557,12 @@ int32 APlayerCharacter::GetPlayerId() const
  * Player Mesh
  ********************************************************************************************* */
 
-// Returns the Skeletal Mesh of bombers
-UMySkeletalMeshComponent* APlayerCharacter::GetMySkeletalMeshComponent() const
+// Returns the Skeletal Mesh Component, or crash if can not be accessed
+UMySkeletalMeshComponent& APlayerCharacter::GetMeshComponentChecked() const
 {
-	return MapComponentInternal ? MapComponentInternal->GetMeshComponent<UMySkeletalMeshComponent>() : nullptr;
-}
-
-UMySkeletalMeshComponent& APlayerCharacter::GetMeshChecked() const
-{
-	return *CastChecked<UMySkeletalMeshComponent>(GetMesh());
+	UMySkeletalMeshComponent* SkeletalMeshComponent = GetMeshComponent();
+	checkf(SkeletalMeshComponent, TEXT("ERROR: [%i] %hs:\n'SkeletalMeshComponent' is null!"), __LINE__, __FUNCTION__);
+	return *SkeletalMeshComponent;
 }
 
 // Set and apply default skeletal mesh for this player

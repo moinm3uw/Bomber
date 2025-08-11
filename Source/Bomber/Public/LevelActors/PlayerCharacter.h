@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "GameFramework/Character.h"
+#include "GameFramework/Pawn.h"
 //---
 #include "AbilitySystemInterface.h"
 //---
@@ -17,14 +17,14 @@ enum class EPlayerType : uint8;
  * @see Access Player's data with UPlayerDataAsset (Content/Bomber/DataAssets/DA_Player).
  * @see Access AI's data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
  */
-UCLASS()
-class BOMBER_API APlayerCharacter : public ACharacter, public IAbilitySystemInterface
+UCLASS(Abstract)
+class BOMBER_API APlayerCharacter : public APawn, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	/** Sets default values for this character's properties */
-	APlayerCharacter(const FObjectInitializer& ObjectInitializer);
+	APlayerCharacter();
 
 	/** Returns level type associated with player, e.g: Water level type for Roger character. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -34,7 +34,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const struct FPlayerTag& GetPlayerTag() const;
 
-	/** Returns the Ability System Component from the Player State. */
+	/** Returns the Ability System Component from the Player State.
+	 * In blueprints, call 'Get Ability System Component' as interface function. */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
 
@@ -103,9 +104,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPlayerStateReady(class AMyPlayerState* InPlayerState, int32 CharacterID);
 
-	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
-	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData) const;
-
 	/*********************************************************************************************
 	 * Protected functions
 	 ********************************************************************************************* */
@@ -130,11 +128,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void TryPossessController(EPlayerType PlayerType);
 
-	/** Move the player character. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, AutoCreateRefTerm = "ActionValue"))
-	void MovePlayer(const struct FInputActionValue& ActionValue);
-
-	/** Takes the player current vector location and updates it on the level as a cell. */
+	/** Takes the player current vector location and updates it on the level as a cell.
+	 * @TODO JanSeliv MA065Fyy - Implement `Update Cell on Tick` for Map Component replacing this function. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void UpdateLocation();
 
@@ -142,6 +137,22 @@ protected:
 	/** The character's AI controller */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "My AI Controller"))
 	TObjectPtr<class AAIController> AIControllerInternal = nullptr;
+
+	/*********************************************************************************************
+	 * Movement
+	 ********************************************************************************************* */
+public:
+	/** Is overridden to return the velocity from the Mover Component instead. */
+	virtual FVector GetVelocity() const override;
+
+	/** Returns the movement component for the player character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE class UBmrMoverComponent* GetMoverComponent() const { return MoverComponentInternal; }
+
+protected:
+	/** Movement component for the player character. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mover Component"))
+	TObjectPtr<class UBmrMoverComponent> MoverComponentInternal = nullptr;
 
 	/*********************************************************************************************
 	 * Nickname
@@ -170,15 +181,22 @@ public:
 public:
 	friend class UMyCheatManager;
 
-	/** Returns the Skeletal Mesh of bombers. */
+	/** Returns owned skeletal mesh component. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	class UMySkeletalMeshComponent* GetMySkeletalMeshComponent() const;
-	UMySkeletalMeshComponent& GetMeshChecked() const;
+	FORCEINLINE class UMySkeletalMeshComponent* GetMeshComponent() const { return MeshComponentInternal; }
+
+	/** Returns owned skeletal mesh component, or crashes if can't be obtained. */
+	UMySkeletalMeshComponent& GetMeshComponentChecked() const;
 
 	/** Set and apply default skeletal mesh for this player.
 	 * @param bForcePlayerSkin If true, will force the bot to change own skin to look like a player. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void SetDefaultPlayerMeshData(bool bForcePlayerSkin = false);
+
+protected:
+	/** The Skeletal Mesh Component of the player character. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
+	TObjectPtr<class UMySkeletalMeshComponent> MeshComponentInternal = nullptr;
 
 	/*********************************************************************************************
 	 * Bomb Placement

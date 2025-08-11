@@ -94,6 +94,16 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
 	static class UAbilitySystemComponent* GetLocalAbilitySystemComponent(const UObject* OptionalWorldContext = nullptr);
 
+	/** Returns specified Mover Component.
+	* @param CharacterID - Global ID of a character in session to find.
+	* @param OptionalWorldContext - the world context object. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UBmrMoverComponent* GetMoverComponent(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns the Mover Component from the local Player Character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UBmrMoverComponent* GetLocalMoverComponent(const UObject* OptionalWorldContext = nullptr);
+
 	/** Returns implemented Game Viewport Client on the project side. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static class UMyGameViewportClient* GetGameViewportClient();

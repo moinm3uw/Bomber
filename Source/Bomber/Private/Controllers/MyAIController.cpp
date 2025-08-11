@@ -4,6 +4,7 @@
 //---
 #include "Bomber.h"
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Components/BmrMoverComponent.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/AIDataAsset.h"
 #include "DataAssets/GameStateDataAsset.h"
@@ -37,15 +38,23 @@ AMyAIController::AMyAIController()
 // Makes AI go toward specified destination cell
 void AMyAIController::MoveToCell(const FCell& DestinationCell)
 {
-	if (!OwnerInternal)
+	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
+	UBmrMoverComponent* MoverComponent = OwnerInternal->GetMoverComponent();
+	if (!MapComponent
+	    || !MoverComponent)
 	{
 		return;
 	}
 
 	if (!IsMoveInputIgnored())
 	{
-		AIMoveToInternal = DestinationCell;
-		MoveToLocation(AIMoveToInternal.Location, INDEX_NONE, false, false);
+		const FCell& CurrentCell = MapComponent->GetCell();
+		const bool bHasArrived = CurrentCell == DestinationCell;
+		AIMoveToInternal = bHasArrived ? FCell::InvalidCell : DestinationCell;
+
+		// AI is moving directly in desired direction without navmesh usage (instead of MoveToLocation with navmesh)
+		const FVector Direction = bHasArrived ? FVector::ZeroVector : (DestinationCell.Location - CurrentCell.Location).GetSafeNormal2D();
+		MoverComponent->RequestMoveByIntent(Direction);
 	}
 
 #if WITH_EDITOR	 // [IsEditor]
@@ -57,9 +66,7 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 			UCellsUtilsLibrary::ClearDisplayedCells(OwnerInternal);
 		}
 
-		const UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
-		if (MapComponent // is valid  map component
-		    && MapComponent->bShouldShowRenders)
+		if (MapComponent->bShouldShowRenders)
 		{
 			static const FDisplayCellsParams DisplayParams{FLinearColor::Gray, 255.f, 300.f, TEXT("x")};
 			UCellsUtilsLibrary::DisplayCell(OwnerInternal, DestinationCell, DisplayParams);

@@ -59,6 +59,10 @@
 		{
 			"Name": "GameplayAbilities",
 			"Enabled": true
+		},
+		{
+			"Name": "Mover",
+			"Enabled": true
 		}
 	]
 }

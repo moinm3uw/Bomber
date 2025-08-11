@@ -21,6 +21,7 @@ public class Bomber : ModuleRules
                 , "EnhancedInput" // Created UMyInputAction, UMyInputMappingContext
                 , "DeveloperSettings" // Created UDataAssetsContainer
                 , "GameplayAbilities", "GameplayTags", "GameplayTasks" // Gameplay Ability System (GAS)
+                , "Mover" // Created UBmrMoverComponent, UBmrMoverWalkingMode
                 //My modules
                 , "FunctionPicker" // Created properties in UMyInputAction
                 , "MetaCheatManager" // Created UMyCheatManager

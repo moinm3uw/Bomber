@@ -202,6 +202,20 @@ class UAbilitySystemComponent* UMyBlueprintFunctionLibrary::GetLocalAbilitySyste
 	return PlayerState ? PlayerState->GetAbilitySystemComponent() : nullptr;
 }
 
+// Returns specified Mover Component
+class UBmrMoverComponent* UMyBlueprintFunctionLibrary::GetMoverComponent(int32 CharacterID, const UObject* OptionalWorldContext)
+{
+	const APlayerCharacter* PlayerCharacter = GetPlayerCharacter(CharacterID, OptionalWorldContext);
+	return PlayerCharacter ? PlayerCharacter->GetMoverComponent() : nullptr;
+}
+
+// Returns the Mover Component from the local Player Character
+class UBmrMoverComponent* UMyBlueprintFunctionLibrary::GetLocalMoverComponent(const UObject* OptionalWorldContext)
+{
+	const APlayerCharacter* PlayerCharacter = GetLocalPlayerCharacter(OptionalWorldContext);
+	return PlayerCharacter ? PlayerCharacter->GetMoverComponent() : nullptr;
+}
+
 // Returns implemented Game Viewport Client on the project side
 UMyGameViewportClient* UMyBlueprintFunctionLibrary::GetGameViewportClient()
 {

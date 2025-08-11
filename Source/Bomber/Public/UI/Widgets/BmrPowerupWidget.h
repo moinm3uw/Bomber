@@ -64,9 +64,9 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 protected:
-	/** Called when the local player state is initialized and its assigned character is ready. */
+	/** Called when the local player character is spawned, possessed, and replicated. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnLocalPlayerStateReady(class AMyPlayerState* PlayerState, int32 CharacterID);
+	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
 
 	/** Called when the power-up data is updated and the UI should reflect new values */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Powerups", meta = (BlueprintProtected))

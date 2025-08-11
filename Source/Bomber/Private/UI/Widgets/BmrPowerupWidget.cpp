@@ -4,7 +4,7 @@
 //---
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
-#include "GameFramework/MyPlayerState.h"
+#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 //---
@@ -46,7 +46,7 @@ void UBmrPowerupWidget::NativeConstruct()
 		return;
 	}
 
-	BIND_ON_LOCAL_PLAYER_STATE_READY(this, ThisClass::OnLocalPlayerStateReady);
+	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
 }
 
 // Is executed every tick when widget is enabled
@@ -81,25 +81,27 @@ void UBmrPowerupWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
  ********************************************************************************************* */
 
 // Called when the local player state is initialized and its assigned character is ready
-void UBmrPowerupWidget::OnLocalPlayerStateReady_Implementation(AMyPlayerState* PlayerState, int32 CharacterID)
+void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(APlayerCharacter* Character, int32 CharacterID)
 {
+	checkf(Character, TEXT("ERROR: [%i] %hs:\n'Character' is null!"), __LINE__, __FUNCTION__);
+
 	// Bind to the attribute change and set the initial values
 	constexpr bool bImmediateUpdate = true;
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(PlayerState);
-	UAbilitySystemComponent& ASC = PlayerState->GetAbilitySystemComponentChecked();
+	UAbilitySystemComponent& ASC = Character->GetAbilitySystemComponentChecked();
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(&ASC);
 	if (ItemTypeInternal == FBmrPowerupTag::Skate)
 	{
-		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_SkateAttribute()).AddUObject(this, &ThisClass::OnSkateAttributeChanged);
+		ASC.GetGameplayAttributeValueChangeDelegate(UBmrPowerupsAttributeSet::GetPowerup_SkateAttribute()).AddUObject(this, &ThisClass::OnSkateAttributeChanged);
 		SetTargetValue(PowerupsAttributeSet.GetPowerup_Skate(), PowerupsAttributeSet.GetPowerup_MaxSkate(), bImmediateUpdate);
 	}
 	else if (ItemTypeInternal == FBmrPowerupTag::Fire)
 	{
-		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_FireAttribute()).AddUObject(this, &ThisClass::OnFireAttributeChanged);
+		ASC.GetGameplayAttributeValueChangeDelegate(UBmrPowerupsAttributeSet::GetPowerup_FireAttribute()).AddUObject(this, &ThisClass::OnFireAttributeChanged);
 		SetTargetValue(PowerupsAttributeSet.GetPowerup_Fire(), PowerupsAttributeSet.GetPowerup_MaxFire(), bImmediateUpdate);
 	}
 	else if (ItemTypeInternal == FBmrPowerupTag::Bomb)
 	{
-		ASC.GetGameplayAttributeValueChangeDelegate(PowerupsAttributeSet.GetPowerup_BombsAvailableAttribute()).AddUObject(this, &ThisClass::OnBombAttributeChanged);
+		ASC.GetGameplayAttributeValueChangeDelegate(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute()).AddUObject(this, &ThisClass::OnBombAttributeChanged);
 		SetTargetValue(PowerupsAttributeSet.GetPowerup_BombsAvailable(), PowerupsAttributeSet.GetPowerup_MaxBombs(), bImmediateUpdate);
 	}
 }
@@ -113,7 +115,7 @@ void UBmrPowerupWidget::OnPowerUpsChanged_Implementation(float NewValue, float M
 // Is called when the Skate attribute is changed, e.g: when player picked up a Skate item
 void UBmrPowerupWidget::OnSkateAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
 {
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerPawn());
 	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxSkate();
 	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Skate);
 }
@@ -121,7 +123,7 @@ void UBmrPowerupWidget::OnSkateAttributeChanged(const FOnAttributeChangeData& On
 // Is called when the Fire attribute is changed, e.g: when player picked up a Fire item
 void UBmrPowerupWidget::OnFireAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
 {
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerPawn());
 	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxFire();
 	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Fire);
 }
@@ -129,7 +131,7 @@ void UBmrPowerupWidget::OnFireAttributeChanged(const FOnAttributeChangeData& OnA
 // Is called when the Bomb attribute is changed, e.g: when player picked up a Bomb item
 void UBmrPowerupWidget::OnBombAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
 {
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerState());
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerPawn());
 	const float MaxValue = PowerupsAttributeSet.GetPowerup_MaxBombs();
 	OnPowerUpsChanged(OnAttributeChangeData.NewValue, MaxValue, FBmrPowerupTag::Bomb);
 }

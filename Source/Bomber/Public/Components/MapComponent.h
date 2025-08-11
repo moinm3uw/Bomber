@@ -159,8 +159,8 @@ public:
 	void SetReplicatedMeshData(const FBmrMeshData& MeshData);
 
 protected:
-	/** Mesh of an owner. */
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
+	/** Cached mesh component of the owner actor: can be static or skeletal mesh component, is created on this component registration. */
+	UPROPERTY(BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
 	TObjectPtr<class UMeshComponent> MeshComponentInternal = nullptr;
 
 	/** Is optional to set, since clients are allowed to set mesh and material locally.
