@@ -94,8 +94,11 @@ void FWidgetUtilsLibrary::DestroyWidget(UUserWidget& ParentWidget)
 	// Hide widget to let last chance react on visibility change
 	ParentWidget.SetVisibility(ESlateVisibility::Collapsed);
 
-	// Remove the child widget from the viewport
-	ParentWidget.RemoveFromParent();
+	// Remove the child widget from the viewport (no parent means is not even in the viewport)
+	if (ParentWidget.GetParent())
+	{
+		ParentWidget.RemoveFromParent();
+	}
 
 	// RemoveFromParent() does not completely destroy widget, so schedule the child widget for destruction
 	ParentWidget.ConditionalBeginDestroy();
