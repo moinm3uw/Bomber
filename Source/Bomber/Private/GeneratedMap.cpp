@@ -731,12 +731,15 @@ void AGeneratedMap::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 void AGeneratedMap::GenerateLevelActors()
 {
 	if (!ensureMsgf(!LocalGridCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\nThere are no cells on the Generated Map!"), __LINE__, __FUNCTION__)
-	    || !HasAuthority())
+	    || !HasAuthority()
+	    || bIsCurrentlyGeneratingInternal)
 	{
 		return;
 	}
 
 	TRACE_CPUPROFILER_EVENT_SCOPE(AGeneratedMap::GenerateLevelActors);
+
+	bIsCurrentlyGeneratingInternal = true;
 
 	// Destroy all actors first
 	// Iterate it by handles to cancel spawning even if the actor is not spawned yet
@@ -796,6 +799,8 @@ void AGeneratedMap::GenerateLevelActors_Finish(TMap<FCell, EActorType>&& ActorsT
 		// Replicate the token to clients, so they can track when all actors completed generation
 		This->GenerateLevelActorsTokenInternal = This->MapComponentsInternal.LocalReplicationToken;
 		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, GenerateLevelActorsTokenInternal, This);
+
+		This->bIsCurrentlyGeneratingInternal = false;
 		This->OnGeneratedLevelActors.Broadcast();
 	};
 

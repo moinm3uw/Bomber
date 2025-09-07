@@ -217,6 +217,12 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Generate Level Actors Token"))
 	int32 GenerateLevelActorsTokenInternal = 0;
 
+	/** Is server-only, true while the level actors are being generated, is useful to avoid reentry.
+	 * It takes some time to process as firstly it starts async task to compute pattern, and then spawns actors spreading over multiple frames.
+	 * Once completed, it will broadcast the OnGeneratedLevelActors event on both server and clients. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Is Currently Generating"))
+	bool bIsCurrentlyGeneratingInternal = false;
+
 	/** Attached camera component. */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Camera Component"))
 	TObjectPtr<class UMyCameraComponent> CameraComponentInternal = nullptr;
