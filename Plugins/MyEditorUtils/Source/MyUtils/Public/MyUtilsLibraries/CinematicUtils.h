@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "CinematicUtils.generated.h"
 
 class UMovieSceneSequence;
@@ -58,7 +58,7 @@ template <typename T>
 void UCinematicUtils::GetAllSectionsByClass(const UMovieSceneSequence* MasterSequence, TArray<T*>& OutSections)
 {
 	TArray<UMovieSceneSection*> Sections;
-	GetAllSectionsByClass(MasterSequence, T::StaticClass(), /*out*/Sections);
+	GetAllSectionsByClass(MasterSequence, T::StaticClass(), /*out*/ Sections);
 	for (UMovieSceneSection* It : Sections)
 	{
 		OutSections.Emplace(CastChecked<T>(It));

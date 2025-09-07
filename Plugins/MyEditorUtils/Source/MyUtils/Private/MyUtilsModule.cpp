@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "MyUtilsModule.h"
-//---
+
+// UE
 #include "Modules/ModuleManager.h"
 
 // Called right after the module DLL has been loaded and the module object has been created

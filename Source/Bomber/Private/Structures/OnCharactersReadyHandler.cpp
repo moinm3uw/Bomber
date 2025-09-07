@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Structures/OnCharactersReadyHandler.h"
-//---
+
+// Bomber
 #include "GameFramework/MyPlayerState.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
@@ -122,9 +123,8 @@ bool FOnCharactersReadyHandler::IsCharacterPossessed(const FOnCharacterReadyData
 		return true;
 	}
 
-	return ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\nUnhandled condition!\n"
-			"Character: '%s' | PlayerState: '%s' | bIsPossessed: %s | bIsBot: %s | bIsLocallyControlled: %s | HasAuthority: %s | ID: %i"),
-		__LINE__, __FUNCTION__, *GetNameSafe(FoundHandle.Character.Get()), *GetNameSafe(FoundHandle.PlayerState.Get()), FoundHandle.bIsPossessed ? TEXT("true") : TEXT("false"), bIsBot ? TEXT("true") : TEXT("false"), bIsLocallyControlled ? TEXT("true") : TEXT("false"), FoundHandle.Character->HasAuthority() ? TEXT("true") : TEXT("false"), FoundHandle.PlayerState->GetPlayerId());
+	return ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\nUnhandled condition!\nCharacter: '%s' | PlayerState: '%s' | bIsPossessed: %s | bIsBot: %s | bIsLocallyControlled: %s | HasAuthority: %s | ID: %i"),
+	    __LINE__, __FUNCTION__, *GetNameSafe(FoundHandle.Character.Get()), *GetNameSafe(FoundHandle.PlayerState.Get()), FoundHandle.bIsPossessed ? TEXT("true") : TEXT("false"), bIsBot ? TEXT("true") : TEXT("false"), bIsLocallyControlled ? TEXT("true") : TEXT("false"), FoundHandle.Character->HasAuthority() ? TEXT("true") : TEXT("false"), FoundHandle.PlayerState->GetPlayerId());
 }
 
 // Broadcasts OnCharacterReady event if all conditions are met

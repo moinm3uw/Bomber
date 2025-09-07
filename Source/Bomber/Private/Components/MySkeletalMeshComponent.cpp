@@ -1,23 +1,25 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/MySkeletalMeshComponent.h"
-//---
+
+// Bomber
 #include "Components/MapComponent.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
+
+// UE
 #include "Animation/AnimSequence.h"
 #include "Components/GameFrameworkComponentManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MySkeletalMeshComponent)
 
 // Default constructor, overrides in object initializer default mesh by bomber mesh
 AMySkeletalMeshActor::AMySkeletalMeshActor(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMySkeletalMeshComponent>(TEXT("SkeletalMeshComponent0"))) // override default mesh class
+    : Super(ObjectInitializer.SetDefaultSubobjectClass<UMySkeletalMeshComponent>(TEXT("SkeletalMeshComponent0"))) // override default mesh class
 {
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
@@ -34,7 +36,7 @@ AMySkeletalMeshActor::AMySkeletalMeshActor(const FObjectInitializer& ObjectIniti
 	Mesh.bAllowCullDistanceVolume = false;
 
 	// Enable all lighting channels, so it's clearly visible in the dark
-	Mesh.SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
+	Mesh.SetLightingChannels(/*bChannel0*/ true, /*bChannel1*/ true, /*bChannel2*/ true);
 }
 
 // Returns the Skeletal Mesh of bombers
@@ -140,7 +142,7 @@ void UMySkeletalMeshComponent::OnVisibilityChanged()
 }
 
 // Disables tick and visibility if inactive and vice versa
-void UMySkeletalMeshComponent::SetActive(bool bNewActive, bool bReset/*= false*/)
+void UMySkeletalMeshComponent::SetActive(bool bNewActive, bool bReset /*= false*/)
 {
 	Super::SetActive(bNewActive, bReset);
 
@@ -299,10 +301,10 @@ void UMySkeletalMeshComponent::AttachProps()
 		// Attach the prop: location is 0, rotation is parent's world, scale is 1
 		constexpr bool bInWeldSimulatedBodies = true;
 		const FAttachmentTransformRules AttachRules(
-			EAttachmentRule::SnapToTarget,
-			EAttachmentRule::KeepWorld,
-			EAttachmentRule::SnapToTarget,
-			bInWeldSimulatedBodies);
+		    EAttachmentRule::SnapToTarget,
+		    EAttachmentRule::KeepWorld,
+		    EAttachmentRule::SnapToTarget,
+		    bInWeldSimulatedBodies);
 
 		// Before attach, mark it as transient only for this operation to avoid Modify()-call that asks to save the level
 		// However, remove the flag next as props have to be cooked

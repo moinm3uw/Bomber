@@ -3,7 +3,7 @@
 #pragma once
 
 #include "View/MVVMViewModelContextResolver.h"
-//---
+
 #include "MVVMMyContextResolver.generated.h"
 
 /**

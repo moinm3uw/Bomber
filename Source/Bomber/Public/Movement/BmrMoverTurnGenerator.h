@@ -3,7 +3,7 @@
 #pragma once
 
 #include "MoveLibrary/ModularMovement.h"
-//---
+
 #include "BmrMoverTurnGenerator.generated.h"
 
 /**

@@ -1,25 +1,29 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/NMMCameraSubsystem.h"
-//---
-#include "NMMUtils.h"
-#include "Components/MyCameraComponent.h"
+
+// NMM
 #include "Components/NMMSpotComponent.h"
-#include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
-#include "MyUtilsLibraries/CinematicUtils.h"
-#include "MyUtilsLibraries/GameplayUtilsLibrary.h"
+#include "NMMUtils.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMInGameSettingsSubsystem.h"
 #include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Components/MyCameraComponent.h"
+#include "Controllers/MyPlayerController.h"
+#include "MyUtilsLibraries/CinematicUtils.h"
+#include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "Camera/CameraActor.h"
 #include "CineCameraRigRail.h"
+#include "Engine/World.h"
 #include "LevelSequencePlayer.h"
 #include "TimerManager.h"
-#include "Camera/CameraActor.h"
-#include "Engine/World.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMCameraSubsystem)
 
 // Returns this Subsystem, is checked and wil crash if can't be obtained
@@ -35,23 +39,23 @@ UCameraComponent* UNMMCameraSubsystem::FindCameraComponent(ENMMState MainMenuSta
 {
 	switch (MainMenuState)
 	{
-	case ENMMState::None:
+		case ENMMState::None:
 		{
 			return UMyBlueprintFunctionLibrary::GetLevelCamera();
 		}
-	case ENMMState::Transition:
+		case ENMMState::Transition:
 		{
 			const ACameraActor* CurrentRailCamera = GetCurrentRailCamera();
 			return CurrentRailCamera ? CurrentRailCamera->GetCameraComponent() : nullptr;
 		}
-	case ENMMState::Idle: // Fall through
-	case ENMMState::Cinematic:
+		case ENMMState::Idle: // Fall through
+		case ENMMState::Cinematic:
 		{
 			const UNMMSpotComponent* CurrentSpot = UNMMSpotsSubsystem::Get().GetCurrentSpot();
 			ULevelSequencePlayer* MasterPlayer = CurrentSpot ? CurrentSpot->GetMasterPlayer() : nullptr;
 			return MasterPlayer ? UCinematicUtils::FindSequenceCameraComponent(MasterPlayer) : nullptr;
 		}
-	default: break;
+		default: break;
 	}
 
 	return nullptr;
@@ -72,8 +76,8 @@ ACineCameraRigRail* UNMMCameraSubsystem::GetCurrentRailRig()
 	constexpr int32 ForwardDir = 1;
 	const UNMMSpotsSubsystem& SpotsSubsystem = UNMMSpotsSubsystem::Get();
 	const UNMMSpotComponent* MenuSpot = IsCameraForwardTransition()
-		                                    ? SpotsSubsystem.GetCurrentSpot()
-		                                    : SpotsSubsystem.GetNextSpot(ForwardDir, UMyBlueprintFunctionLibrary::GetLevelType());
+	                                        ? SpotsSubsystem.GetCurrentSpot()
+	                                        : SpotsSubsystem.GetNextSpot(ForwardDir, UMyBlueprintFunctionLibrary::GetLevelType());
 	return MenuSpot ? UGameplayUtilsLibrary::GetAttachedActorByClass<ACineCameraRigRail>(MenuSpot->GetOwner()) : nullptr;
 }
 
@@ -90,8 +94,8 @@ void UNMMCameraSubsystem::PossessCamera(ENMMState MainMenuState)
 	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
 	const UCameraComponent* CameraComponent = FindCameraComponent(MainMenuState);
 	if (!ensureMsgf(MyPC, TEXT("ASSERT: [%i] %s:\n'MyPC' is not valid!"), __LINE__, *FString(__FUNCTION__))
-		|| !ensureMsgf(CameraComponent, TEXT("ASSERT: [%i] %s:\n'CameraComponent' is not valid!"), __LINE__, *FString(__FUNCTION__))
-		|| MyPC->GetViewTarget() == CameraComponent->GetOwner()) // Already possessed
+	    || !ensureMsgf(CameraComponent, TEXT("ASSERT: [%i] %s:\n'CameraComponent' is not valid!"), __LINE__, *FString(__FUNCTION__))
+	    || MyPC->GetViewTarget() == CameraComponent->GetOwner()) // Already possessed
 	{
 		return;
 	}
@@ -101,17 +105,18 @@ void UNMMCameraSubsystem::PossessCamera(ENMMState MainMenuState)
 
 	switch (MainMenuState)
 	{
-	case ENMMState::Transition:
-		BlendParams.BlendTime = CameraBlendTime;
-		break;
-	case ENMMState::Idle:
-		if (!UNMMInGameSettingsSubsystem::Get().IsInstantCharacterSwitchEnabled()
-			&& SpotsSubsystem.GetLastMoveSpotDirection() != 0)
-		{
+		case ENMMState::Transition:
 			BlendParams.BlendTime = CameraBlendTime;
-		}
-		break;
-	default: break;
+			break;
+
+		case ENMMState::Idle:
+			if (!UNMMInGameSettingsSubsystem::Get().IsInstantCharacterSwitchEnabled()
+			    && SpotsSubsystem.GetLastMoveSpotDirection() != 0)
+			{
+				BlendParams.BlendTime = CameraBlendTime;
+			}
+			break;
+		default: break;
 	}
 
 	MyPC->SetViewTarget(CameraComponent->GetOwner(), BlendParams);
@@ -140,7 +145,7 @@ void UNMMCameraSubsystem::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (!bIsBlendingInOutInternal
-		&& UNMMUtils::GetMainMenuState() == ENMMState::Transition)
+	    && UNMMUtils::GetMainMenuState() == ENMMState::Transition)
 	{
 		TickTransition(DeltaTime);
 	}
@@ -155,11 +160,11 @@ void UNMMCameraSubsystem::OnNewMainMenuStateChanged_Implementation(ENMMState New
 {
 	switch (NewState)
 	{
-	case ENMMState::Transition:
-		// Start blending the camera towards current spot on the rail
-		OnBeginTransition();
-		break;
-	default: break;
+		case ENMMState::Transition:
+			// Start blending the camera towards current spot on the rail
+			OnBeginTransition();
+			break;
+		default: break;
 	}
 }
 
@@ -206,7 +211,7 @@ void UNMMCameraSubsystem::OnBeginTransition()
 		return;
 	}
 
-	// Setup the rail readiness 
+	// Setup the rail readiness
 	CurrentRailRig->SetDriveMode(ECineCameraRigRailDriveMode::Manual);
 	CurrentRailRig->bUseAbsolutePosition = true;
 	CurrentRailRig->AbsolutePositionOnRail = GetCameraStartTransitionValue();
@@ -251,7 +256,7 @@ void UNMMCameraSubsystem::TickTransition(float DeltaTime)
 	ACineCameraRigRail* CurrentRailRig = GetCurrentRailRig();
 	const float CameraTransitionTime = UNMMDataAsset::Get().GetCameraTransitionTime();
 	if (!CurrentRailRig
-		|| !ensureMsgf(CameraTransitionTime > 0.f, TEXT("ASSERT: [%i] %s:\n''CameraTransitionTime' has to be greater than 0!"), __LINE__, *FString(__FUNCTION__)))
+	    || !ensureMsgf(CameraTransitionTime > 0.f, TEXT("ASSERT: [%i] %s:\n''CameraTransitionTime' has to be greater than 0!"), __LINE__, *FString(__FUNCTION__)))
 	{
 		return;
 	}
@@ -264,13 +269,13 @@ void UNMMCameraSubsystem::TickTransition(float DeltaTime)
 
 	// checks if it's halfway of transition
 	constexpr float HalfwayPosition = 0.5f;
-	if (CameraRailTransitionStateInternal != ENMMCameraRailTransitionState::HalfwayTransition &&
-		FMath::IsNearlyEqual(Progress, HalfwayPosition, DeltaTime))
+	if (CameraRailTransitionStateInternal != ENMMCameraRailTransitionState::HalfwayTransition
+	    && FMath::IsNearlyEqual(Progress, HalfwayPosition, DeltaTime))
 	{
 		SetNewCameraRailTransitionState(ENMMCameraRailTransitionState::HalfwayTransition);
 	}
 
-	// continue execution to ensure full camera movement 
+	// continue execution to ensure full camera movement
 	if (FMath::IsNearlyEqual(Progress, GetCameraLastTransitionValue(), KINDA_SMALL_NUMBER))
 	{
 		OnEndTransition();

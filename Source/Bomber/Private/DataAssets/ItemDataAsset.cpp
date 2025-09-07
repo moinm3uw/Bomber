@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/ItemDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemDataAsset)
 
 // Default constructor

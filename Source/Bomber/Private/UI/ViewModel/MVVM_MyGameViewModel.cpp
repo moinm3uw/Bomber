@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/ViewModel/MVVM_MyGameViewModel.h"
-//---
+
+// Bomber
 #include "Components/MouseActivityComponent.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -9,9 +10,10 @@
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Engine/World.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MVVM_MyGameViewModel)
 
 /*********************************************************************************************

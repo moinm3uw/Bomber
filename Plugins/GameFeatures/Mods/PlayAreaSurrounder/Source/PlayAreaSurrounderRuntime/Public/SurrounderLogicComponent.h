@@ -3,12 +3,13 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
+
 #include "SurrounderLogicComponent.generated.h"
 
 /**
  *
  */
-UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, BlueprintType, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class PLAYAREASURROUNDERRUNTIME_API USurrounderLogicComponent final : public UActorComponent
 {
 	GENERATED_BODY()

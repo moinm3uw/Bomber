@@ -3,9 +3,10 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/GeneratedMapSettings.h"
-//---
+
 #include "GeneratedMapDataAsset.generated.h"
 
 /**

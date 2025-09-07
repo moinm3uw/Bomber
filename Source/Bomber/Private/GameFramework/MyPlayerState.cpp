@@ -1,30 +1,32 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyPlayerState.h"
-//---
+
+// Bomber
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "AdvancedIdentityLibrary.h"
 #include "AdvancedSteamFriendsLibrary.h"
-#include "GeneratedMap.h"
-#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "GameplayAbilitiesModule.h"
 #include "Engine/World.h"
+#include "GameplayAbilitiesModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerState)
 
 AMyPlayerState::AMyPlayerState()
@@ -86,7 +88,7 @@ void AMyPlayerState::UpdateEndGameState()
 
 	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
 	const ECurrentGameState CurrentGameState = MyGameState ? MyGameState->GetCurrentGameState() : ECGS::None;
-	if (CurrentGameState == ECGS::None                  // is not valid game state, nullptr or not fully initialized
+	if (CurrentGameState == ECGS::None // is not valid game state, nullptr or not fully initialized
 	    || EndGameStateInternal != EEndGameState::None) // end state was set already for current game
 	{
 		return;
@@ -152,7 +154,7 @@ void AMyPlayerState::ApplyEndGameState()
 	// Try to end the game globally for all players
 	if (EndGameStateInternal != EEndGameState::None)
 	{
-		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1       // no characters to play with
+		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1 // no characters to play with
 		    || UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Human) == 0) // all human players are dead
 		{
 			AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
@@ -231,7 +233,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 			{
 				FString OnlinePlayerName = TEXT("");
-				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/OnlinePlayerName);
+				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/ OnlinePlayerName);
 				if (!OnlinePlayerName.IsEmpty())
 				{
 					NewName = OnlinePlayerName;
@@ -564,7 +566,7 @@ void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState Current
 
 	switch (CurrentGameState)
 	{
-		case ECGS::Menu:         // Fallthrough
+		case ECGS::Menu: // Fallthrough
 		case ECGS::GameStarting: // Fallthrough
 		case ECGS::InGame:
 		{

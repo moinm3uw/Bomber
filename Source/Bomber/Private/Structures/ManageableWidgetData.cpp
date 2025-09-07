@@ -1,7 +1,8 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "Structures/ManageableWidgetData.h"
-//---
+
+// UE
 #include "Blueprint/UserWidget.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ManageableWidgetData)

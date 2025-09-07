@@ -3,7 +3,7 @@
 #pragma once
 
 #include "MoverComponent.h"
-//---
+
 #include "BmrMoverComponent.generated.h"
 
 enum class ECurrentGameState : uint8;
@@ -22,8 +22,8 @@ class BOMBER_API UBmrMoverComponent : public UMoverComponent
 
 public:
 	/** Moves owner in given direction.
-	* Is called by both player (from input) and AI.
-	* @param Direction - Normalized direction to move in the world space, can be zero to stop moving. */
+	 * Is called by both player (from input) and AI.
+	 * @param Direction - Normalized direction to move in the world space, can be zero to stop moving. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void RequestMoveByIntent(const FVector& Direction);
 

@@ -2,13 +2,14 @@
 
 #pragma once
 
+// UE
 #include "GameplayTagContainer.h"
-//---
+
 #include "BmrPowerupTag.generated.h"
 
 /**
-* The tag that represents specific powerup type.
-*/
+ * The tag that represents specific powerup type.
+ */
 USTRUCT(BlueprintType, DisplayName = "Powerup Tag", meta = (Categories = "Powerup"))
 struct BOMBER_API FBmrPowerupTag : public FGameplayTag
 {

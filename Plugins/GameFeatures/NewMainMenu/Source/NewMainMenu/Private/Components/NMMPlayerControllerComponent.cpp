@@ -1,26 +1,30 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/NMMPlayerControllerComponent.h"
-//---
-#include "NMMUtils.h"
-#include "Components/MouseActivityComponent.h"
-#include "Components/MyCameraComponent.h"
+
+// NMM
 #include "Components/NMMSpotComponent.h"
-#include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
+#include "NMMUtils.h"
+#include "Subsystems/NMMBaseSubsystem.h"
+#include "Subsystems/NMMCameraSubsystem.h"
+#include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Components/MouseActivityComponent.h"
+#include "Components/MyCameraComponent.h"
+#include "Controllers/MyPlayerController.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "MyUtilsLibraries/SaveUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "Subsystems/NMMBaseSubsystem.h"
-#include "Subsystems/NMMCameraSubsystem.h"
-#include "Subsystems/NMMSpotsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/AudioComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMPlayerControllerComponent)
 
 // Sets default values for this component's properties
@@ -47,12 +51,12 @@ AMyPlayerController& UNMMPlayerControllerComponent::GetPlayerControllerChecked()
  * Main methods
  ********************************************************************************************* */
 
-// Assigns existing Save Game Data to this component 
+// Assigns existing Save Game Data to this component
 void UNMMPlayerControllerComponent::SetSaveGameData(class USaveGame* NewSaveGameData)
 {
 	UNMMSaveGameData* InSaveGameData = Cast<UNMMSaveGameData>(NewSaveGameData);
 	if (!InSaveGameData
-		|| InSaveGameData == SaveGameDataInternal)
+	    || InSaveGameData == SaveGameDataInternal)
 	{
 		return;
 	}
@@ -96,13 +100,13 @@ void UNMMPlayerControllerComponent::SetManagedInputContextsEnabled(ENMMState New
 
 	// Remove all previous input contexts managed by Controller
 	TArray<const UMyInputMappingContext*> OutInputContexts;
-	UNMMDataAsset::Get().GetAllInputContexts(/*out*/OutInputContexts);
+	UNMMDataAsset::Get().GetAllInputContexts(/*out*/ OutInputContexts);
 	PC.RemoveInputContexts(OutInputContexts);
 
 	// Add Menu context as auto managed by Game State, so it will be enabled everytime the game is in the Menu state
 	const UMyInputMappingContext* InputContext = UNMMDataAsset::Get().GetInputContext(NewState);
 	if (InputContext
-		&& InputContext->GetChosenGameStatesBitmask() > 0)
+	    && InputContext->GetChosenGameStatesBitmask() > 0)
 	{
 		PC.SetupInputContexts({InputContext});
 	}
@@ -194,14 +198,14 @@ void UNMMPlayerControllerComponent::OnUnregister()
 	if (const UNMMDataAsset* DataAsset = UNMMUtils::GetDataAsset(this))
 	{
 		TArray<const UMyInputMappingContext*> MenuInputContexts;
-		DataAsset->GetAllInputContexts(/*out*/MenuInputContexts);
+		DataAsset->GetAllInputContexts(/*out*/ MenuInputContexts);
 		GetPlayerControllerChecked().RemoveInputContexts(MenuInputContexts);
 
 		// Cleanup all sounds
 		if (USoundsSubsystem* SoundSubsystem = USoundsSubsystem::GetSoundsSubsystem())
 		{
 			TArray<class USoundBase*> AllMainMenuMusic;
-			UNMMDataAsset::Get().GetAllMainMenuMusic(/*out*/AllMainMenuMusic);
+			UNMMDataAsset::Get().GetAllMainMenuMusic(/*out*/ AllMainMenuMusic);
 			for (USoundBase* MainMenuMusic : AllMainMenuMusic)
 			{
 				SoundSubsystem->DestroySingleSound2D(MainMenuMusic);
@@ -228,14 +232,14 @@ void UNMMPlayerControllerComponent::OnGameStateChanged(ECurrentGameState Current
 {
 	switch (CurrentGameState)
 	{
-	case ECGS::Menu: // Entered the Main Menu
-		PlayMainMenuMusic();
-		break;
-	case ECGS::GameStarting: // Left the Main Menu
-		StopMainMenuMusic();
-		break;
-	default:
-		break;
+		case ECGS::Menu: // Entered the Main Menu
+			PlayMainMenuMusic();
+			break;
+		case ECGS::GameStarting: // Left the Main Menu
+			StopMainMenuMusic();
+			break;
+		default:
+			break;
 	}
 }
 
@@ -246,12 +250,12 @@ void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENM
 
 	switch (NewState)
 	{
-	case ENMMState::Cinematic:
-		MyPC.SetIgnoreMoveInput(true);
-		StopMainMenuMusic();
-		break;
-	default:
-		break;
+		case ENMMState::Cinematic:
+			MyPC.SetIgnoreMoveInput(true);
+			StopMainMenuMusic();
+			break;
+		default:
+			break;
 	}
 
 	// Update input contexts

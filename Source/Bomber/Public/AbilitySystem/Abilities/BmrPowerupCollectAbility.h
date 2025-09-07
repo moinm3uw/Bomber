@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Abilities/GameplayAbility.h"
-//---
+
 #include "BmrPowerupCollectAbility.generated.h"
 
 /**

@@ -3,10 +3,11 @@
 #pragma once
 
 #include "Engine/DataTable.h"
-//---
+
+// Bomber
 #include "Bomber.h" // ELevelType
 #include "Structures/PlayerTag.h"
-//---
+
 #include "NMMTypes.generated.h"
 
 /**

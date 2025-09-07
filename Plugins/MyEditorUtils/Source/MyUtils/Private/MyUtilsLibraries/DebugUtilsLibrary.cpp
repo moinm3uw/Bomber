@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/DebugUtilsLibrary.h"
-//---
+
 #if !UE_BUILD_SHIPPING
 #include "HAL/PlatformStackWalk.h"
 #endif // !UE_BUILD_SHIPPING
@@ -40,7 +40,7 @@ const ANSICHAR* FDebugUtilsLibrary::GetCallerFunctionANSI(int32 NumCallers)
 		}
 
 		FProgramCounterSymbolInfo SymbolInfo;
-		FPlatformStackWalk::ProgramCounterToSymbolInfo(StackTrace[FrameIndex], /*out*/SymbolInfo);
+		FPlatformStackWalk::ProgramCounterToSymbolInfo(StackTrace[FrameIndex], /*out*/ SymbolInfo);
 		if (SymbolInfo.FunctionName[0] == '\0')
 		{
 			continue;

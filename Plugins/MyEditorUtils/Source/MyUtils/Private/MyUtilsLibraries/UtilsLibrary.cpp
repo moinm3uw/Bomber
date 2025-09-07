@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "UnrealClient.h"
+
+// UE
+#include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
-#include "Engine/Engine.h"
-//---
+#include "UnrealClient.h"
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UtilsLibrary)
 
 // Returns the current play world
@@ -94,7 +95,10 @@ bool UUtilsLibrary::IsViewportInitialized()
 		return false;
 	}
 
-	auto IsZeroViewportSize = [Viewport] { return Viewport->GetSizeXY() == FIntPoint::ZeroValue; };
+	auto IsZeroViewportSize = [Viewport]
+	{
+		return Viewport->GetSizeXY() == FIntPoint::ZeroValue;
+	};
 
 	if (IsZeroViewportSize())
 	{
@@ -113,7 +117,7 @@ FIntPoint UUtilsLibrary::GetViewportResolution()
 
 #if WITH_EDITOR
 	if (FEditorUtilsLibrary::IsEditor()
-		&& !Viewport)
+	    && !Viewport)
 	{
 		Viewport = FEditorUtilsLibrary::GetEditorViewport();
 	}

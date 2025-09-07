@@ -1,7 +1,7 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Structures/BmrMoverSyncState.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrMoverSyncState)
 
 FMoverDataStructBase* FBmrMoverSyncState::Clone() const

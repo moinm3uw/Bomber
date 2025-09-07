@@ -1,16 +1,17 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "MyAssets/AssetTypeActions_MyDataTable.h"
-//---
+
+// UE
 #include "DataTableEditorModule.h"
 #include "DesktopPlatformModule.h"
-#include "ToolMenus.h"
 #include "EditorFramework/AssetImportData.h"
 #include "Engine/DataTable.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
-//---
+#include "ToolMenus.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AssetTypeActions_MyDataTable)
 
 #define LOCTEXT_NAMESPACE "AssetTypeActions"
@@ -57,15 +58,13 @@ void FAssetTypeActions_MyDataTable::GetActions(const TArray<UObject*>& InObjects
 	const TArray<TWeakObjectPtr<UObject>> Tables = GetTypedWeakObjectPtrs<UObject>(InObjects);
 
 	Section.AddMenuEntry(
-		"DataTable_ExportAsJSON",
-		LOCTEXT("DataTable_ExportAsJSON", "Export as JSON"),
-		LOCTEXT("DataTable_ExportAsJSONTooltip", "Export the data table as a file containing JSON data."),
-		FSlateIcon(),
-		FUIAction(
-			FExecuteAction::CreateSP(this, &FAssetTypeActions_MyDataTable::ExecuteExportAsJSON, Tables),
-			FCanExecuteAction()
-		)
-	);
+	    "DataTable_ExportAsJSON",
+	    LOCTEXT("DataTable_ExportAsJSON", "Export as JSON"),
+	    LOCTEXT("DataTable_ExportAsJSONTooltip", "Export the data table as a file containing JSON data."),
+	    FSlateIcon(),
+	    FUIAction(
+	        FExecuteAction::CreateSP(this, &FAssetTypeActions_MyDataTable::ExecuteExportAsJSON, Tables),
+	        FCanExecuteAction()));
 }
 
 // Is overridden to show 'reimport' options in the contexts menu
@@ -114,20 +113,19 @@ void FAssetTypeActions_MyDataTable::OpenAssetEditor(const TArray<UObject*>& InOb
 		}
 
 		const EAppReturnType::Type DlgResult = FMessageDialog::Open(
-			EAppMsgType::YesNoCancel,
-			FText::Format(LOCTEXT("DataTable_MissingRowStructMsg", "The following Data Tables are missing their row structure and will not be editable.\n\n{0}\n\nDo you want to open these data tables?"), DataTablesListText.ToText()),
-			LOCTEXT("DataTable_MissingRowStructTitle", "Continue?")
-		);
+		    EAppMsgType::YesNoCancel,
+		    FText::Format(LOCTEXT("DataTable_MissingRowStructMsg", "The following Data Tables are missing their row structure and will not be editable.\n\n{0}\n\nDo you want to open these data tables?"), DataTablesListText.ToText()),
+		    LOCTEXT("DataTable_MissingRowStructTitle", "Continue?"));
 
 		switch (DlgResult)
 		{
-		case EAppReturnType::Yes:
-			DataTablesToOpen.Append(InvalidDataTables);
-			break;
-		case EAppReturnType::Cancel:
-			return;
-		default:
-			break;
+			case EAppReturnType::Yes:
+				DataTablesToOpen.Append(InvalidDataTables);
+				break;
+			case EAppReturnType::Cancel:
+				return;
+			default:
+				break;
 		}
 	}
 
@@ -156,14 +154,13 @@ void FAssetTypeActions_MyDataTable::ExecuteExportAsJSON(TArray<TWeakObjectPtr<UO
 
 			TArray<FString> OutFilenames;
 			DesktopPlatform->SaveFileDialog(
-				ParentWindowWindowHandle,
-				Title.ToString(),
-				(CurrentFilename.IsEmpty()) ? TEXT("") : FPaths::GetPath(CurrentFilename),
-				(CurrentFilename.IsEmpty()) ? TEXT("") : FPaths::GetBaseFilename(CurrentFilename) + TEXT(".json"),
-				FileTypes,
-				EFileDialogFlags::None,
-				OutFilenames
-			);
+			    ParentWindowWindowHandle,
+			    Title.ToString(),
+			    (CurrentFilename.IsEmpty()) ? TEXT("") : FPaths::GetPath(CurrentFilename),
+			    (CurrentFilename.IsEmpty()) ? TEXT("") : FPaths::GetBaseFilename(CurrentFilename) + TEXT(".json"),
+			    FileTypes,
+			    EFileDialogFlags::None,
+			    OutFilenames);
 
 			if (OutFilenames.Num() > 0)
 			{

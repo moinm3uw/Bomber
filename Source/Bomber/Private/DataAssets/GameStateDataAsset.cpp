@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/GameStateDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameStateDataAsset)
 
 // Returns the Game State data asset

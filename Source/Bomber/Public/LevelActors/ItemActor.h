@@ -3,9 +3,10 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
+
+// Bomber
 #include "Structures/BmrPowerupTag.h"
-//---
+
 #include "ItemActor.generated.h"
 
 /**
@@ -35,10 +36,10 @@ protected:
 	TObjectPtr<class UMapComponent> MapComponentInternal = nullptr;
 
 	/**
-	* Skate: Increase the movement speed of the character.
-	* Bomb: Increase the number of bombs that can be set at one time.
-	* Fire: Increase the bomb blast radius.
-	*/
+	 * Skate: Increase the movement speed of the character.
+	 * Bomb: Increase the number of bombs that can be set at one time.
+	 * Fire: Increase the bomb blast radius.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Item Type"))
 	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
 

@@ -1,31 +1,33 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/BombActor.h"
-//---
-#include "Bomber.h"
-#include "GeneratedMap.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Bomber.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/BombDataAsset.h"
 #include "GameFramework/MyCheatManager.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
-//---
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
-#include "TimerManager.h"
+
+#if WITH_EDITOR
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
+#include "MyUnrealEdEngine.h"
+#endif
+
+// UE
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Net/UnrealNetwork.h"
-//---
-#if WITH_EDITOR
-#include "MyUnrealEdEngine.h"
-#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
-#endif
-//---
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BombActor)
 
 // Sets default values
@@ -54,7 +56,7 @@ ABombActor::ABombActor()
  ********************************************************************************************* */
 
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
-void ABombActor::InitBomb(const UObject* OptionalBombPlacer/* = nullptr*/)
+void ABombActor::InitBomb(const UObject* OptionalBombPlacer /* = nullptr*/)
 {
 	SetBombPlacer(OptionalBombPlacer);
 
@@ -78,7 +80,7 @@ void ABombActor::InitBomb(const UObject* OptionalBombPlacer/* = nullptr*/)
 	{
 		InFireRadius = CheatOverride;
 	}
-#endif //!UE_BUILD_SHIPPING
+#endif // !UE_BUILD_SHIPPING
 
 	// Set fire radius (from player, cheat manager or default) and update explosion cells
 	SetFireRadius(InFireRadius);
@@ -275,7 +277,7 @@ void ABombActor::ApplyMaterial()
 		const UBombDataAsset& BombDataAsset = UBombDataAsset::Get();
 		const int32 BombMaterialsNum = BombDataAsset.GetBombMaterialsNum();
 		if (PlayerIndex != INDEX_NONE // Is not debug character
-		    && BombMaterialsNum)      // As least one bomb material
+		    && BombMaterialsNum) // As least one bomb material
 		{
 			const int32 MaterialIndex = FMath::Abs(PlayerIndex) % BombMaterialsNum;
 			NewBombMaterial = BombDataAsset.GetBombMaterial(MaterialIndex);
@@ -327,7 +329,7 @@ void ABombActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 }
 
 // Set the lifespan of this actor. When it expires the object will be destroyed
-void ABombActor::SetLifeSpan(float InLifespan/* = DEFAULT_LIFESPAN*/)
+void ABombActor::SetLifeSpan(float InLifespan /* = DEFAULT_LIFESPAN*/)
 {
 	if (InLifespan == DEFAULT_LIFESPAN
 	    && AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
@@ -381,7 +383,7 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	{
 		UMyUnrealEdEngine::GOnAIUpdatedDelegate.Broadcast();
 	}
-#endif //WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 }
 
 // Called when this level actor is destroyed on the Generated Map
@@ -425,7 +427,7 @@ void ABombActor::OnPlayerCellChanged_Implementation(UMapComponent* PlayerMapComp
 	const bool bIsPlayerLeft = NewCell != MapComponentInternal->GetCell();
 
 	const ECollisionResponse NewResponse = bIsPlayerLeft ? ECR_Block : ECR_Overlap;
-	GetCollisionResponseToPlayerByID(/*InOut*/CollisionResponses, PlayerCharacter.GetPlayerId(), NewResponse);
+	GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerCharacter.GetPlayerId(), NewResponse);
 	MapComponentInternal->SetCollisionResponses(CollisionResponses);
 }
 
@@ -439,7 +441,7 @@ void ABombActor::InitCollisionResponseToAllPlayers()
 	// Obtain all overlapped level actors on the bomb cell to enable overlap response for players inside the bomb
 	FMapComponents OverlapMapComponents;
 	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	ULevelActorsUtilsLibrary::GetLevelActorsOnCells(/*out*/OverlapMapComponents, {MapComponentInternal->GetCell()});
+	ULevelActorsUtilsLibrary::GetLevelActorsOnCells(/*out*/ OverlapMapComponents, {MapComponentInternal->GetCell()});
 
 	// Obtain default collision responses
 	const UBoxComponent* BoxCollisionComponent = MapComponentInternal ? MapComponentInternal->GetBoxCollisionComponent() : nullptr;
@@ -450,7 +452,7 @@ void ABombActor::InitCollisionResponseToAllPlayers()
 	static constexpr int32 MaxPlayerID = 3;
 	for (int32 CharacterID = 0; CharacterID <= MaxPlayerID; ++CharacterID)
 	{
-		GetCollisionResponseToPlayerByID(/*InOut*/CollisionResponses, CharacterID, ECR_Block);
+		GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, CharacterID, ECR_Block);
 	}
 
 	// Unlock (allow overlap) those players which overlap with this bomb
@@ -464,7 +466,7 @@ void ABombActor::InitCollisionResponseToAllPlayers()
 		}
 
 		// Change response for the player which overlaps with this bomb (all other channels and players will stay as they are)
-		GetCollisionResponseToPlayerByID(/*InOut*/CollisionResponses, PlayerCharacter->GetPlayerId(), ECR_Overlap);
+		GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerCharacter->GetPlayerId(), ECR_Overlap);
 
 		// Listen when character end to overlaps with this bomb to block collision
 		UMapComponent* PlayerMapComponent = UMapComponent::GetMapComponent(PlayerCharacter);

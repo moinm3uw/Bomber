@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "GameFramework/MyGameModeBase.h"
-//---
+
+// Bomber
 #include "Controllers/MyPlayerController.h"
 #include "GameFramework/MyGameSession.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameModeBase)
 
 // Sets default values for this actor's properties
@@ -88,7 +89,7 @@ void AMyGameModeBase::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 }
 
-// Sets the name for a controller 
+// Sets the name for a controller
 void AMyGameModeBase::ChangeName(AController* Controller, const FString& NewName, bool bNameChange)
 {
 	// Super is not called since it's forbidden to change player name with this function

@@ -1,16 +1,18 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "AttachedMeshCustomization.h"
-//---
+
+// Bomber
 #include "BomberEditorModule.h"
-//---
+
+// UE
+#include "Components/SkeletalMeshComponent.h"
 #include "DetailLayoutBuilder.h"
+#include "Engine/SkeletalMesh.h"
 #include "IDetailChildrenBuilder.h"
+#include "Modules/ModuleManager.h"
 #include "PropertyCustomizationHelpers.h"
 #include "SSocketChooser.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Engine/SkeletalMesh.h"
-#include "Modules/ModuleManager.h"
 #include "Toolkits/IToolkit.h"
 #include "Toolkits/IToolkitHost.h"
 #include "Toolkits/ToolkitManager.h"
@@ -57,9 +59,8 @@ void FAttachedMeshCustomization::RegisterAttachedMeshCustomization()
 
 	// FAttachedMesh property realizes the functionally of the SSocketChooser
 	PropertyModule.RegisterCustomPropertyTypeLayout(
-		PropertyClassName,
-		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FAttachedMeshCustomization::MakeInstance)
-		);
+	    PropertyClassName,
+	    FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FAttachedMeshCustomization::MakeInstance));
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 }
@@ -86,6 +87,7 @@ void FAttachedMeshCustomization::OnCustomizeChildren(IDetailChildrenBuilder& Chi
 // Is called on adding the custom property
 void FAttachedMeshCustomization::AddCustomPropertyRow(const FText& PropertyDisplayText, IDetailChildrenBuilder& ChildBuilder)
 {
+	// clang-format off
 	ChildBuilder.AddCustomRow(PropertyDisplayText)
 	            .NameContent()
 		[
@@ -129,6 +131,7 @@ void FAttachedMeshCustomization::AddCustomPropertyRow(const FText& PropertyDispl
 					)
 			]
 		];
+	// clang-format on
 }
 
 // Push menu to allow user choose socket
@@ -179,7 +182,8 @@ void FAttachedMeshCustomization::OnBrowseSocket()
 		return;
 	}
 
-	// Pop up a combo box to pick a socket or bone from mesh
+	// Pop up a combo box to pick a socket or bone from
+	// clang-format off
 	FSlateApplication::Get().PushMenu(
 		ToolkitEditor->GetToolkitHost()->/*ref*/GetParentWidget(),
 		FWidgetPath(),
@@ -189,4 +193,5 @@ void FAttachedMeshCustomization::OnBrowseSocket()
 		FSlateApplication::Get().GetCursorPos(),
 		FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu)
 		);
+	// clang-format on
 }

@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/WallActor.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
 #include "Components/MapComponent.h"
-//---
+#include "GeneratedMap.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(WallActor)
 
 // Sets default values

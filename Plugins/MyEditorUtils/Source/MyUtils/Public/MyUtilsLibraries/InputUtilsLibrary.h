@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "InputUtilsLibrary.generated.h"
 
 class UInputAction;
@@ -17,7 +17,7 @@ struct FKey;
 UENUM(BlueprintType)
 enum class EInputActionInContextState : uint8
 {
-	///< The input action exists in Input Context, but is not bound to the Player Input 
+	///< The input action exists in Input Context, but is not bound to the Player Input
 	NotBound,
 	///< The input action exists in Input Context and is bound to the Player Input
 	Bound,

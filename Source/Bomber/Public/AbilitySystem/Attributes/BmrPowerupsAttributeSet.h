@@ -3,9 +3,10 @@
 #pragma once
 
 #include "AttributeSet.h"
-//---
+
+// UE
 #include "AbilitySystemComponent.h" // ATTRIBUTE_ACCESSORS_BASIC
-//---
+
 #include "BmrPowerupsAttributeSet.generated.h"
 
 /**

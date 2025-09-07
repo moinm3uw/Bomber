@@ -1,7 +1,8 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "BmrPowerupTagCustomization.h"
-//---
+
+// UE
 #include "PropertyEditorModule.h"
 
 /** The name of class to be customized: BmrPowerupTag */
@@ -26,9 +27,8 @@ void FBmrPowerupTagCustomization::RegisterPowerupTagCustomization()
 
 	// Use default GameplayTag customization for inherited BmrPowerupTag to show Tags list
 	PropertyModule.RegisterCustomPropertyTypeLayout(
-		PropertyClassName,
-		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FBmrPowerupTagCustomization::MakeInstance)
-		);
+	    PropertyClassName,
+	    FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FBmrPowerupTagCustomization::MakeInstance));
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 }

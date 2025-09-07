@@ -1,7 +1,8 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "MyPropertyType/MyPropertyTypeCustomization.h"
-//---
+
+// UE
 #include "DetailLayoutBuilder.h"
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
@@ -11,6 +12,7 @@
 void FMyPropertyTypeCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils)
 {
 	// Use default the header details panel
+	// clang-format off
 	HeaderRow
 		.NameContent()
 		[
@@ -20,6 +22,7 @@ void FMyPropertyTypeCustomization::CustomizeHeader(TSharedRef<IPropertyHandle> P
 		[
 			PropertyHandle->CreatePropertyValueWidget()
 		];
+	// clang-format on
 }
 
 // Called when the children of the property should be customized or extra rows added.
@@ -27,21 +30,21 @@ void FMyPropertyTypeCustomization::CustomizeChildren(TSharedRef<IPropertyHandle>
 {
 	// Find outer
 	TArray<UObject*> OuterObjects;
-	PropertyHandle/*ref*/->GetOuterObjects(OuterObjects);
+	PropertyHandle /*ref*/->GetOuterObjects(OuterObjects);
 	MyPropertyOuterInternal = OuterObjects.IsValidIndex(0) ? OuterObjects[0] : nullptr;
 
 	// Set parent property
 	ParentPropertyInternal = FPropertyData(PropertyHandle);
 	const TDelegate<void()>& RefreshCustomPropertyFunction = FSimpleDelegate::CreateSP(this, &FMyPropertyTypeCustomization::RefreshCustomProperty);
-	PropertyHandle/*ref*/->SetOnPropertyValueChanged(RefreshCustomPropertyFunction);
-	PropertyHandle/*ref*/->SetOnChildPropertyValueChanged(RefreshCustomPropertyFunction);
+	PropertyHandle /*ref*/->SetOnPropertyValueChanged(RefreshCustomPropertyFunction);
+	PropertyHandle /*ref*/->SetOnChildPropertyValueChanged(RefreshCustomPropertyFunction);
 
 	// Set children properties
 	uint32 NumChildren;
-	PropertyHandle/*ref*/->GetNumChildren(NumChildren);
+	PropertyHandle /*ref*/->GetNumChildren(NumChildren);
 	for (uint32 ChildIndex = 0; ChildIndex < NumChildren; ++ChildIndex)
 	{
-		FPropertyData PropertyData(PropertyHandle/*ref*/->GetChildHandle(ChildIndex).ToSharedRef());
+		FPropertyData PropertyData(PropertyHandle /*ref*/->GetChildHandle(ChildIndex).ToSharedRef());
 		OnCustomizeChildren(ChildBuilder, PropertyData);
 	}
 }
@@ -92,9 +95,9 @@ void FMyPropertyTypeCustomization::OnCustomizeChildren(IDetailChildrenBuilder& C
 	{
 		// Add each another property to the Details Panel without customization
 		ChildBuilder.AddProperty(PropertyData.PropertyHandle.ToSharedRef())
-		                                           .ShouldAutoExpand(true)
-		                                           .IsEnabled(PropertyData.bIsEnabled)
-		                                           .Visibility(PropertyData.Visibility);
+		    .ShouldAutoExpand(true)
+		    .IsEnabled(PropertyData.bIsEnabled)
+		    .Visibility(PropertyData.Visibility);
 		DefaultPropertiesInternal.Emplace(PropertyData);
 		return;
 	}
@@ -114,7 +117,8 @@ void FMyPropertyTypeCustomization::AddCustomPropertyRow(const FText& PropertyDis
 
 	RefreshCustomProperty();
 
-	// Will add the searchable combo box by default
+	// Will add the searchable combo box by
+	// clang-format off
 	const TSharedRef<STextBlock> TextRowWidgetRef =
 		SNew(STextBlock)
 		.Text(GetCustomPropertyValue());
@@ -156,9 +160,10 @@ void FMyPropertyTypeCustomization::AddCustomPropertyRow(const FText& PropertyDis
 				SearchableComboBoxRef
 			]
 		];
+	// clang-format on
 }
 
-//Set new values for the list of selectable members
+// Set new values for the list of selectable members
 void FMyPropertyTypeCustomization::RefreshCustomProperty()
 {
 	if (const TSharedPtr<SSearchableComboBox>& SearchableComboBox = SearchableComboBoxInternal.Pin())

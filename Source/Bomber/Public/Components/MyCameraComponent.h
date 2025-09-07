@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Camera/CameraComponent.h"
-//---
+
 #include "MyCameraComponent.generated.h"
 
 enum class ECurrentGameState : uint8;
@@ -109,11 +109,11 @@ public:
 	 * @see UMyCameraComponent::bAutoPossessCameraInternal */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetAutoPossessCameraEnabled(bool bInAutoPossessCamera);
-	
+
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** If true, it will prevent following camera by player locations, is config property. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Config, Category = "C++", meta = (BlueprintProtected, DisplayName = "Is Camera Locked On Center"))
@@ -133,8 +133,8 @@ protected:
 	bool bForceStartInternal = false;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
 	/** Called every frame. */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

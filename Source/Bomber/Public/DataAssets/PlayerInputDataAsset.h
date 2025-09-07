@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/MouseVisibilitySettings.h"
-//---
+
 #include "PlayerInputDataAsset.generated.h"
 
 class UMyInputMappingContext;
@@ -15,8 +16,8 @@ enum class ECurrentGameState : uint8;
 struct FKey;
 
 /**
-* Contains all data that describe player input.
-*/
+ * Contains all data that describe player input.
+ */
 UCLASS(Blueprintable, BlueprintType)
 class BOMBER_API UPlayerInputDataAsset final : public UMyPrimaryDataAsset
 {
@@ -37,17 +38,17 @@ public:
 	int32 GetGameplayInputContextsNum() const { return GameplayInputContextsInternal.Num(); }
 
 	/** Returns the Enhanced Input Mapping Context of gameplay actions for specified local player.
-	* @param LocalPlayerIndex The index of a local player. */
+	 * @param LocalPlayerIndex The index of a local player. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const UMyInputMappingContext* GetGameplayInputContext(int32 LocalPlayerIndex) const;
 
 	/** Returns the Enhanced Input Mapping Context of actions on the In-Game Menu widget.
-	  * @see UPlayerInputDataAsset::InGameMenuInputContextInternal */
+	 * @see UPlayerInputDataAsset::InGameMenuInputContextInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const FORCEINLINE UMyInputMappingContext* GetInGameMenuInputContext() const { return InGameMenuInputContextInternal; }
 
 	/** Returns the Enhanced Input Mapping Context of actions on the Settings widget.
-	  * @see UPlayerInputDataAsset::SettingsInputContextInternalInternal */
+	 * @see UPlayerInputDataAsset::SettingsInputContextInternalInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const FORCEINLINE UMyInputMappingContext* GetSettingsInputContext() const { return SettingsInputContextInternalInternal; }
 

@@ -1,7 +1,8 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "PlayerTagCustomization.h"
-//---
+
+// UE
 #include "PropertyEditorModule.h"
 
 /** The name of class to be customized: PlayerTag */
@@ -26,9 +27,8 @@ void FPlayerTagCustomization::RegisterPlayersTagCustomization()
 
 	// Use default GameplayTag customization for inherited PlayerTag to show Tags list
 	PropertyModule.RegisterCustomPropertyTypeLayout(
-		PropertyClassName,
-		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FPlayerTagCustomization::MakeInstance)
-		);
+	    PropertyClassName,
+	    FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FPlayerTagCustomization::MakeInstance));
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 }

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "MyViewModelUtilsLibrary.generated.h"
 
 enum class EEndGameState : uint8;
@@ -27,8 +27,8 @@ public:
 	 * @return 'Visible' if the 'CurrentGameState' is in the 'GameStates', otherwise 'Collapsed'. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (BlueprintAutocast))
 	static ESlateVisibility GetVisibilityByGameState(
-		const ECurrentGameState& GameStateProperty, /*const ref to hide default*/
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECurrentGameState")) int32 ByGameStates);
+	    const ECurrentGameState& GameStateProperty, /*const ref to hide default*/
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECurrentGameState")) int32 ByGameStates);
 
 	/** Checks if the current game state matches the specified states
 	 * Used to determine whether a widget should be active or inactive
@@ -37,6 +37,6 @@ public:
 	 * @return True if the 'CurrentGameState' is in the 'GameStates', otherwise false */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (BlueprintAutocast))
 	static bool IsGameStateMatching(
-		const ECurrentGameState& GameStateProperty, /*const ref to hide default*/
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECurrentGameState")) int32 ByGameStates);
+	    const ECurrentGameState& GameStateProperty, /*const ref to hide default*/
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECurrentGameState")) int32 ByGameStates);
 };

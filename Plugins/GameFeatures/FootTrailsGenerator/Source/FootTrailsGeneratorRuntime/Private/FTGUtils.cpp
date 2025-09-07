@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "FTGUtils.h"
-//---
-#include "FTGDataAsset.h"
+
+// FTG
 #include "FTGComponent.h"
+#include "FTGDataAsset.h"
+
+// Bomber
 #include "GeneratedMap.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(FTGUtils)
 
 // Returns the Foot Trails Generator component that is responsible for generating foot trails

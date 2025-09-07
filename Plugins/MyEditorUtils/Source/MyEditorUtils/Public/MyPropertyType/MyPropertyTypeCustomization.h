@@ -3,7 +3,6 @@
 #pragma once
 
 #include "IPropertyTypeCustomization.h"
-//---
 #include "MyPropertyType/PropertyData.h"
 
 typedef class FMyPropertyTypeCustomization Super;
@@ -19,8 +18,8 @@ public:
 	inline static const FName PropertyEditorModule = TEXT("PropertyEditor");
 
 	/* ---------------------------------------------------
-	*		Public functions
-	* --------------------------------------------------- */
+	 *		Public functions
+	 * --------------------------------------------------- */
 
 	/**
 	 * Called when the header of the property (the row in the details panel where the property is shown)
@@ -32,11 +31,11 @@ public:
 	virtual void CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils) override;
 
 	/**
-	* Called when the children of the property should be customized or extra rows added.
-	* @param PropertyHandle Handle to the property being customized
-	* @param ChildBuilder A builder for adding children
-	* @param CustomizationUtils Utilities for customization
-	*/
+	 * Called when the children of the property should be customized or extra rows added.
+	 * @param PropertyHandle Handle to the property being customized
+	 * @param ChildBuilder A builder for adding children
+	 * @param CustomizationUtils Utilities for customization
+	 */
 	virtual void CustomizeChildren(TSharedRef<IPropertyHandle> PropertyHandle, IDetailChildrenBuilder& ChildBuilder, IPropertyTypeCustomizationUtils& CustomizationUtils) override;
 
 	/** Get cached value contained in the property to be customized. */
@@ -51,8 +50,8 @@ public:
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** Contains data of hierarchically upper property which is chosen in editor module to customize its child property. */
 	FPropertyData ParentPropertyInternal = FPropertyData::Empty;
@@ -80,8 +79,8 @@ protected:
 	TWeakPtr<FString> NoneStringInternal = nullptr;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
 	/**
 	 * Is called for each property on building its row.

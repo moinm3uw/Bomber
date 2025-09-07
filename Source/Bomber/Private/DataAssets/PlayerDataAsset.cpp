@@ -1,18 +1,20 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/PlayerDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
-//---
-#include "GameFramework/Actor.h"
-#include "Engine/Texture2DArray.h"
-#include "Materials/MaterialInstance.h"
-#include "Materials/MaterialInstanceDynamic.h"
-//---
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
-//---
+
+// UE
+#include "Engine/Texture2DArray.h"
+#include "GameFramework/Actor.h"
+#include "Materials/MaterialInstance.h"
+#include "Materials/MaterialInstanceDynamic.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerDataAsset)
 
 // Returns the num of skin textures in the array of diffuse maps specified a player material instance
@@ -32,7 +34,7 @@ int32 UPlayerRow::GetSkinTexturesNum() const
 	}
 
 	UTexture* FoundTexture = nullptr;
-	MaterialInstanceInternal->GetTextureParameterValue(SkinArrayParameterName, /*out*/FoundTexture);
+	MaterialInstanceInternal->GetTextureParameterValue(SkinArrayParameterName, /*out*/ FoundTexture);
 	const UTexture2DArray* Texture2DArray = Cast<UTexture2DArray>(FoundTexture);
 	return Texture2DArray ? Texture2DArray->GetArraySize() : INDEX_NONE;
 }
@@ -73,7 +75,7 @@ void UPlayerRow::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		UpdateSkinTextures();
 	}
 }
-#endif	//WITH_EDITOR
+#endif // WITH_EDITOR
 
 // Create dynamic material instance for each ski if is not done before.
 void UPlayerRow::UpdateSkinTextures()

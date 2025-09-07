@@ -3,10 +3,11 @@
 #pragma once
 
 #include "UObject/Object.h"
-//---
-#include "Structures/GeneratedMapSettings.h"
+
+// Bomber
 #include "Structures/Cell.h"
-//---
+#include "Structures/GeneratedMapSettings.h"
+
 #include "BmrCellsGenerator_Base.generated.h"
 
 enum class EActorType : uint8;

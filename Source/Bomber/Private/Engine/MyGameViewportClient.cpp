@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Engine/MyGameViewportClient.h"
-//---
+
+// Bomber
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "Engine/LocalPlayer.h"
+
+// UE
 #include "Engine/Engine.h"
-//---
+#include "Engine/LocalPlayer.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameViewportClient)
 
 // Returns the Axis Constraint of the viewport based on current aspect ratio

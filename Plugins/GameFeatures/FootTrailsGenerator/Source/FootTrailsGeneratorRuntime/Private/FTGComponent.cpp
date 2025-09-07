@@ -1,19 +1,23 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "FTGComponent.h"
-//---
+
+// FTG
 #include "FTGDataAsset.h"
+
+// Bomber
 #include "GeneratedMap.h"
 #include "InstancedStaticMeshActor.h"
 #include "MyDataTable/MyDataTable.h"
 #include "Structures/Cell.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(FTGComponent)
 
 // Sets default values for this component's properties
@@ -84,7 +88,7 @@ void UFTGComponent::InitOnce()
 {
 	const UDataTable* FootTrailsDT = GetFootTrailsDataAssetChecked().GetFootTrailsDataTable();
 	if (!ensureMsgf(FootTrailsDT, TEXT("%s: 'FootTrailsDT' is not set"), *FString(__FUNCTION__))
-		|| !FootTrailInstancesInternal.IsEmpty())
+	    || !FootTrailInstancesInternal.IsEmpty())
 	{
 		// is already initialized
 		return;
@@ -117,8 +121,8 @@ void UFTGComponent::SpawnFootTrail(EFTGTrailType FootTrailType, const FCell& Cel
 {
 	const UStaticMesh* FootTrailMesh = GetRandomMesh(FootTrailType);
 	if (!FootTrailMesh
-		|| !ensureMsgf(FootTrailType != EFTGTrailType::None, TEXT("%s: 'FootTrailType' is none"), *FString(__FUNCTION__))
-		|| !ensureMsgf(InstancedStaticMeshActorInternal, TEXT("%s: 'InstancedStaticMeshActor' is not valid"), *FString(__FUNCTION__)))
+	    || !ensureMsgf(FootTrailType != EFTGTrailType::None, TEXT("%s: 'FootTrailType' is none"), *FString(__FUNCTION__))
+	    || !ensureMsgf(InstancedStaticMeshActorInternal, TEXT("%s: 'InstancedStaticMeshActor' is not valid"), *FString(__FUNCTION__)))
 	{
 		return;
 	}

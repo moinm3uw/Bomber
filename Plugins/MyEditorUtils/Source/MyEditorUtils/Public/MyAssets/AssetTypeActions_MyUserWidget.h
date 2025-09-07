@@ -3,9 +3,9 @@
 #pragma once
 
 #include "AssetTypeActions_Base.h"
-#include "WidgetBlueprint.h"
 #include "Factories/Factory.h"
-//---
+#include "WidgetBlueprint.h"
+
 #include "AssetTypeActions_MyUserWidget.generated.h"
 
 /**

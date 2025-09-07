@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/SoundsSubsystem.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "DataAssets/SoundsDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -9,7 +10,8 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/AudioComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/Level.h"
@@ -17,7 +19,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "UObject/Package.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SoundsSubsystem)
 
 /*********************************************************************************************
@@ -137,7 +139,7 @@ void USoundsSubsystem::DestroyAllSoundComponents()
 	SoundComponentsInternal.Empty();
 
 #if WITH_EDITOR
-	// Clean up all potentially leaked editor sounds (such as UScrubbedSound), firstly leaked in UE5.6.0 
+	// Clean up all potentially leaked editor sounds (such as UScrubbedSound), firstly leaked in UE5.6.0
 	const UWorld* World = GetWorld();
 	const ULevel* Level = World ? World->GetCurrentLevel() : nullptr;
 	if (Level)
@@ -267,7 +269,7 @@ void USoundsSubsystem::StopEndGameCountdownSFX()
 	StopSingleSound2D(USoundsDataAsset::Get().GetEndGameCountdownSFX());
 }
 
-// Play the sound that is played before the match starts. 
+// Play the sound that is played before the match starts
 void USoundsSubsystem::PlayStartGameCountdownSFX()
 {
 	if (!CanPlaySounds()

@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/CinematicUtils.h"
-//---
+
+// UE
+#include "Camera/CameraComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "MovieScene.h"
 #include "MovieSceneSequence.h"
 #include "MovieSceneSequencePlayer.h"
-#include "Camera/CameraComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Sections/MovieSceneCameraCutSection.h"
 #include "Sections/MovieSceneSubSection.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CinematicUtils)
 
 // Finds subsequence by given index inside specified Master sequence
@@ -23,7 +24,7 @@ const UMovieSceneSequence* UCinematicUtils::FindSubsequence(int32 SubsequenceInd
 	{
 		const UMovieSceneSequence* SubSequence = It ? It->GetSequence() : nullptr;
 		if (SubSequence
-			&& CurrentSubsequenceIdx == SubsequenceIndex)
+		    && CurrentSubsequenceIdx == SubsequenceIndex)
 		{
 			return SubSequence;
 		}
@@ -92,7 +93,7 @@ void UCinematicUtils::GetAllSectionsByClass(const UMovieSceneSequence* MasterSeq
 
 	const UMovieScene* InMovieScene = MasterSequence ? MasterSequence->GetMovieScene() : nullptr;
 	if (!ensureMsgf(InMovieScene, TEXT("ASSERT: [%i] %s:\n'InMovieScene' is not valid!"), __LINE__, *FString(__FUNCTION__))
-		|| !ensureMsgf(SectionClass, TEXT("ASSERT: [%i] %s:\n'SectionClass' is not valid!"), __LINE__, *FString(__FUNCTION__)))
+	    || !ensureMsgf(SectionClass, TEXT("ASSERT: [%i] %s:\n'SectionClass' is not valid!"), __LINE__, *FString(__FUNCTION__)))
 	{
 		return;
 	}
@@ -120,7 +121,7 @@ void UCinematicUtils::GetAllSectionsByClass(const UMovieSceneSequence* MasterSeq
 }
 
 // Resets the sequence player to the beginning.
-void UCinematicUtils::ResetSequence(UMovieSceneSequencePlayer* LevelSequencePlayer, bool bKeepCamera/* = false*/)
+void UCinematicUtils::ResetSequence(UMovieSceneSequencePlayer* LevelSequencePlayer, bool bKeepCamera /* = false*/)
 {
 	if (!ensureMsgf(LevelSequencePlayer, TEXT("ASSERT: [%i] %hs:\n'LevelSequencePlayer' is not valid!"), __LINE__, __FUNCTION__))
 	{
@@ -143,7 +144,7 @@ void UCinematicUtils::ResetSequence(UMovieSceneSequencePlayer* LevelSequencePlay
 	LevelSequencePlayer->PreAnimatedState.EnableGlobalPreAnimatedStateCapture();
 
 	if (bKeepCamera
-		&& PC)
+	    && PC)
 	{
 		const AActor* NewViewTarget = PC->GetViewTarget();
 		if (PrevViewTarget != NewViewTarget)

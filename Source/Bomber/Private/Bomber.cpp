@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Bomber.h"
-//---
+
+// UE
 #include "Kismet/GameplayStatics.h"
-//---
 #include "Modules/ModuleManager.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(Bomber)
 
 IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, Bomber, "Bomber");

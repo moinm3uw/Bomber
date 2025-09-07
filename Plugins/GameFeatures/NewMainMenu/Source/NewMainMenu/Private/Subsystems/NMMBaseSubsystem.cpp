@@ -1,17 +1,20 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/NMMBaseSubsystem.h"
-//---
-#include "NMMUtils.h"
+
+// NMM
 #include "Data/NMMDataAsset.h"
+#include "NMMUtils.h"
+
+// Bomber
 #include "GameFramework/MyGameStateBase.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMBaseSubsystem)
 
 // Returns this Subsystem, is checked and wil crash if can't be obtained
-UNMMBaseSubsystem& UNMMBaseSubsystem::Get(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMBaseSubsystem& UNMMBaseSubsystem::Get(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	UNMMBaseSubsystem* ThisSubsystem = UNMMUtils::GetBaseSubsystem(OptionalWorldContext);
 	checkf(ThisSubsystem, TEXT("%s: 'SoundsSubsystem' is null"), *FString(__FUNCTION__));
@@ -70,18 +73,18 @@ void UNMMBaseSubsystem::OnGameStateChanged_Implementation(ECurrentGameState Curr
 {
 	switch (CurrentGameState)
 	{
-	case ECurrentGameState::Menu:
+		case ECurrentGameState::Menu:
 		{
 			// Player returns to the Main Menu, means Main Menu is in Idle state
 			SetNewMainMenuState(ENMMState::Idle);
 			break;
 		}
-	case ECurrentGameState::GameStarting:
+		case ECurrentGameState::GameStarting:
 		{
-			// Player left the Main Menu 
+			// Player left the Main Menu
 			SetNewMainMenuState(ENMMState::None);
 			break;
 		}
-	default: break;
+		default: break;
 	}
 }

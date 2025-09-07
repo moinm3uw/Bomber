@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Subsystems/LocalPlayerSubsystem.h"
-//---
+
+// UE
 #include "GameplayTagContainer.h"
-//---
+
 #include "WidgetsSubsystem.generated.h"
 
 class UUserWidget;

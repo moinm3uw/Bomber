@@ -3,13 +3,14 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/BmrPowerupTag.h"
-//---
+
 #include "ItemDataAsset.generated.h"
 
 /**
-* Row that describes each unique item.
+ * Row that describes each unique item.
  */
 UCLASS(Blueprintable, BlueprintType)
 class BOMBER_API UItemRow final : public ULevelActorRow
@@ -42,7 +43,7 @@ public:
 	static const UItemDataAsset& Get();
 
 	/** Returns speed value that is added to the player speed on taking a skate item.
-	  * @see UItemDataAsset::SkateStrengthInternal */
+	 * @see UItemDataAsset::SkateStrengthInternal */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE float GetSkateAdditiveStrength() const { return SkateAdditiveStrengthInternal; }
 

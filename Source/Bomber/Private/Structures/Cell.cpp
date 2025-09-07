@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Structures/Cell.h"
-//---
+
+// Bomber
 #include "Engine/NetSerialization.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(Cell)
 
 const FCell FCell::InvalidCell = FCell(0.f, 0.f, -1.f);
@@ -23,7 +24,9 @@ FCell::FCell(const FVector& Vector)
 }
 
 FCell::FCell(const FVector_NetQuantize& Vector)
-	: FCell(FVector(Vector)) {}
+    : FCell(FVector(Vector))
+{
+}
 
 // Floats to cell constructor
 FCell::FCell(float X, float Y, float Z)
@@ -146,7 +149,7 @@ FCell FCell::GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCells
 // More optimized version of GetCellByPositionOnGrid which requires the Grid Width to be passed
 FCell FCell::GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCellsArr& InGrid, int32 GridWidth)
 {
-	const int32 CellIndex = CellPosition.Y/*Row*/ * GridWidth/*ColumnsNum*/ + CellPosition.X/*Column*/;
+	const int32 CellIndex = CellPosition.Y /*Row*/ * GridWidth /*ColumnsNum*/ + CellPosition.X /*Column*/;
 	return InGrid.IsValidIndex(CellIndex) ? InGrid[CellIndex] : InvalidCell;
 }
 
@@ -197,20 +200,18 @@ TMap<FCell, FIntPoint> FCell::GetPositionsByCellsOnGrid(const FCellsArr& InGrid,
 FIntPoint FCell::GetCenterCellPositionOnGrid(const FCells& InGrid)
 {
 	return FIntPoint(
-		FMath::FloorToInt32(GetCellArrayWidth(InGrid) / 2.f),
-		FMath::FloorToInt32(GetCellArrayLength(InGrid) / 2.f));
+	    FMath::FloorToInt32(GetCellArrayWidth(InGrid) / 2.f),
+	    FMath::FloorToInt32(GetCellArrayLength(InGrid) / 2.f));
 }
 
 // Returns 4 corner cells on given cells grid
 FCells FCell::GetCornerCellsOnGrid(const FCells& InGrid)
 {
-	return FCells
-	{
-		GetCellByCornerOnGrid(EGridCorner::TopLeft, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::TopRight, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::BottomLeft, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::BottomRight, InGrid)
-	};
+	return FCells{
+	    GetCellByCornerOnGrid(EGridCorner::TopLeft, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::TopRight, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::BottomLeft, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::BottomRight, InGrid)};
 }
 
 // Returns specified corner cell in given grid
@@ -254,10 +255,10 @@ FCell FCell::ScaleCellToNewGrid(const FCell& OriginalCell, const FCells& NewCorn
 
 	// Use bilinear interpolation to find the new cell
 	TArray<float> Weights = {
-		(1 - OriginalCell.X()) * (1 - OriginalCell.Y()),
-		OriginalCell.X() * (1 - OriginalCell.Y()),
-		(1 - OriginalCell.X()) * OriginalCell.Y(),
-		OriginalCell.X() * OriginalCell.Y(),
+	    (1 - OriginalCell.X()) * (1 - OriginalCell.Y()),
+	    OriginalCell.X() * (1 - OriginalCell.Y()),
+	    (1 - OriginalCell.X()) * OriginalCell.Y(),
+	    OriginalCell.X() * OriginalCell.Y(),
 	};
 
 	const TArray<FCell> Corners = NewCornerCells.Array();
@@ -459,7 +460,7 @@ FCells FCell::FilterCellsByBounds(const FCells& ActiveCells, const FCells& Bound
 }
 
 // Returns true if Starting Cell is in the direction of any of the Target Cells within the given angle
-bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees/* = 40.f*/)
+bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees /* = 40.f*/)
 {
 	/**     .  .  .  T  .  .  .
 	 *             \ | /

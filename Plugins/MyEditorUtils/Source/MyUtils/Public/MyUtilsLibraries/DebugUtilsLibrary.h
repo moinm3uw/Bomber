@@ -14,7 +14,7 @@
 
 /**
  * Contains debug utilities for non-shipping game.
- * Is useful for debugging and profiling. 
+ * Is useful for debugging and profiling.
  */
 class MYUTILS_API FDebugUtilsLibrary
 {

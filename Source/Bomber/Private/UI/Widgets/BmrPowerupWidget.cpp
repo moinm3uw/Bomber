@@ -1,15 +1,17 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "UI/Widgets/BmrPowerupWidget.h"
-//---
-#include "AbilitySystemComponent.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/RadialSlider.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupWidget)
 
 /*********************************************************************************************

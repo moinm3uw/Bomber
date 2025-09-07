@@ -1,11 +1,12 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
-//---
+
+// UE
 #include "AbilitySystemGlobals.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupsAttributeSet)
 
 // Returns the powerups attribute set for the specified owner. It will return nullptr if can't be obtained

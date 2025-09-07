@@ -3,7 +3,7 @@
 #pragma once
 
 #include "MetaCheatManagerExtension.h"
-//---
+
 #include "NMMCheatExtension.generated.h"
 
 /**

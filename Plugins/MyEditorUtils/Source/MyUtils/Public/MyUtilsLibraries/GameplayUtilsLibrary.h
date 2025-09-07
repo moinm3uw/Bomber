@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "GameplayUtilsLibrary.generated.h"
 
 /**
@@ -34,9 +34,9 @@ public:
 	static void SetMesh(class UMeshComponent* MeshComponent, class UStreamableRenderAsset* MeshAsset);
 
 	/** Returns the first child actor of the specified class.
-	  * @param ParentActor The parent actor to search in.
-	  * @param ChildActorClass The class of the attached actor to find.
-	  * @param bIncludeDescendants If true, also include all attached actors of each attached actor. */
+	 * @param ParentActor The parent actor to search in.
+	 * @param ChildActorClass The class of the attached actor to find.
+	 * @param bIncludeDescendants If true, also include all attached actors of each attached actor. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static AActor* GetAttachedActorByClass(const AActor* ParentActor, TSubclassOf<AActor> ChildActorClass, bool bIncludeDescendants = false);
 

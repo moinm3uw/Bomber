@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Subsystems/WidgetsSubsystem.h"
-//---
+
+// Bomber
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/UIDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
@@ -10,13 +11,14 @@
 #include "UI/Widgets/HUDWidget.h"
 #include "UI/Widgets/PlayerNameWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/Viewport.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(WidgetsSubsystem)
 
 // Returns the pointer the UI Subsystem
-UWidgetsSubsystem* UWidgetsSubsystem::GetWidgetsSubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UWidgetsSubsystem* UWidgetsSubsystem::GetWidgetsSubsystem(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(OptionalWorldContext);
 	if (!LocalPlayer)
@@ -44,7 +46,7 @@ UWidgetsSubsystem& UWidgetsSubsystem::Get(const UObject* OptionalWorldContext)
  ********************************************************************************************* */
 
 // Create specified widget and add it to Manageable widgets list, so its visibility can be changed globally
-UUserWidget* UWidgetsSubsystem::CreateManageableWidget(const FManageableWidgetData& WidgetData, const UObject* OptionalWorldContext/* = nullptr*/)
+UUserWidget* UWidgetsSubsystem::CreateManageableWidget(const FManageableWidgetData& WidgetData, const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	if (!ensureMsgf(WidgetData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'WidgetData' is not valid: %s"), __LINE__, __FUNCTION__, *WidgetData.ToString()))
 	{
@@ -175,7 +177,7 @@ void UWidgetsSubsystem::CleanupWidgets()
  ********************************************************************************************* */
 
 // If true, changes all visible manageable widgets to hidden
-void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater/* = true*/)
+void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater /* = true*/)
 {
 	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
 	const TArray<TSoftObjectPtr<UUserWidget>> WidgetsToProcess = [&]()

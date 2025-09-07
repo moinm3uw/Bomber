@@ -1,9 +1,10 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Structures/BmrPowerupTag.h"
-//---
+
+// UE
 #include "NativeGameplayTags.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupTag)
 
 // The Powerup tag that contains nothing chosen by default
@@ -22,13 +23,14 @@ const FBmrPowerupTag FBmrPowerupTag::Fire = TAG_Powerup_Fire.GetTag();
 const FGameplayTagContainer& FBmrPowerupTag::GetAll()
 {
 	static const FGameplayTagContainer AllTags = FGameplayTagContainer::CreateFromArray(TArray<FGameplayTag>{
-		Skate,
-		Bomb,
-		Fire
-	});
+	    Skate,
+	    Bomb,
+	    Fire});
 	return AllTags;
 }
 
 // Custom constructor to set all members values
 FBmrPowerupTag::FBmrPowerupTag(const FGameplayTag& Tag)
-	: FGameplayTag(Tag) {}
+    : FGameplayTag(Tag)
+{
+}

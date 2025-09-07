@@ -1,17 +1,21 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Widgets/NMMCinematicStateWidget.h"
-//---
-#include "Controllers/MyPlayerController.h"
+
+// NMM
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMTypes.h"
 #include "Subsystems/NMMBaseSubsystem.h"
+
+// Bomber
+#include "Controllers/MyPlayerController.h"
 #include "Subsystems/WidgetsSubsystem.h"
-//---
+
+// UE
 #include "Components/Button.h"
 #include "Components/RadialSlider.h"
 #include "Components/TextBlock.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMCinematicStateWidget)
 
 // Applies the given time to hold the skip progress to skip the cinematic
@@ -60,10 +64,10 @@ void UNMMCinematicStateWidget::OnNewMainMenuStateChanged_Implementation(ENMMStat
 	const bool bIsCinematic = NewState == ENMMState::Cinematic;
 
 	if (bIsCinematic
-		|| PreviousState == ENMMState::Cinematic)
+	    || PreviousState == ENMMState::Cinematic)
 	{
 		// Hide all other widgets in Cinematic state and display them back when left
- 		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
+		UWidgetsSubsystem::Get().SetAllWidgetsVisibility(!bIsCinematic);
 	}
 
 	// Show this widget in Cinematic state

@@ -1,12 +1,14 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Movement/BmrMoverWalkingMode.h"
-//---
+
+// Bomber
 #include "Structures/BmrMoverSyncState.h"
-//---
-#include "MoverComponent.h"
+
+// UE
 #include "DefaultMovementSet/Settings/CommonLegacyMovementSettings.h"
-//---
+#include "MoverComponent.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrMoverWalkingMode)
 
 // Called when the mode is registered, initializes cached settings

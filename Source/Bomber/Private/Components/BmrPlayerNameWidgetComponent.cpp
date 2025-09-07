@@ -1,13 +1,15 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Components/BmrPlayerNameWidgetComponent.h"
-//---
+
+// Bomber
+#include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/Widgets/PlayerNameWidget.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPlayerNameWidgetComponent)
 
 // Sets default values for this component's properties
@@ -86,8 +88,8 @@ void UBmrPlayerNameWidgetComponent::UpdateVisibility()
 	}
 
 	const bool bMakeVisible = AMyGameStateBase::GetCurrentGameState() != ECGS::Menu
-							  && AssociatedPlayerStateInternal
-							  && !AssociatedPlayerStateInternal->IsCharacterDead();
+	                          && AssociatedPlayerStateInternal
+	                          && !AssociatedPlayerStateInternal->IsCharacterDead();
 
 	const ESlateVisibility NewVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
 	if (InWidget->GetVisibility() != NewVisibility)
@@ -105,7 +107,7 @@ void UBmrPlayerNameWidgetComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem()) // Is null on remote clients 
+	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem()) // Is null on remote clients
 	{
 		WidgetsSubsystem->OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
 		if (WidgetsSubsystem->AreWidgetInitialized())

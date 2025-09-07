@@ -3,9 +3,10 @@
 #pragma once
 
 #include "GameFramework/Pawn.h"
-//---
+
+// UE
 #include "AbilitySystemInterface.h"
-//---
+
 #include "PlayerCharacter.generated.h"
 
 enum class ELevelType : uint8;
@@ -18,7 +19,8 @@ enum class EPlayerType : uint8;
  * @see Access AI's data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
  */
 UCLASS(Abstract)
-class BOMBER_API APlayerCharacter : public APawn, public IAbilitySystemInterface
+class BOMBER_API APlayerCharacter : public APawn,
+                                    public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 

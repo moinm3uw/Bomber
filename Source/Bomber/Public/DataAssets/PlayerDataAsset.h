@@ -3,9 +3,10 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/PlayerTag.h"
-//---
+
 #include "PlayerDataAsset.generated.h"
 
 /**
@@ -42,7 +43,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Row", meta = (ShowOnlyInnerProperties))
 	FPlayerTag PlayerTag = FPlayerTag::None;
 
-	/** Gameplay effect to apply on changing the character from one to another. */ 
+	/** Gameplay effect to apply on changing the character from one to another. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
 	TSubclassOf<class UGameplayEffect> ConfigGameplayEffect = nullptr;
 
@@ -93,7 +94,7 @@ protected:
 #if WITH_EDITOR
 	/** Handle adding and changing material instance to prepare dynamic materials. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif	//WITH_EDITOR
+#endif // WITH_EDITOR
 };
 
 /**
@@ -131,7 +132,7 @@ public:
 	FORCEINLINE FName GetSkinArrayParameter() const { return SkinArrayParameterInternal; }
 
 	/** Returns the name of a material parameter with a diffuse index.
-	* @see UPlayerDataAsset::SkinSlotNameInternal. */
+	 * @see UPlayerDataAsset::SkinSlotNameInternal. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE FName GetSkinIndexParameter() const { return SkinIndexParameterInternal; }
 

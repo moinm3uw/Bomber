@@ -1,12 +1,14 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Generators/BmrCellsGenerator_FourSidedSymmetry.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
+
+// UE
 #include "Containers/Queue.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrCellsGenerator_FourSidedSymmetry)
 
 // Is overriden to implement custom level generation logic
@@ -119,7 +121,10 @@ FCells UBmrCellsGenerator_FourSidedSymmetry::GeneratePathsForQuarter(const FBmrG
 
 	const int32 RightBorderIndex = PathParams.QuarterScale.X - 1;
 	FCells RightBorderCells;
-	for (int32 Index = 0; Index < PathParams.QuarterScale.Y; ++Index) { RightBorderCells.Add(FCell::GetCellByPositionOnGrid({RightBorderIndex, Index}, GeneratorData.AllCells, GeneratorData.MapScale.X)); }
+	for (int32 Index = 0; Index < PathParams.QuarterScale.Y; ++Index)
+	{
+		RightBorderCells.Add(FCell::GetCellByPositionOnGrid({RightBorderIndex, Index}, GeneratorData.AllCells, GeneratorData.MapScale.X));
+	}
 	if (!RightBorderCells.IsEmpty())
 	{
 		const FCellsArr NetworkAsArray = PathNetwork.Array();
@@ -131,7 +136,10 @@ FCells UBmrCellsGenerator_FourSidedSymmetry::GeneratePathsForQuarter(const FBmrG
 
 	const int32 BottomBorderIndex = PathParams.QuarterScale.Y - 1;
 	FCells BottomBorderCells;
-	for (int32 Index = 0; Index < PathParams.QuarterScale.X; ++Index) { BottomBorderCells.Add(FCell::GetCellByPositionOnGrid({Index, BottomBorderIndex}, GeneratorData.AllCells, GeneratorData.MapScale.X)); }
+	for (int32 Index = 0; Index < PathParams.QuarterScale.X; ++Index)
+	{
+		BottomBorderCells.Add(FCell::GetCellByPositionOnGrid({Index, BottomBorderIndex}, GeneratorData.AllCells, GeneratorData.MapScale.X));
+	}
 	if (!BottomBorderCells.IsEmpty())
 	{
 		const FCellsArr NetworkAsArray = PathNetwork.Array();
@@ -268,9 +276,8 @@ TMap<FCell, EActorType> UBmrCellsGenerator_FourSidedSymmetry::ApplySymmetry(TMap
 		const int32 SymmetricalY = MaxIndexY - OriginalPosition.Y;
 
 		const TArray<FIntPoint> PositionsToPlace = {
-			{OriginalPosition.X, OriginalPosition.Y}, {SymmetricalX, OriginalPosition.Y},
-			{OriginalPosition.X, SymmetricalY}, {SymmetricalX, SymmetricalY}
-		};
+		    {OriginalPosition.X, OriginalPosition.Y}, {SymmetricalX, OriginalPosition.Y},
+		    {OriginalPosition.X, SymmetricalY}, {SymmetricalX, SymmetricalY}};
 
 		for (const FIntPoint& SymPosition : PositionsToPlace)
 		{

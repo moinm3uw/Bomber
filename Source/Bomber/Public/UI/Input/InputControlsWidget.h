@@ -3,7 +3,7 @@
 #pragma once
 
 #include "UI/SettingSubWidget.h"
-//---
+
 #include "InputControlsWidget.generated.h"
 
 /* Widgets hierarchy:

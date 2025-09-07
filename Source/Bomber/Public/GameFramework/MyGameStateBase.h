@@ -3,9 +3,10 @@
 #pragma once
 
 #include "GameFramework/GameState.h"
-//---
-#include "Bomber.h"
-//---
+
+// Bomber
+#include "Bomber.h" // ECurrentGameState
+
 #include "MyGameStateBase.generated.h"
 
 /**
@@ -29,7 +30,7 @@ public:
 
 	/*********************************************************************************************
 	 * Game State
-	 * Can be tracked both on host and client by binding with BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged); 
+	 * Can be tracked both on host and client by binding with BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 	 ********************************************************************************************* */
 public:
 	/** Returns true if current game state can be eventually changed. */

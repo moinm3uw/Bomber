@@ -1,22 +1,24 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Components/BmrMoverComponent.h"
-//---
-#include "Bomber.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Bomber.h"
 #include "Components/MapComponent.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Structures/BmrMoverSyncState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
+
+// UE
 #include "AbilitySystemGlobals.h"
-#include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
 #include "DefaultMovementSet/InstantMovementEffects/BasicInstantMovementEffects.h"
 #include "GameFramework/PlayerController.h"
-//---
+#include "InputActionValue.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrMoverComponent)
 
 // Moves owner in given direction
@@ -129,7 +131,7 @@ void UBmrMoverComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
 // Called when owner is added on the Generated Map, on both server and client
 void UBmrMoverComponent::OnOwnerAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
-	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);;
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 
 	// Owner is respawned, teleport it to initial restart location
 	const TSharedPtr<FTeleportEffect> TeleportEffect = MakeShared<FTeleportEffect>();

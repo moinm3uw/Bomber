@@ -3,12 +3,12 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
 #include "AIDataAsset.generated.h"
 
 /**
-* Contains AI data.
-*/
+ * Contains AI data.
+ */
 UCLASS(Blueprintable, BlueprintType)
 class BOMBER_API UAIDataAsset final : public UMyPrimaryDataAsset
 {
@@ -19,22 +19,22 @@ public:
 	static const UAIDataAsset& Get();
 
 	/** Returns the search radius of items.
-	  * @see UAIDataAsset::ItemSearchRadiusInternal */
+	 * @see UAIDataAsset::ItemSearchRadiusInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetItemSearchRadius() const { return ItemSearchRadiusInternal; }
 
 	/** Returns the search radius of crossways
-	  * @see UAIDataAsset::CrosswaySearchRadiusInternal */
+	 * @see UAIDataAsset::CrosswaySearchRadiusInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetCrosswaySearchRadius() const { return CrosswaySearchRadiusInternal; }
 
 	/** Returns the filter radius of near cells.
-	  * @see UAIDataAsset::NearFilterRadiusInternal */
+	 * @see UAIDataAsset::NearFilterRadiusInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetNearFilterRadius() const { return NearFilterRadiusInternal; }
 
 	/** Returns the radius of dangerous cells.
-	* @see UAIDataAsset::DangerousCellRadiusInternal */
+	 * @see UAIDataAsset::DangerousCellRadiusInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetNearDangerousRadius() const { return NearDangerousRadiusInternal; }
 

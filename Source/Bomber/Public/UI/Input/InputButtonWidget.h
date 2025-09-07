@@ -3,9 +3,10 @@
 #pragma once
 
 #include "UI/SettingSubWidget.h"
-//---
+
+// UE
 #include "UserSettings/EnhancedInputUserSettings.h" // FPlayerKeyMapping
-//---
+
 #include "InputButtonWidget.generated.h"
 
 /* Widgets hierarchy:

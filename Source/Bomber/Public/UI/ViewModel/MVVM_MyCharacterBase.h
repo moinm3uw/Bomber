@@ -3,9 +3,10 @@
 #pragma once
 
 #include "UI/ViewModel/MVVM_MyBaseViewModel.h"
-//---
+
+// UE
 #include "Components/SlateWrapperTypes.h"
-//---
+
 #include "MVVM_MyCharacterBase.generated.h"
 
 class UTexture2D;
@@ -83,7 +84,7 @@ protected:
 	 ********************************************************************************************* */
 protected:
 	/**  Is called when this View Model is constructed.
-	* Is used for bindings to the changes in other systems in order to update own data. */
+	 * Is used for bindings to the changes in other systems in order to update own data. */
 	virtual void OnViewModelConstruct_Implementation(const UUserWidget* UserWidget) override;
 
 	/** Is called when this View Model is destructed. */
@@ -101,7 +102,7 @@ protected:
 /*********************************************************************************************
  * Below View Models per each character: UMVVM_MyCharacter0, UMVVM_MyCharacter1, UMVVM_MyCharacter2, UMVVM_MyCharacter3.
  * It's done in such 'hardcoded' way for next reasons:
- * - It is much easier for the UI designer to work with separate View Models 
+ * - It is much easier for the UI designer to work with separate View Models
  * by selecting the right View Model for the right character instead of struggling with Conversion Functions.
  * - It is not the problem since the number of character is always limited.
  ********************************************************************************************* */

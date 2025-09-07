@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-//---
+
+// Bomber
 #include "Structures/BmrPowerupTag.h" // ItemType
-//---
+
 #include "BmrPowerupWidget.generated.h"
 
 /**
@@ -26,11 +27,11 @@ public:
 
 protected:
 	/** Exposed property to be set in Details Panel of the type of item this UI or data element is associated with (e.g., Speed, BombCount, etc.) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Item Type", ExposeOnSpawn="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Item Type", ExposeOnSpawn = "true"))
 	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
 
 	/** Exposed property to be set in Details Panel of the duration of the interpolation when updating visual feedback (e.g., slider value change) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Lerp Duration", ClampMin="0.01"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Lerp Duration", ClampMin = "0.01"))
 	float LerpDurationInternal = 0.5f;
 
 	/** The radial slider UI widget used to display or adjust the power-up level */

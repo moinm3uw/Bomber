@@ -1,15 +1,17 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "AbilitySystem/Abilities/BmrPowerupCollectAbility.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
 #include "Components/MapComponent.h"
 #include "DataAssets/ItemDataAsset.h"
+#include "GeneratedMap.h"
 #include "Structures/BmrPowerupTag.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "AbilitySystemComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupCollectAbility)
 
 // Actually activate ability, do not call this directly

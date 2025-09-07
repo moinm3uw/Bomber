@@ -1,29 +1,31 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Components/MapComponent.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-#include "GeneratedMap.h"
-#include "PoolManagerSubsystem.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/LevelActorDataAsset.h"
+#include "GeneratedMap.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "PoolManagerSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+#if WITH_EDITOR
+#include "MyUnrealEdEngine.h"
+#endif
+
+// UE
 #include "Components/BoxComponent.h"
 #include "Components/GameFrameworkComponentManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/EngineTypes.h"
 #include "Engine/StreamableRenderAsset.h"
 #include "Net/UnrealNetwork.h"
-//---
-#if WITH_EDITOR
-#include "MyUnrealEdEngine.h"
-#endif
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponent)
 
 // Returns the map component of the specified owner
@@ -69,7 +71,7 @@ void UMapComponent::SetCell(const FCell& Cell)
 }
 
 // Show current cell if owned actor type is allowed, is not available in shipping build
-void UMapComponent::TryDisplayOwnedCell(bool bClearPrevious/* = false*/)
+void UMapComponent::TryDisplayOwnedCell(bool bClearPrevious /* = false*/)
 {
 #if !UE_BUILD_SHIPPING
 	FDisplayCellsParams Params = FDisplayCellsParams::EmptyParams;
@@ -321,7 +323,7 @@ void UMapComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
 	const AActor* ComponentOwner = GetOwner();
 	if (ComponentOwner && IsValid(this) // Could be called multiple times, make sure it is called once for valid object
-	    && !GExitPurge)                 // Do not call on exit
+	    && !GExitPurge) // Do not call on exit
 	{
 		if (UUtilsLibrary::IsEditorNotPieWorld())
 		{
@@ -414,7 +416,7 @@ void UMapComponent::OnPreRemoved_Implementation(UObject* DestroyCauser)
 }
 
 // Is called directly from Generated Map to broadcast OnPostRemovedFromLevel delegate and performs own logic
-void UMapComponent::OnPostRemoved_Implementation(UObject* DestroyCauser/* = nullptr*/)
+void UMapComponent::OnPostRemoved_Implementation(UObject* DestroyCauser /* = nullptr*/)
 {
 	const AActor* Owner = GetOwner();
 	checkf(Owner, TEXT("ERROR: [%i] %hs:\n'Owner' is null!"), __LINE__, __FUNCTION__);
@@ -457,12 +459,12 @@ bool UMapComponent::IsEditorOnly() const
 }
 
 // Destroy editoronly actor for the editor -game before registering the component
-bool UMapComponent::Modify(bool bAlwaysMarkDirty/* = true*/)
+bool UMapComponent::Modify(bool bAlwaysMarkDirty /* = true*/)
 {
 	AActor* Owner = GetOwner();
 	if (Owner
 	    && !UUtilsLibrary::IsEditor() // is editor macro but not is GEditor, so [-game]
-	    && IsEditorOnly())            // was generated in the editor
+	    && IsEditorOnly()) // was generated in the editor
 	{
 		Owner->Destroy();
 		return false;
@@ -470,4 +472,4 @@ bool UMapComponent::Modify(bool bAlwaysMarkDirty/* = true*/)
 
 	return Super::Modify(bAlwaysMarkDirty);
 }
-#endif //WITH_EDITOR
+#endif // WITH_EDITOR

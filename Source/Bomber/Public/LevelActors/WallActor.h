@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
+
 #include "WallActor.generated.h"
 
 /**
@@ -21,16 +21,16 @@ public:
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** The MapComponent manages this actor on the Generated Map */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Map Component"))
 	TObjectPtr<class UMapComponent> MapComponentInternal = nullptr;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
 	/** Called when an instance of this class is placed (in editor) or spawned. */
 	virtual void OnConstruction(const FTransform& Transform) override;

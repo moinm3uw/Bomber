@@ -3,10 +3,11 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-//---
+
+// Bomber
 #include "Structures/BmrMeshData.h"
 #include "Structures/Cell.h"
-//---
+
 #include "MapComponent.generated.h"
 
 enum class EActorType : uint8;
@@ -263,10 +264,10 @@ protected:
 	virtual bool IsEditorOnly() const override;
 
 	/**
-	* Destroy EditorOnly owner for the editor -game.
-	* Before we register our component, save it to our transaction buffer so if "undone" it will return to an unregistered state.
-	* This should prevent unwanted components hanging around when undoing a copy/paste or duplication action.
-	*/
+	 * Destroy EditorOnly owner for the editor -game.
+	 * Before we register our component, save it to our transaction buffer so if "undone" it will return to an unregistered state.
+	 * This should prevent unwanted components hanging around when undoing a copy/paste or duplication action.
+	 */
 	virtual bool Modify(bool bAlwaysMarkDirty = true) override;
 #endif
 };

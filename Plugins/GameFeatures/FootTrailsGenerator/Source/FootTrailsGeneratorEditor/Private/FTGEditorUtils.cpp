@@ -1,14 +1,16 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "FTGEditorUtils.h"
-//---
-#include "FootTrailsGeneratorRuntimeModule.h"
+
+// FTG
 #include "FTGComponent.h"
-//---
+#include "FootTrailsGeneratorRuntimeModule.h"
+
+// UE
 #include "GameFeatureAction_AddComponents.h"
 #include "GameFeatureData.h"
 #include "GameFeaturesSubsystem.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(FTGEditorUtils)
 
 // Tries to obtain the blueprint class of the Foot Trails Generator component from MGF data asset, where it's expected to be set

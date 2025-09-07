@@ -1,16 +1,17 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/BmrGameInstance.h"
-//---
+
+// Bomber
 #include "AdvancedSteamFriendsLibrary.h"
-#include "CreateSessionCallbackProxyAdvanced.h"
 #include "Controllers/MyPlayerController.h"
+#include "CreateSessionCallbackProxyAdvanced.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrGameInstance)
 
 /*********************************************************************************************

@@ -3,11 +3,13 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/ManageableWidgetData.h"
-//---
+
+// UE
 #include "NativeGameplayTags.h"
-//---
+
 #include "UIDataAsset.generated.h"
 
 /** All UI widget tags registered in Widgets Subsystem, used to obtain widget data or widget instance. */

@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "GeneratedMap.h"
-//---
-#include "PoolManagerSubsystem.h"
+
+// Bomber
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
@@ -11,19 +11,21 @@
 #include "Generators/BmrCellsGenerator_Base.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "PoolManagerSubsystem.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
+
+#if WITH_EDITOR
+#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
+#include "MyUnrealEdEngine.h"
+#endif
+
+// UE
 #include "Components/GameFrameworkComponentManager.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
-//---
-#if WITH_EDITOR
-#include "MyUnrealEdEngine.h"
-#include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
-#endif
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMap)
 
 /* ---------------------------------------------------
@@ -48,10 +50,10 @@ AGeneratedMap::AGeneratedMap()
 	SetNetUpdateFrequency(NewNewUpdateFrequency);
 	bAlwaysRelevant = true;
 
-#if WITH_EDITOR	 //[Editor]
+#if WITH_EDITOR //[Editor]
 	// Should not call OnConstruction on drag events
 	bRunConstructionScriptOnDrag = false;
-#endif	//WITH_EDITOR [Editor]
+#endif // WITH_EDITOR [Editor]
 
 	// Initialize the Root Component
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
@@ -69,7 +71,7 @@ AGeneratedMap::AGeneratedMap()
 }
 
 // Returns the generated map
-AGeneratedMap& AGeneratedMap::Get(const UObject* OptionalWorldContext/* = nullptr*/)
+AGeneratedMap& AGeneratedMap::Get(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	AGeneratedMap* GeneratedMap = UGeneratedMapSubsystem::Get(OptionalWorldContext).GetGeneratedMap();
 	checkf(GeneratedMap, TEXT("%s: ERROR: 'GeneratedMap' is null"), *FString(__FUNCTION__));
@@ -77,7 +79,7 @@ AGeneratedMap& AGeneratedMap::Get(const UObject* OptionalWorldContext/* = nullpt
 }
 
 // Attempts to return the generated map, nullptr otherwise
-AGeneratedMap* AGeneratedMap::GetGeneratedMap(const UObject* OptionalWorldContext/* = nullptr*/)
+AGeneratedMap* AGeneratedMap::GetGeneratedMap(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	constexpr bool bWarnIfNull = false;
 	const UGeneratedMapSubsystem* Subsystem = UGeneratedMapSubsystem::GetGeneratedMapSubsystem(OptionalWorldContext);
@@ -119,11 +121,11 @@ void AGeneratedMap::SetLevelSize(const FIntPoint& LevelSize)
  ********************************************************************************************* */
 
 // Spawns level actor on the Generated Map by the specified type
-void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const TFunction<void(UMapComponent&)>& OnSpawned/* = nullptr*/)
+void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const TFunction<void(UMapComponent&)>& OnSpawned /* = nullptr*/)
 {
 	if (!HasAuthority()
 	    || UCellsUtilsLibrary::IsCellHasAnyMatchingActor(Cell, TO_FLAG(~EAT::Player)) // the free cell was not found
-	    || Type == EAT::None)                                                         // nothing to spawn
+	    || Type == EAT::None) // nothing to spawn
 	{
 		return;
 	}
@@ -165,7 +167,7 @@ void AGeneratedMap::SpawnActorByType(EActorType Type, const FCell& Cell, const T
 }
 
 // Spawns multiple level actors at once, mostly used for level generation
-void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSpawn, const TFunction<void(const TArray<UMapComponent*>&)>& OnSpawned/* = nullptr*/)
+void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSpawn, const TFunction<void(const TArray<UMapComponent*>&)>& OnSpawned /* = nullptr*/)
 {
 	if (!HasAuthority())
 	{
@@ -180,7 +182,7 @@ void AGeneratedMap::SpawnActorsByTypes(const TMap<FCell, EActorType>& ActorsToSp
 		const EActorType& Type = It.Value;
 
 		if (UCellsUtilsLibrary::IsCellHasAnyMatchingActor(Cell, TO_FLAG(~EAT::Player)) // the free cell was not found
-		    || Type == EAT::None)                                                      // nothing to spawn
+		    || Type == EAT::None) // nothing to spawn
 		{
 			continue;
 		}
@@ -255,7 +257,10 @@ void AGeneratedMap::SpawnActorWithMesh(EActorType ActorType, const FCell& Cell, 
 {
 	if (ensureMsgf(MeshData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'MeshData' is not valid!"), __LINE__, __FUNCTION__))
 	{
-		const auto& OnSpawned = [MeshData](UMapComponent& MapComponent) { MapComponent.SetReplicatedMeshData(MeshData); };
+		const auto& OnSpawned = [MeshData](UMapComponent& MapComponent)
+		{
+			MapComponent.SetReplicatedMeshData(MeshData);
+		};
 		SpawnActorByType(ActorType, Cell, OnSpawned);
 	}
 }
@@ -382,7 +387,7 @@ void AGeneratedMap::IncrementReplicationToken()
  ********************************************************************************************* */
 
 // Destroy all actors from the set of cells
-void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* DestroyCauser/* = nullptr*/)
+void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* DestroyCauser /* = nullptr*/)
 {
 	if (!HasAuthority()
 	    || !MapComponentsInternal.Num()
@@ -421,7 +426,7 @@ void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* Dest
 }
 
 // Destroy level actor by specified Map Component from the level
-void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* DestroyCauser/* = nullptr*/)
+void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* DestroyCauser /* = nullptr*/)
 {
 	if (!HasAuthority())
 	{
@@ -522,8 +527,8 @@ bool AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
 	FCell FoundFreeCell = UCellsUtilsLibrary::SnapActorOnLevel(LevelActor);
 	const bool bIsSnappedGame = FoundFreeCell != LastCell;
 
-	/// In editor world, always perform additional snaps 
-	const bool bIsSnappedDragged = SetNearestCellDragged(MapComponent, /*InOut*/FoundFreeCell);
+	/// In editor world, always perform additional snaps
+	const bool bIsSnappedDragged = SetNearestCellDragged(MapComponent, /*InOut*/ FoundFreeCell);
 
 	if (!bIsSnappedGame && !bIsSnappedDragged)
 	{
@@ -610,10 +615,10 @@ void AGeneratedMap::OnConstructionGeneratedMap_Implementation(const FTransform& 
 		// Should be bind in construction in a case of object reconstructing after blueprint compile
 		UMyUnrealEdEngine::GOnAnyDataAssetChanged.AddUObject(this, &ThisClass::RerunConstructionScripts);
 	}
-#endif //WITH_EDITOR [GEditor]
+#endif // WITH_EDITOR [GEditor]
 
 	// Create the background blueprint child actor
-	if (CollisionComponentInternal                       // Is accessible
+	if (CollisionComponentInternal // Is accessible
 	    && !CollisionComponentInternal->GetChildActor()) // Is not created yet
 	{
 		const TSubclassOf<AActor> CollisionsAssetClass = UGeneratedMapDataAsset::Get().GetCollisionsAssetClass();
@@ -699,7 +704,7 @@ void AGeneratedMap::Destroyed()
 			// Remove editor bound delegates
 			UMyUnrealEdEngine::GOnAnyDataAssetChanged.RemoveAll(this);
 		}
-#endif //WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 	}
 
 	if (RootComponent)
@@ -905,7 +910,7 @@ void AGeneratedMap::ScaleDraggedCellsOnGrid(const FCells& OriginalGrid, const FC
 // The dragged version of the Add To Grid function to add the dragged actor on the level
 void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 {
-#if WITH_EDITOR	 // [IsEditorNotPieWorld]
+#if WITH_EDITOR // [IsEditorNotPieWorld]
 	if (!FEditorUtilsLibrary::IsEditorNotPieWorld())
 	{
 		return;
@@ -935,7 +940,7 @@ void AGeneratedMap::AddToGridDragged(UMapComponent* AddedComponent)
 	{
 		DraggedCellsInternal.Emplace(DraggedCell, AddedComponent->GetActorType());
 	}
-#endif	//WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 }
 
 // The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor

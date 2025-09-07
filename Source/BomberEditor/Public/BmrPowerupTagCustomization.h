@@ -5,8 +5,8 @@
 #include "GameplayTagsEditorModule.h"
 
 /**
-* Is customized to show only selected in-game option.
-*/
+ * Is customized to show only selected in-game option.
+ */
 class BOMBEREDITOR_API FBmrPowerupTagCustomization : public FGameplayTagCustomizationPublic
 {
 public:

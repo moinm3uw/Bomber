@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/NMMInGameSettingsSubsystem.h"
-//---
-#include "NMMUtils.h"
+
+// NMM
 #include "Data/NMMDataAsset.h"
+#include "NMMUtils.h"
+
+// Bomber
 #include "Subsystems/SoundsSubsystem.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMInGameSettingsSubsystem)
 
 // Returns this Subsystem, is checked and wil crash if can't be obtained

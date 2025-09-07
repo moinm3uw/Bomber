@@ -1,14 +1,16 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/MouseActivityComponent.h"
-//---
+
+// Bomber
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "GameFramework/PlayerController.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MouseActivityComponent)
 
 // Sets default values for this component's properties

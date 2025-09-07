@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/ViewModel/MVVM_MyCharacterBase.h"
-//---
+
+// Bomber
 #include "AdvancedSteamFriendsLibrary.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MVVM_MyCharacterBase)
 
 // Is overridden to prevent constructing this View Model, but only child classes
@@ -63,7 +64,7 @@ void UMVVM_MyCharacterBase::UpdateAvatar()
 	{
 		// Try to obtain online avatar, if not found - human default will be used
 		EBlueprintAsyncResultSwitch Result = EBlueprintAsyncResultSwitch::OnFailure;
-		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/Result);
+		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/ Result);
 		if (OnlineAvatar
 		    && Result == EBlueprintAsyncResultSwitch::OnSuccess)
 		{

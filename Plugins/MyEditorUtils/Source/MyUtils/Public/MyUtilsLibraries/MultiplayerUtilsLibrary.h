@@ -3,12 +3,12 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "MultiplayerUtilsLibrary.generated.h"
 
 /**
  * Function library with multiplayer-related helpers.
- * 
+ *
  * Other useful multiplayer functions:
  * - UKismetSystemLibrary::IsServer
  * - UKismetSystemLibrary::HasMultipleLocalPlayers
@@ -51,8 +51,8 @@ public:
 /**
  * Overrides the replication condition of an inherited property, including private ones.
  *
- * Useful when reusing actors like APlayerState, where certain engine properties are marked 
- * as COND_InitialOnly and do not replicate again after initial connection. This macro allows 
+ * Useful when reusing actors like APlayerState, where certain engine properties are marked
+ * as COND_InitialOnly and do not replicate again after initial connection. This macro allows
  * changing their replication condition (e.g., to COND_None) so they replicate normally.
  *
  * Example: Enable APlayerState::bIsABot replication, which is originally COND_InitialOnly:
@@ -62,8 +62,8 @@ public:
  * @param PropertyName   The name of the property to override.
  * @param NewCondition   The new replication condition to apply (e.g., COND_None).
  */
-#define DOREPLIFETIME_OVERRIDE_CONDITION(SuperClass, PropertyName, NewCondition) \
-{ \
-	static const FName PropertyName##_PrivateName = TEXT(#PropertyName); \
-	ResetReplicatedLifetimeProperty(StaticClass(), SuperClass::StaticClass(), PropertyName##_PrivateName, NewCondition, OutLifetimeProps); \
-}
+#define DOREPLIFETIME_OVERRIDE_CONDITION(SuperClass, PropertyName, NewCondition)                                                               \
+	{                                                                                                                                          \
+		static const FName PropertyName##_PrivateName = TEXT(#PropertyName);                                                                   \
+		ResetReplicatedLifetimeProperty(StaticClass(), SuperClass::StaticClass(), PropertyName##_PrivateName, NewCondition, OutLifetimeProps); \
+	}

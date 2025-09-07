@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
-//---
-#include "Editor.h"
-#include "LevelEditor.h"
-#include "SLevelViewport.h"
-#include "UnrealEdGlobals.h"
+
+// UE
 #include "CookOnTheSide/CookOnTheFlyServer.h"
+#include "Editor.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/UnrealEdEngine.h"
 #include "EditorFramework/AssetImportData.h"
 #include "Engine/DataTable.h"
+#include "LevelEditor.h"
 #include "Misc/FileHelper.h"
+#include "SLevelViewport.h"
+#include "UnrealEdGlobals.h"
 
 // Checks, is the current world placed in the editor
 bool FEditorUtilsLibrary::IsEditor()

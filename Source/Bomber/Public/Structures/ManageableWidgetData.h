@@ -2,14 +2,15 @@
 
 #pragma once
 
+// UE
 #include "GameplayTagContainer.h"
 #include "Templates/SubclassOf.h"
-//---
+
 #include "ManageableWidgetData.generated.h"
 
 /**
-* Default data for manageable widgets to be set in the UI data assets.
-* Its data is expected to be passed in UWidgetsSubsystem::Get().CreateManageableWidget(Data);
+ * Default data for manageable widgets to be set in the UI data assets.
+ * Its data is expected to be passed in UWidgetsSubsystem::Get().CreateManageableWidget(Data);
  */
 USTRUCT(BlueprintType)
 struct BOMBER_API FManageableWidgetData

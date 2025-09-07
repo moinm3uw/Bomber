@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/PlayerCharacter.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/BmrMoverComponent.h"
 #include "Components/BmrPlayerNameWidgetComponent.h"
@@ -14,18 +14,20 @@
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
+#include "GeneratedMap.h"
 #include "LevelActors/BombActor.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "AbilitySystemComponent.h"
-#include "GameplayEffect.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
-//---
+#include "GameplayEffect.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerCharacter)
 
 // Sets default values
@@ -59,7 +61,7 @@ APlayerCharacter::APlayerCharacter()
 	MeshComponentInternal->SetRelativeRotation_Direct(MeshRelativeRotation);
 	MeshComponentInternal->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	// Enable all lighting channels, so it's clearly visible in the dark
-	MeshComponentInternal->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
+	MeshComponentInternal->SetLightingChannels(/*bChannel0*/ true, /*bChannel1*/ true, /*bChannel2*/ true);
 	MapComponentInternal->SetMeshComponent(MeshComponentInternal);
 
 	// Initialize 3D widget component for the player name
@@ -76,7 +78,7 @@ APlayerCharacter::APlayerCharacter()
 	// Setup collision to allow overlap players with each other, but block all other actors
 	RootCapsuleComponent->CanCharacterStepUpOn = ECB_Yes;
 	RootCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);           // Pawn+Custom profile (both required)
+	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName); // Pawn+Custom profile (both required)
 	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName); // Pawn+Custom profile (both required)
 	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
@@ -209,7 +211,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	// Spawn or destroy controller of specific ai with enabled visualization
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (UUtilsLibrary::IsEditorNotPieWorld()                                 // [IsEditorNotPieWorld] only
+	if (UUtilsLibrary::IsEditorNotPieWorld() // [IsEditorNotPieWorld] only
 	    && ULevelActorsUtilsLibrary::GetIndexByLevelActor(MapComponent) > 0) // Is a bot
 	{
 		AIControllerInternal = Cast<AAIController>(GetController());
@@ -229,7 +231,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 			}
 		}
 	}
-#endif	// WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 	TryPossessController(EPlayerType::Any);
 
@@ -359,7 +361,7 @@ void APlayerCharacter::OnCellChanged_Implementation(UMapComponent* MapComponent,
 	if (HasActorBegunPlay())
 	{
 		// Visualize the cell changes during the gameplay
-		MapComponentInternal->TryDisplayOwnedCell(/*bClearPrevious*/true);
+		MapComponentInternal->TryDisplayOwnedCell(/*bClearPrevious*/ true);
 	}
 }
 
@@ -483,7 +485,7 @@ void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 
 		case EPlayerType::Bot:
 		{
-			if (!AIControllerInternal                             // Is not spawned yet
+			if (!AIControllerInternal // Is not spawned yet
 			    || !AIControllerInternal->IsA(AIControllerClass)) // Spawned, but wrong AI controller assigned
 			{
 				// Spawn AI controller
@@ -571,7 +573,7 @@ UMySkeletalMeshComponent& APlayerCharacter::GetMeshComponentChecked() const
 }
 
 // Set and apply default skeletal mesh for this player
-void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin/* = false*/)
+void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin /* = false*/)
 {
 	if (!HasAuthority())
 	{
@@ -618,7 +620,7 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin/* = false*
  ********************************************************************************************* */
 
 // Spawns bomb on character position
-void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
+void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce /* = false*/)
 {
 	const AController* OwnedController = GetController();
 	if (!ensureMsgf(OwnedController, TEXT("ASSERT: [%i] %hs:\n'OwnedController' is not valid!"), __LINE__, __FUNCTION__)
@@ -665,7 +667,7 @@ void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
 }
 
 // Event triggered when the bomb has been explicitly destroyed.
-void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser/* = nullptr*/)
+void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser /* = nullptr*/)
 {
 	if (!MapComponent
 	    || MapComponent->GetActorType() != EAT::Bomb)

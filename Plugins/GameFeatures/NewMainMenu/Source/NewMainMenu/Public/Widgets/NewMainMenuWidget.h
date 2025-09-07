@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-//---
+
 #include "NewMainMenuWidget.generated.h"
 
 enum class ENMMState : uint8;
@@ -71,7 +71,7 @@ protected:
 	void OnPrevPlayerButtonPressed();
 
 	/** Sets the preview mesh of a player depending on specified incrementer.
-	* @param Incrementer 1 set the next player, -1 set previous. */
+	 * @param Incrementer 1 set the next player, -1 set previous. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SwitchCurrentPlayer(int32 Incrementer);
 

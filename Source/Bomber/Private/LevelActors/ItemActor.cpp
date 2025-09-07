@@ -1,19 +1,21 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/ItemActor.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
 #include "Components/MapComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/ItemDataAsset.h"
+#include "GeneratedMap.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "Abilities/GameplayAbilityTypes.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "NativeGameplayTags.h"
-#include "Abilities/GameplayAbilityTypes.h"
 #include "Net/UnrealNetwork.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemActor)
 
 UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_EVENT_POWERUP_COLLECTED, "Event.Powerup.Collected", "Event that activates collecting powerup ability.");
@@ -91,7 +93,7 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 
 	// Rand the item type if not set yet
 	if (HasAuthority()
-		&& ItemTypeInternal == FBmrPowerupTag::None)
+	    && ItemTypeInternal == FBmrPowerupTag::None)
 	{
 		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::GetAll().Num() - 1);
 		const FBmrPowerupTag NewItemType = FBmrPowerupTag::GetAll().GetByIndex(RandomIndex);

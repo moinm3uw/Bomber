@@ -1,17 +1,19 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/BoxActor.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-#include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/BoxDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "GeneratedMap.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Math/UnrealMathUtility.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BoxActor)
 
 // Sets default values.

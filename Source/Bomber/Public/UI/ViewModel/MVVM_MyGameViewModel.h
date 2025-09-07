@@ -3,15 +3,17 @@
 #pragma once
 
 #include "UI/ViewModel/MVVM_MyBaseViewModel.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-//---
+
+// UE
 #include "Components/SlateWrapperTypes.h"
-//---
+
 #include "MVVM_MyGameViewModel.generated.h"
 
 /**
- * Contains general data to be used only by widgets. 
+ * Contains general data to be used only by widgets.
  */
 UCLASS(DisplayName = "My Game View Model")
 class BOMBER_API UMVVM_MyGameViewModel : public UMVVM_MyBaseViewModel
@@ -127,7 +129,7 @@ protected:
 	 ********************************************************************************************* */
 protected:
 	/**  Is called when this View Model is constructed.
-	* Is used for bindings to the changes in other systems in order to update own data. */
+	 * Is used for bindings to the changes in other systems in order to update own data. */
 	virtual void OnViewModelConstruct_Implementation(const UUserWidget* UserWidget) override;
 
 	/** Is called when this View Model is destructed. */

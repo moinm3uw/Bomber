@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/GameUserSettings.h"
-//---
+
 #include "MyGameUserSettings.generated.h"
 
 /**
@@ -100,7 +100,7 @@ protected:
 public:
 	/** Returns the enum type of supported fullscreen mode.
 	 * Is expanded as a function to avoid usage of unsupported modes.
-	 * Never use directly EWindowMode type, but only this function. 
+	 * Never use directly EWindowMode type, but only this function.
 	 * @param bReturnFullscreen If true, then EWindowMode::WindowedFullscreen will be returned, otherwise EWindowMode::Windowed.
 	 * @warning Native Fullscreen (EWindowMode::Fullscreen) is not supported at all because of various engine issues, WindowedFullscreen is used instead. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -108,7 +108,7 @@ public:
 
 	/** Returns true if the game is in fullscreen mode. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE bool IsFullscreenEnabled() const { return GetFullscreenMode() == GetSupportedWindowModeType(/*bReturnFullscreen*/true); }
+	FORCEINLINE bool IsFullscreenEnabled() const { return GetFullscreenMode() == GetSupportedWindowModeType(/*bReturnFullscreen*/ true); }
 
 	/** Set and apply fullscreen mode. If false, the windowed mode will be applied. */
 	UFUNCTION(BlueprintCallable, Category = "C++")

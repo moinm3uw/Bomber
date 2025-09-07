@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Controllers/MyAIController.h"
-//---
-#include "Bomber.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Bomber.h"
 #include "Components/BmrMoverComponent.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/AIDataAsset.h"
@@ -15,14 +16,15 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
-#include "TimerManager.h"
-#include "Components/GameFrameworkComponentManager.h"
-//---
+
 #if WITH_EDITOR
 #include "MyUnrealEdEngine.h"
 #endif
-//---
+
+// UE
+#include "Components/GameFrameworkComponentManager.h"
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyAIController)
 
 // Sets default values for this character's properties
@@ -57,7 +59,7 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 		MoverComponent->RequestMoveByIntent(Direction);
 	}
 
-#if WITH_EDITOR	 // [IsEditor]
+#if WITH_EDITOR // [IsEditor]
 	if (UUtilsLibrary::IsEditor())
 	{
 		// Visualize and show destination cell
@@ -255,7 +257,7 @@ void AMyAIController::UpdateAI()
 	}
 	// ----- Part 1: Cells iteration -----
 
-	FCells AllCrossways;    //  cells of all crossways
+	FCells AllCrossways; //  cells of all crossways
 	FCells SecureCrossways; // crossways without players
 	FCells FoundItems;
 	bool bIsItemInDirect = false;
@@ -270,8 +272,8 @@ void AMyAIController::UpdateAI()
 		}
 
 		const FCells ThisCrossway = UCellsUtilsLibrary::GetCellsAround(*F, EPathType::Safe, AIDataAsset.GetCrosswaySearchRadius());
-		FCells Way = Free;                  // Way = Safe / (Free + F0)
-		Way.Emplace(F0);                    // Way = Free + F0
+		FCells Way = Free; // Way = Safe / (Free + F0)
+		Way.Emplace(F0); // Way = Free + F0
 		Way = ThisCrossway.Difference(Way); // Way = Safe / Way
 
 		if (Way.Num() > 0) // Are there any cells?
@@ -290,7 +292,7 @@ void AMyAIController::UpdateAI()
 			if (ItemsAround.Num() > 0) // Is there items in this crossway?
 			{
 				ItemsAround = ItemsAround.Intersect(Free); // ItemsAround = ItemsAround ∪ Free
-				if (ItemsAround.Num() > 0)                 // Is there direct items in this crossway?
+				if (ItemsAround.Num() > 0) // Is there direct items in this crossway?
 				{
 					if (bIsItemInDirect == false) // is the first found direct item
 					{
@@ -298,13 +300,13 @@ void AMyAIController::UpdateAI()
 						FoundItems.Empty(); // clear all previously found corner items
 					}
 					FoundItems = FoundItems.Union(ItemsAround); // Add found direct items
-				}                                               // item around the corner
-				else if (bIsItemInDirect == false)              // Need corner item?
+				} // item around the corner
+				else if (bIsItemInDirect == false) // Need corner item?
 				{
 					FoundItems.Emplace(*F); // Add found corner item
 				}
 			} // [has items]
-		}     // [is crossway]
+		} // [is crossway]
 		else if (bIsDangerous && ThisCrossway.Contains(*F) == false)
 		{
 			F.RemoveCurrent(); // In the dangerous situation delete a non-crossway cell
@@ -363,10 +365,10 @@ void AMyAIController::UpdateAI()
 
 	// ----- Part 2: Deciding whether to put the bomb -----
 
-	if (bCanSpawnBombs         // false meaning manually disabled 
-	    && !bIsDangerous       // is not dangerous situation
+	if (bCanSpawnBombs // false meaning manually disabled
+	    && !bIsDangerous // is not dangerous situation
 	    && !bIsFilteringFailed // filtering was not failed
-	    && !bIsItemInDirect)   // was not found direct items
+	    && !bIsItemInDirect) // was not found direct items
 	{
 		const float Fire = UBmrPowerupsAttributeSet::Get(OwnerInternal).GetPowerup_Fire();
 		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, Fire, TO_FLAG(EAT::Box | EAT::Player));
@@ -376,13 +378,13 @@ void AMyAIController::UpdateAI()
 			OwnerInternal->ServerSpawnBomb();
 			Free.Empty(); // Delete all cells to make new choice
 
-#if WITH_EDITOR	 // [Editor]
+#if WITH_EDITOR // [Editor]
 			if (MapComponent->bShouldShowRenders)
 			{
 				static const FDisplayCellsParams DisplayParams{FLinearColor::Red, 261.F, 95.F, TEXT("Attack")};
 				UCellsUtilsLibrary::DisplayCell(OwnerInternal, F0, DisplayParams);
 			}
-#endif	// [Editor]
+#endif // [Editor]
 		}
 	}
 
@@ -395,7 +397,7 @@ void AMyAIController::UpdateAI()
 
 	MoveToCell(Filtered.Array()[FMath::RandRange(0, Filtered.Num() - 1)]);
 
-#if WITH_EDITOR	 // [Editor]
+#if WITH_EDITOR // [Editor]
 	if (MapComponent->bShouldShowRenders)
 	{
 		static constexpr int32 VisualizationTypesNum = 3;
@@ -438,7 +440,7 @@ void AMyAIController::UpdateAI()
 			UCellsUtilsLibrary::DisplayCells(OwnerInternal, VisualizingStep, DisplayParams);
 		} // [Loopy visualization]
 	}
-#endif	// [Editor]
+#endif // [Editor]
 }
 
 // Enable or disable AI for this bot

@@ -1,16 +1,18 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "GameFramework/MyGameUserSettings.h"
-//---
+
+// Bomber
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "DynamicRHI.h"
 #include "Kismet/KismetInternationalizationLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/ConfigCacheIni.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameUserSettings)
 
 // Returns the game user settings
@@ -278,7 +280,10 @@ void UMyGameUserSettings::SetFPSLockByIndex(int32 Index)
 	static const FString SpaceDelimiter = TEXT(" ");
 	TArray<FString> StringArray;
 	StrMaxFPS.ParseIntoArray(StringArray, *SpaceDelimiter);
-	const FString* FoundNumericStr = StringArray.FindByPredicate([](const FString& StrIt) { return StrIt.IsNumeric(); });
+	const FString* FoundNumericStr = StringArray.FindByPredicate([](const FString& StrIt)
+	{
+		return StrIt.IsNumeric();
+	});
 	if (FoundNumericStr)
 	{
 		const int32 MaxFPS = FCString::Atoi(**FoundNumericStr);
@@ -381,7 +386,10 @@ void UMyGameUserSettings::UpdateSupportedLanguages()
 
 	// Make the system (OS) language to be displayed first, if supported: it contains within available cultures
 	const FString SystemCulture = UKismetSystemLibrary::GetDefaultLanguage();
-	const FString* AvailableSystemCulture = AllAvailableCultures.FindByPredicate([&SystemCulture](const FString& It) { return SystemCulture.Contains(It); });
+	const FString* AvailableSystemCulture = AllAvailableCultures.FindByPredicate([&SystemCulture](const FString& It)
+	{
+		return SystemCulture.Contains(It);
+	});
 	if (AvailableSystemCulture
 	    && *AvailableSystemCulture != FallbackDefaultLanguage)
 	{
@@ -406,11 +414,11 @@ void UMyGameUserSettings::UpdateSupportedLanguages()
 
 	// If very first launch of the game, then set the system language as default
 	if (AppliedCultureInternal.IsNone())
-    {
-        // Set the system language as default
-        checkf(CulturesInternal.IsValidIndex(0), TEXT("ERROR: [%i] %hs:\n'CulturesInternal.IsValidIndex(0)' is null!"), __LINE__, __FUNCTION__);
-        AppliedCultureInternal = CulturesInternal[0];
-    }
+	{
+		// Set the system language as default
+		checkf(CulturesInternal.IsValidIndex(0), TEXT("ERROR: [%i] %hs:\n'CulturesInternal.IsValidIndex(0)' is null!"), __LINE__, __FUNCTION__);
+		AppliedCultureInternal = CulturesInternal[0];
+	}
 
 	// Always update current language index
 	if (CurrentLanguageIndexInternal == INDEX_NONE)

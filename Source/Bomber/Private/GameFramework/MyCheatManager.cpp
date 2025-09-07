@@ -1,10 +1,10 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyCheatManager.h"
-//---
-#include "Bomber.h"
-#include "GeneratedMap.h"
+
+// Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "Bomber.h"
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "Controllers/MyAIController.h"
@@ -14,12 +14,16 @@
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/PlayerState.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "DataAssets/GeneratedMapDataAsset.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyCheatManager)
 
 // Default constructor
@@ -136,10 +140,10 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 
 // Override the percentage of items spawn from boxes
 TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
-	TEXT("Bomber.Box.SetPowerupsChance"),
-	0.f,
-	TEXT("100 - is maximum, 0 - is disabled (default chance will be used)"),
-	ECVF_Cheat);
+    TEXT("Bomber.Box.SetPowerupsChance"),
+    0.f,
+    TEXT("100 - is maximum, 0 - is disabled (default chance will be used)"),
+    ECVF_Cheat);
 
 /*********************************************************************************************
  * Bomb
@@ -147,10 +151,10 @@ TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
 
 // Override blast radius of all bombs
 TAutoConsoleVariable<int32> UMyCheatManager::CVarBombRadius(
-	TEXT("Bomber.Bomb.SetRadius"),
-	INDEX_NONE,
-	TEXT("5 - Set five cells blast radius to each side of all bombs"),
-	ECVF_Cheat);
+    TEXT("Bomber.Bomb.SetRadius"),
+    INDEX_NONE,
+    TEXT("5 - Set five cells blast radius to each side of all bombs"),
+    ECVF_Cheat);
 
 /*********************************************************************************************
  * Player
@@ -190,10 +194,10 @@ void UMyCheatManager::SetAutoCopilot()
 
 // Enable or disable all bots
 TAutoConsoleVariable<bool> UMyCheatManager::CVarAISetEnabled(
-	TEXT("Bomber.AI.SetEnabled"),
-	true,
-	TEXT("Enable or disable all bots: 1 (Enable) OR 0 (Disable)"),
-	ECVF_Cheat);
+    TEXT("Bomber.AI.SetEnabled"),
+    true,
+    TEXT("Enable or disable all bots: 1 (Enable) OR 0 (Disable)"),
+    ECVF_Cheat);
 
 // Override the level of each powerup for bots
 void UMyCheatManager::SetAIPowerups(int32 NewLevel)
@@ -250,10 +254,10 @@ void UMyCheatManager::AddBot()
 
 // Override the percentage of items spawn from boxes
 TAutoConsoleVariable<FString> UMyCheatManager::CVarDisplayCells(
-	TEXT("Bomber.Debug.DisplayCells"),
-	TEXT(""),
-	TEXT("Shows coordinates of level actors of specified types (requires regeneration), e.g: Bomber.Debug.DisplayCells Bomb Player - show bombs and players"),
-	ECVF_Cheat);
+    TEXT("Bomber.Debug.DisplayCells"),
+    TEXT(""),
+    TEXT("Shows coordinates of level actors of specified types (requires regeneration), e.g: Bomber.Debug.DisplayCells Bomb Player - show bombs and players"),
+    ECVF_Cheat);
 
 /*********************************************************************************************
  * Level
@@ -385,11 +389,10 @@ void UMyCheatManager::SetGameState(ECurrentGameState GameState)
 	// - We cannot rely on iterating enums using TEnumRange or bitmasks as enum members may not be defined in a logical order.
 	// - This ensures deterministic transitions and avoids potential issues caused by chaotic ordering of enum members.
 	static const TArray<ECurrentGameState> GameStateOrder = {
-		ECurrentGameState::Menu,
-		ECurrentGameState::GameStarting,
-		ECurrentGameState::InGame,
-		ECurrentGameState::EndGame
-	};
+	    ECurrentGameState::Menu,
+	    ECurrentGameState::GameStarting,
+	    ECurrentGameState::InGame,
+	    ECurrentGameState::EndGame};
 
 	// Find the current position and target position in the transition order
 	const ECurrentGameState CurrentState = MyGameState->GetCurrentGameState();

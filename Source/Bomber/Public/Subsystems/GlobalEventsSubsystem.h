@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Subsystems/WorldSubsystem.h"
-//---
+
+// Bomber
 #include "Structures/OnCharactersReadyHandler.h"
-//---
+
 #include "GlobalEventsSubsystem.generated.h"
 
 /**
@@ -28,7 +29,7 @@ public:
 	/*********************************************************************************************
 	 * Game States
 	 * - BIND_ON_GAME_STATE_CHANGED - called when the current game state was changed.
-	 * - BIND_ON_GAME_STATE_CREATED - called when the game state actor was created. 
+	 * - BIND_ON_GAME_STATE_CREATED - called when the game state actor was created.
 	 ********************************************************************************************* */
 public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStateChanged, ECurrentGameState, CurrentGameState);
@@ -41,9 +42,9 @@ public:
 	/*********************************************************************************************
 	 * On Player Ready
 	 * Thsese delegates are managed by 'OnCharactersReadyHandler'.
-     * @warning in code:
-     * - Instead of .Broadcast(), call OnCharactersReadyHandler.Broadcast_ methods.
-     * - Instead of .AddDynamic(), use next macros:
+	 * @warning in code:
+	 * - Instead of .Broadcast(), call OnCharactersReadyHandler.Broadcast_ methods.
+	 * - Instead of .AddDynamic(), use next macros:
 	 * BIND_ON_CHARACTER_READY_ID(this, ThisClass::OnCharacterReady, CharacterID);
 	 * BIND_ON_CHARACTER_READY_PTR(this, ThisClass::OnCharacterReady, PlayerCharacter);
 	 * BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
@@ -109,27 +110,27 @@ protected:
 };
 
 /** Helper macro to bind and call the function when the game state was changed. */
-#define BIND_ON_GAME_STATE_CHANGED(Obj, Function) \
-{ \
-	UGlobalEventsSubsystem::Get().BP_OnGameStateChanged.AddUniqueDynamic(Obj, &Function); \
-	if (AMyGameStateBase::GetCurrentGameState() == ECurrentGameState::Menu) \
-	{ \
-		Obj->Function(ECurrentGameState::Menu); \
-	} \
-}
+#define BIND_ON_GAME_STATE_CHANGED(Obj, Function)                                             \
+	{                                                                                         \
+		UGlobalEventsSubsystem::Get().BP_OnGameStateChanged.AddUniqueDynamic(Obj, &Function); \
+		if (AMyGameStateBase::GetCurrentGameState() == ECurrentGameState::Menu)               \
+		{                                                                                     \
+			Obj->Function(ECurrentGameState::Menu);                                           \
+		}                                                                                     \
+	}
 
 /** Helper macro to bind and call the function when the game state actor was created. */
-#define BIND_ON_GAME_STATE_CREATED(Obj, Function) \
-{ \
-	if (AMyGameStateBase* GameState = UMyBlueprintFunctionLibrary::GetMyGameState()) \
-	{ \
-		Obj->Function(GameState); \
-	} \
-	else if (UWorld* World = GetWorld()) \
-	{ \
-		World->GameStateSetEvent.AddUObject(Obj, &Function); \
-	} \
-}
+#define BIND_ON_GAME_STATE_CREATED(Obj, Function)                                        \
+	{                                                                                    \
+		if (AMyGameStateBase* GameState = UMyBlueprintFunctionLibrary::GetMyGameState()) \
+		{                                                                                \
+			Obj->Function(GameState);                                                    \
+		}                                                                                \
+		else if (UWorld* World = GetWorld())                                             \
+		{                                                                                \
+			World->GameStateSetEvent.AddUObject(Obj, &Function);                         \
+		}                                                                                \
+	}
 
 /*********************************************************************************************
  * Macro Helpers for Ready Events
@@ -182,58 +183,58 @@ protected:
  ********************************************************************************************* */
 
 /** Internal macro for binding and calling delegate methods with ID filtering. */
-#define INTERNAL_BIND_CHARACTER_READY_ID(NativeDelegate, Obj, Function, Arg, CallbackParamType, ID) \
-{ \
-	const int32 TargetCharacterID = ID; \
-	UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
-	EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj, TargetCharacterID](CallbackParamType* CallbackParam, int32 InCharacterID) \
-	{ \
-		if (InCharacterID == TargetCharacterID) \
-		{ \
-			(Obj->*(&Function))(CallbackParam, InCharacterID); \
-		} \
-	}); \
-	auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(TargetCharacterID); \
-	if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg)) \
-	{ \
-		(Obj->*(&Function))(Arg, TargetCharacterID); \
-	} \
-}
+#define INTERNAL_BIND_CHARACTER_READY_ID(NativeDelegate, Obj, Function, Arg, CallbackParamType, ID)                                       \
+	{                                                                                                                                     \
+		const int32 TargetCharacterID = ID;                                                                                               \
+		UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj);                                                       \
+		EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj, TargetCharacterID](CallbackParamType* CallbackParam, int32 InCharacterID) \
+		{                                                                                                                                 \
+			if (InCharacterID == TargetCharacterID)                                                                                       \
+			{                                                                                                                             \
+				(Obj->*(&Function))(CallbackParam, InCharacterID);                                                                        \
+			}                                                                                                                             \
+		});                                                                                                                               \
+		auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(TargetCharacterID);                                                             \
+		if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg))                                                               \
+		{                                                                                                                                 \
+			(Obj->*(&Function))(Arg, TargetCharacterID);                                                                                  \
+		}                                                                                                                                 \
+	}
 
 /** Internal macro for binding and calling delegate methods with pointer filtering. */
-#define INTERNAL_BIND_CHARACTER_READY_PTR(NativeDelegate, Obj, Function, CallbackParamType, TargetPtr) \
-{ \
-	if (TargetPtr) \
-	{ \
-		CallbackParamType* const Target = TargetPtr; \
-		const int32 CharacterID = Target->GetPlayerId(); \
-		UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
-		EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj, Target](CallbackParamType* CallbackParam, int32 InCharacterID) \
-		{ \
-			if (CallbackParam == Target) \
-			{ \
-				(Obj->*(&Function))(CallbackParam, InCharacterID); \
-			} \
-		}); \
-		if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Target)) \
-		{ \
-			(Obj->*(&Function))(Target, CharacterID); \
-		} \
-	} \
-}
+#define INTERNAL_BIND_CHARACTER_READY_PTR(NativeDelegate, Obj, Function, CallbackParamType, TargetPtr)                             \
+	{                                                                                                                              \
+		if (TargetPtr)                                                                                                             \
+		{                                                                                                                          \
+			CallbackParamType* const Target = TargetPtr;                                                                           \
+			const int32 CharacterID = Target->GetPlayerId();                                                                       \
+			UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj);                                            \
+			EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj, Target](CallbackParamType* CallbackParam, int32 InCharacterID) \
+			{                                                                                                                      \
+				if (CallbackParam == Target)                                                                                       \
+				{                                                                                                                  \
+					(Obj->*(&Function))(CallbackParam, InCharacterID);                                                             \
+				}                                                                                                                  \
+			});                                                                                                                    \
+			if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Target))                                                 \
+			{                                                                                                                      \
+				(Obj->*(&Function))(Target, CharacterID);                                                                          \
+			}                                                                                                                      \
+		}                                                                                                                          \
+	}
 
 /** Internal macro for binding and calling local delegate methods. */
-#define INTERNAL_BIND_LOCAL_READY(NativeDelegate, Obj, Function, Arg, CallbackParamType) \
-{ \
-	UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj); \
-	EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj](CallbackParamType* CallbackParam, int32 InCharacterID) \
-	{ \
-		(Obj->*(&Function))(CallbackParam, InCharacterID); \
-	}); \
-	auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(INDEX_NONE); \
-	if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg)) \
-	{ \
-		const int32 CharacterID = Arg->GetPlayerId(); \
-		(Obj->*(&Function))(Arg, CharacterID); \
-	} \
-}
+#define INTERNAL_BIND_LOCAL_READY(NativeDelegate, Obj, Function, Arg, CallbackParamType)                               \
+	{                                                                                                                  \
+		UGlobalEventsSubsystem& EventsSubsystem = UGlobalEventsSubsystem::Get(Obj);                                    \
+		EventsSubsystem.NativeDelegate.AddWeakLambda(Obj, [Obj](CallbackParamType* CallbackParam, int32 InCharacterID) \
+		{                                                                                                              \
+			(Obj->*(&Function))(CallbackParam, InCharacterID);                                                         \
+		});                                                                                                            \
+		auto* Arg = UMyBlueprintFunctionLibrary::Get##Arg(INDEX_NONE);                                                 \
+		if (EventsSubsystem.OnCharactersReadyHandler.IsCharacterReady(Arg))                                            \
+		{                                                                                                              \
+			const int32 CharacterID = Arg->GetPlayerId();                                                              \
+			(Obj->*(&Function))(Arg, CharacterID);                                                                     \
+		}                                                                                                              \
+	}

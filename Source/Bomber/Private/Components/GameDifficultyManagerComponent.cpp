@@ -1,18 +1,20 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/GameDifficultyManagerComponent.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "Structures/GameDifficultyData.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Engine/Engine.h"
-#include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
-//---
+#include "Net/UnrealNetwork.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameDifficultyManagerComponent)
 
 // Default constructor
@@ -33,7 +35,7 @@ UGameDifficultyManagerComponent& UGameDifficultyManagerComponent::Get()
 }
 
 // Returns the pointer to this manager
-UGameDifficultyManagerComponent* UGameDifficultyManagerComponent::GetGameDifficultyManager(const UObject* OptionalWorldContext/* = nullptr*/)
+UGameDifficultyManagerComponent* UGameDifficultyManagerComponent::GetGameDifficultyManager(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState(OptionalWorldContext);
 	return MyGameState ? MyGameState->GetGameDifficultyManager() : nullptr;

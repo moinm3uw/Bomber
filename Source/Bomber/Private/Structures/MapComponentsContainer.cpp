@@ -1,17 +1,22 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Structures/MapComponentsContainer.h"
-//---
+
+// Bomber
 #include "Components/MapComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MapComponentsContainer)
 
 FMapComponentSpec::FMapComponentSpec(UMapComponent& InMapComponent)
-	: MapComponent(&InMapComponent)
-	, Cell(InMapComponent.GetCell()) {}
+    : MapComponent(&InMapComponent)
+    , Cell(InMapComponent.GetCell())
+{
+}
 
 FMapComponentSpec::FMapComponentSpec(FPoolObjectHandle InPoolObjectHandle)
-	: PoolObjectHandle(MoveTemp(InPoolObjectHandle)) {}
+    : PoolObjectHandle(MoveTemp(InPoolObjectHandle))
+{
+}
 
 void FMapComponentSpec::PreReplicatedRemove(const FMapComponentsContainer& InMapComponentsContainer)
 {
@@ -49,12 +54,16 @@ void FMapComponentSpec::PostReplicatedChange(const FMapComponentsContainer& InMa
 }
 
 FMapComponentsIterator::FMapComponentsIterator(const TArray<FMapComponentSpec>& InItems)
-	: Items(InItems)
-	, Index(0) {}
+    : Items(InItems)
+    , Index(0)
+{
+}
 
 FMapComponentsIterator::FMapComponentsIterator(const TArray<FMapComponentSpec>& InItems, int32 StartIndex)
-	: Items(InItems)
-	, Index(StartIndex) {}
+    : Items(InItems)
+    , Index(StartIndex)
+{
+}
 
 FMapComponentsIterator& FMapComponentsIterator::operator++()
 {

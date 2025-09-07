@@ -4,11 +4,12 @@
 
 #include "Animation/SkeletalMeshActor.h" // AMySkeletalMeshActor
 #include "Components/SkeletalMeshComponent.h" // UMySkeletalMeshComponent
-//---
+
+// Bomber
 #include "Bomber.h"
-#include "Structures/PlayerTag.h"
 #include "Structures/BmrMeshData.h"
-//---
+#include "Structures/PlayerTag.h"
+
 #include "MySkeletalMeshComponent.generated.h"
 
 class UMySkeletalMeshComponent;
@@ -154,8 +155,8 @@ public:
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** Determines how this mesh looks like for now. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Player Mesh Data"))

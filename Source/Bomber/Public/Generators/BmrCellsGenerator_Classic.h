@@ -3,7 +3,7 @@
 #pragma once
 
 #include "BmrCellsGenerator_Base.h"
-//---
+
 #include "BmrCellsGenerator_Classic.generated.h"
 
 /**

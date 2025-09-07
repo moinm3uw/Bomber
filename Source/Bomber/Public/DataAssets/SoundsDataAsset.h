@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
 #include "SoundsDataAsset.generated.h"
 
 class USoundsSubsystem;

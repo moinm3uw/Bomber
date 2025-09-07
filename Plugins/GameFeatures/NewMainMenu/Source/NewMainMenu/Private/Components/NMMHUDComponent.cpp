@@ -1,20 +1,24 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/NMMHUDComponent.h"
-//---
-#include "NMMUtils.h"
+
+// NMM
 #include "Components/NMMPlayerControllerComponent.h"
 #include "Data/NMMDataAsset.h"
+#include "NMMUtils.h"
+#include "Subsystems/NMMBaseSubsystem.h"
+#include "Widgets/NMMCinematicStateWidget.h"
+#include "Widgets/NewMainMenuWidget.h"
+
+// Bomber
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "Widgets/NewMainMenuWidget.h"
-#include "Widgets/NMMCinematicStateWidget.h"
-//---
+
+// UE
 #include "NativeGameplayTags.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMHUDComponent)
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_WIDGET_NEWMAINMENU_MENU, TEXT("UI.Widget.NewMainMenu.Menu"));
@@ -71,7 +75,7 @@ void UNMMHUDComponent::OnLocalCharacterReady_Implementation(class APlayerCharact
 	UWidgetsSubsystem::Get().CreateManageableWidgetChecked(UNMMDataAsset::Get().GetInCinematicStateWidgetData());
 
 	// Once HUD is displayed, set the Menu state OnLocalCharacterReady
-	// It guarantee that game enters the Menu state only when the character is ready and HUD is displayed 
+	// It guarantee that game enters the Menu state only when the character is ready and HUD is displayed
 	if (UNMMPlayerControllerComponent* ControllerComponent = UNMMUtils::GetPlayerControllerComponent())
 	{
 		ControllerComponent->TrySetMenuState();

@@ -1,7 +1,7 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "FootTrailsGeneratorRuntimeModule.h"
-//---
+
 #include "Modules/ModuleManager.h"
 
 void FFootTrailsGeneratorRuntimeModule::StartupModule()

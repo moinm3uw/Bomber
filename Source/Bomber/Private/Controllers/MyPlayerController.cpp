@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Controllers/MyPlayerController.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "Components/MouseActivityComponent.h"
 #include "DataAssets/BmrInputAction.h"
@@ -18,17 +19,18 @@
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "Components/GameFrameworkComponentManager.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Components/GameFrameworkComponentManager.h"
 #include "Framework/Application/NavigationConfig.h"
 #include "Framework/Application/SlateApplication.h"
-//---
+
 #if WITH_EDITOR
 #include "Editor.h"
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerController)
 
 // Sets default values for this controller's properties
@@ -140,7 +142,7 @@ void AMyPlayerController::BeginPlay()
 
 	// Adds given contexts to the list of auto managed and binds their input actions
 	TArray<const UMyInputMappingContext*> InputContexts;
-	UPlayerInputDataAsset::Get().GetAllInputContexts(/*out*/InputContexts);
+	UPlayerInputDataAsset::Get().GetAllInputContexts(/*out*/ InputContexts);
 	SetupInputContexts(InputContexts);
 
 #if WITH_EDITOR
@@ -173,7 +175,7 @@ void AMyPlayerController::InitInputSystem()
 
 	// Register gameplay mappings, so they can be remapped
 	TArray<const UMyInputMappingContext*> GameplayInputContexts;
-	UPlayerInputDataAsset::Get().GetAllGameplayInputContexts(/*out*/GameplayInputContexts);
+	UPlayerInputDataAsset::Get().GetAllGameplayInputContexts(/*out*/ GameplayInputContexts);
 	for (const UMyInputMappingContext* InputContextIt : GameplayInputContexts)
 	{
 		constexpr bool bRegisterMappings = true;
@@ -419,7 +421,7 @@ void AMyPlayerController::SetUIInputIgnored()
 }
 
 // Takes all cached inputs contexts and turns them on or off according given game state
-void AMyPlayerController::SetAllInputContextsEnabled(bool bEnable, ECurrentGameState CurrentGameState, bool bInvertRest/* = false*/)
+void AMyPlayerController::SetAllInputContextsEnabled(bool bEnable, ECurrentGameState CurrentGameState, bool bInvertRest /* = false*/)
 {
 	for (const UMyInputMappingContext* InputContextIt : AllInputContextsInternal)
 	{
@@ -481,7 +483,7 @@ void AMyPlayerController::BindInputActionsInContext(const UMyInputMappingContext
 
 	// Obtains all input actions in given context that are not currently bound to the input component
 	TArray<UInputAction*> InputActions;
-	UInputUtilsLibrary::GetAllActionsInContext(this, InInputContext, EInputActionInContextState::NotBound, /*out*/InputActions);
+	UInputUtilsLibrary::GetAllActionsInContext(this, InInputContext, EInputActionInContextState::NotBound, /*out*/ InputActions);
 
 	// --- Bind input actions
 	for (const UInputAction* InputActionIt : InputActions)
@@ -579,7 +581,7 @@ void AMyPlayerController::GetPlayerViewPoint(FVector& OutLocation, FRotator& Out
 #if !UE_BUILD_SHIPPING
 	if (bIsDebugCameraEnabledInternal)
 	{
-		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D 
+		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D
 		OutRotation.Roll = 0.f;
 	}
 #endif // !UE_BUILD_SHIPPING

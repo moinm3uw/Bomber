@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyDataTable/MyDataTable.h"
-//---
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h" // ReExportTableAsJSON()
 #include "UObject/ObjectSaveContext.h"
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyDataTable)
 
 // Default constructor to set RowStruct structure inherit from FMyTableRow

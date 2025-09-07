@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Controllers/MyDebugCameraController.h"
-//---
+
+// Bomber
 #include "GameFramework/MyCheatManager.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyDebugCameraController)
 
 // Default constructor

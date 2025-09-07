@@ -1,9 +1,10 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/BmrLocalPlayer.h"
-//---
+
+// Bomber
 #include "Controllers/MyPlayerController.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrLocalPlayer)
 
 // Default constructor with overridden properties

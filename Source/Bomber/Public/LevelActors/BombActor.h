@@ -3,9 +3,10 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
+
+// Bomber
 #include "Structures/Cell.h"
-//---
+
 #include "BombActor.generated.h"
 
 #define DEFAULT_LIFESPAN -1.f

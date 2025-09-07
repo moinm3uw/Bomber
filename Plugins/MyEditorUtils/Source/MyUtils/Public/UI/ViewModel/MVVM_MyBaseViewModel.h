@@ -3,7 +3,7 @@
 #pragma once
 
 #include "MVVMViewModelBase.h"
-//---
+
 #include "MVVM_MyBaseViewModel.generated.h"
 
 /**
@@ -29,10 +29,10 @@ public:
 	 * Is used for bindings to the changes in other systems in order to update own data. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnViewModelConstruct(const class UUserWidget* UserWidget);
-	virtual void OnViewModelConstruct_Implementation(const class UUserWidget* UserWidget) {}
+	virtual void OnViewModelConstruct_Implementation(const class UUserWidget* UserWidget) { }
 
 	/** Is called when this View Model is destructed. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnViewModelDestruct();
-	virtual void OnViewModelDestruct_Implementation() {}
+	virtual void OnViewModelDestruct_Implementation() { }
 };

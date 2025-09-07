@@ -1,11 +1,12 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/BmrInputAction.h"
-//---
+
+// UE
 #if WITH_EDITOR
 #include "Misc/DataValidation.h" // IsDataValid func
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrInputAction)
 
 // Contains no binding data

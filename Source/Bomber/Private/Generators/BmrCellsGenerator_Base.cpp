@@ -1,10 +1,11 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Generators/BmrCellsGenerator_Base.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrCellsGenerator_Base)
 
 // Main generation function to be overridden by child classes

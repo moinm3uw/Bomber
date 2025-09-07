@@ -3,13 +3,14 @@
 #pragma once
 
 #include "Engine/DeveloperSettings.h"
-//---
+
+// Bomber
 #include "Structures/GameDifficultyData.h" // FDifficultyGameFeaturesData
-//---
+
 #include "ModularGameFeatureSettings.generated.h"
 
 /**
- * Contains all core tweaks for Modular Game Features (MGF). 
+ * Contains all core tweaks for Modular Game Features (MGF).
  * Is set up in 'Project Settings' -> 'Game' -> 'Bomber Modular Game Features (MGF)'.
  * The changes are saved in 'DefaultModularGameFeatures.ini' config file.
  * It's not data asset for easier access and better tracking in version control.

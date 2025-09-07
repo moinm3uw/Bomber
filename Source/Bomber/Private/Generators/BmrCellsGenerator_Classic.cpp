@@ -1,9 +1,10 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Generators/BmrCellsGenerator_Classic.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrCellsGenerator_Classic)
 
 // Is overriden to implement custom level generation logic
@@ -22,16 +23,14 @@ TMap<FCell, EActorType> UBmrCellsGenerator_Classic::GenerateLevel(FBmrGeneratorD
 	TSet<FIntPoint> SafeZoneCoordinates;
 	const int32 MaxX = GeneratorData.MapScale.X - 1;
 	const int32 MaxY = GeneratorData.MapScale.Y - 1;
-	SafeZoneCoordinates.Append({
-		// Top-Left Player
-		{0, 0}, {1, 0}, {0, 1},
-		// Top-Right Player
-		{MaxX, 0}, {MaxX - 1, 0}, {MaxX, 1},
-		// Bottom-Left Player
-		{0, MaxY}, {1, MaxY}, {0, MaxY - 1},
-		// Bottom-Right Player
-		{MaxX, MaxY}, {MaxX - 1, MaxY}, {MaxX, MaxY - 1}
-	});
+	SafeZoneCoordinates.Append({// Top-Left Player
+	    {0, 0}, {1, 0}, {0, 1},
+	    // Top-Right Player
+	    {MaxX, 0}, {MaxX - 1, 0}, {MaxX, 1},
+	    // Bottom-Left Player
+	    {0, MaxY}, {1, MaxY}, {0, MaxY - 1},
+	    // Bottom-Right Player
+	    {MaxX, MaxY}, {MaxX - 1, MaxY}, {MaxX, MaxY - 1}});
 
 	// --- First Pass: Place deterministic walls and gather possible box locations ---
 	for (int32 PosY = 0; PosY < GeneratorData.MapScale.Y; ++PosY)
@@ -84,8 +83,8 @@ TMap<FCell, EActorType> UBmrCellsGenerator_Classic::GenerateLevel(FBmrGeneratorD
 
 	// --- Final Pass: Place players in the four corners ---
 	const TArray<FIntPoint> CornerPositions = {
-		{0, 0}, {MaxX, 0},      // Top-Left, Top-Right
-		{0, MaxY}, {MaxX, MaxY} // Bottom-Left, Bottom-Right
+	    {0, 0}, {MaxX, 0}, // Top-Left, Top-Right
+	    {0, MaxY}, {MaxX, MaxY} // Bottom-Left, Bottom-Right
 	};
 
 	for (const FIntPoint& CornerPos : CornerPositions)

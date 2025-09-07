@@ -3,7 +3,8 @@
 #pragma once
 
 #include "Modules/ModuleInterface.h"
-//---
+
+// UE
 #include "CoreMinimal.h"
 
 class FOOTTRAILSGENERATORRUNTIME_API FFootTrailsGeneratorRuntimeModule : public IModuleInterface
@@ -22,10 +23,10 @@ public:
 	virtual void StartupModule() override;
 
 	/**
-	* Called before the module is unloaded, right before the module object is destroyed.
-	* During normal shutdown, this is called in reverse order that modules finish StartupModule().
-	* This means that, as long as a module references dependent modules in it's StartupModule(), it
-	* can safely reference those dependencies in ShutdownModule() as well.
-	*/
+	 * Called before the module is unloaded, right before the module object is destroyed.
+	 * During normal shutdown, this is called in reverse order that modules finish StartupModule().
+	 * This means that, as long as a module references dependent modules in it's StartupModule(), it
+	 * can safely reference those dependencies in ShutdownModule() as well.
+	 */
 	virtual void ShutdownModule() override;
 };

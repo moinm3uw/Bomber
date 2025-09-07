@@ -2,10 +2,10 @@
 
 #pragma once
 
+// Bomber
 #include "FunctionPickerData/FunctionPicker.h"
-//---
 #include "InputTriggers.h"
-//---
+
 #include "BmrInputActionBinding.generated.h"
 
 /**

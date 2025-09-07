@@ -3,10 +3,13 @@
 #pragma once
 
 #include "GameFramework/PlayerState.h"
-//---
+
+// Bomber
+#include "Bomber.h" // EEndGameState, EPlayerType
+
+// UE
 #include "AbilitySystemInterface.h"
-#include "Bomber.h"
-//---
+
 #include "MyPlayerState.generated.h"
 
 enum class EPlayerType : uint8;
@@ -17,7 +20,8 @@ enum class EPlayerType : uint8;
  * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused for both human and bot characters.
  */
 UCLASS(Config = "GameUserSettings", DefaultConfig)
-class BOMBER_API AMyPlayerState : public APlayerState, public IAbilitySystemInterface
+class BOMBER_API AMyPlayerState : public APlayerState,
+                                  public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 

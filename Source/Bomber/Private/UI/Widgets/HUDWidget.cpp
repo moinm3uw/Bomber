@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/Widgets/HUDWidget.h"
-//---
+
+// Bomber
 #include "GameFramework/MyPlayerState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Animation/WidgetAnimation.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(HUDWidget)
 
 //  Called after the underlying slate widget is constructed

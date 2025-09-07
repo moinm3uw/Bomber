@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-//---
-#include "FTGTypes.h"
-//---
+
+// FTG
+#include "FTGTypes.h" // FFTGArchetype
+
 #include "FTGComponent.generated.h"
 
 class UFTGDataAsset;
@@ -14,7 +15,7 @@ class UStaticMesh;
 /**
  * Is main logic component that generates foot trails.
  */
-UCLASS(BlueprintType, Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FOOTTRAILSGENERATORRUNTIME_API UFTGComponent : public UActorComponent
 {
 	GENERATED_BODY()

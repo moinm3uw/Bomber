@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "LevelActorsUtilsLibrary.generated.h"
 
 class UMapComponent;
@@ -26,8 +26,8 @@ public:
 	 * @param ActorsTypesBitmask EActorType bitmask of actors types.*/
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static void GetLevelActors(
-		TSet<UMapComponent*>& OutBitmaskedComponents,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    TSet<UMapComponent*>& OutBitmaskedComponents,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns level actors that are located on the specified cells.
 	 * @param OutMapComponents Will contains map components of owners located on the specified cells.
@@ -45,7 +45,7 @@ public:
 	 * @param ActorsTypesBitmask EActorType bitmask of actors types.*/
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static UMapComponent* GetLevelActorByIndex(int32 Index,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Takes level actors and returns only matching with specified actor types.
 	 * Could be useful to extract only needed actors.
@@ -54,6 +54,6 @@ public:
 	 * @return actors of specified types. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	static TSet<UMapComponent*> FilterLevelActors(
-		const TSet<UMapComponent*>& InActors,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const TSet<UMapComponent*>& InActors,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 };

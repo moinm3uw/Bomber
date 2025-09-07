@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "NMMUtils.generated.h"
 
 enum class ENMMState : uint8;

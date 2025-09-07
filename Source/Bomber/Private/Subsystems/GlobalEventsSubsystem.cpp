@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/GlobalEventsSubsystem.h"
-//---
+
+// Bomber
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
+
+// UE
 #include "Engine/World.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GlobalEventsSubsystem)
 
 // Returns this Subsystem, is checked and will crash if can't be obtained
-UGlobalEventsSubsystem& UGlobalEventsSubsystem::Get(const UObject* OptionalWorldContext/* = nullptr*/)
+UGlobalEventsSubsystem& UGlobalEventsSubsystem::Get(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	UGlobalEventsSubsystem* Subsystem = GetGlobalEventsSubsystem(OptionalWorldContext);
 	checkf(Subsystem, TEXT("%s: 'Subsystem' is null"), *FString(__FUNCTION__));
@@ -17,7 +19,7 @@ UGlobalEventsSubsystem& UGlobalEventsSubsystem::Get(const UObject* OptionalWorld
 }
 
 // Returns the pointer to this Subsystem
-UGlobalEventsSubsystem* UGlobalEventsSubsystem::GetGlobalEventsSubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UGlobalEventsSubsystem* UGlobalEventsSubsystem::GetGlobalEventsSubsystem(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UWorld* World = UUtilsLibrary::GetPlayWorld(OptionalWorldContext);
 	return World ? World->GetSubsystem<UGlobalEventsSubsystem>() : nullptr;

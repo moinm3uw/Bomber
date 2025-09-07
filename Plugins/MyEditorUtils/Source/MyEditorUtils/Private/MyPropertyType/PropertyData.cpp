@@ -1,7 +1,8 @@
 // Copyright (c) Yevhenii Selivanov.
 
 #include "MyPropertyType/PropertyData.h"
-//---
+
+// UE
 #include "PropertyHandle.h"
 
 // Empty property data
@@ -9,7 +10,7 @@ const FPropertyData FPropertyData::Empty = FPropertyData();
 
 // Custom constructor, is not required, but fully init property data.
 FPropertyData::FPropertyData(TSharedRef<IPropertyHandle> InPropertyHandle)
-	: PropertyHandle(MoveTemp(InPropertyHandle))
+    : PropertyHandle(MoveTemp(InPropertyHandle))
 {
 	PropertyName = GetPropertyNameFromHandle();
 	PropertyValue = GetPropertyValueFromHandle();
@@ -35,7 +36,7 @@ FName FPropertyData::GetPropertyValueFromHandle() const
 	if (PropertyHandle.IsValid())
 	{
 		FString ValueString;
-		PropertyHandle->GetValueAsDisplayString(/*Out*/ValueString);
+		PropertyHandle->GetValueAsDisplayString(/*Out*/ ValueString);
 		if (ValueString.Len() < NAME_SIZE)
 		{
 			ValueName = *ValueString;
@@ -50,7 +51,7 @@ void* FPropertyData::GetPropertyValuePtrFromHandle() const
 	void* FoundData = nullptr;
 	if (PropertyHandle.IsValid())
 	{
-		PropertyHandle->GetValueData(/*Out*/FoundData);
+		PropertyHandle->GetValueData(/*Out*/ FoundData);
 	}
 	return FoundData;
 }
@@ -80,7 +81,7 @@ bool FPropertyData::IsMetaKeyExists(FName Key) const
 }
 
 // Set the meta value by specified key
-void FPropertyData::SetMetaDataValue(FName Key, FName NewValue, bool bNotifyPostChange/* = false*/)
+void FPropertyData::SetMetaDataValue(FName Key, FName NewValue, bool bNotifyPostChange /* = false*/)
 {
 	FProperty* Property = !Key.IsNone() ? GetProperty() : nullptr;
 	if (!Property)

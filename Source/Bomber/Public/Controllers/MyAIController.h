@@ -3,16 +3,17 @@
 #pragma once
 
 #include "AIController.h"
-//---
+
+// Bomber
 #include "Structures/Cell.h"
-//---
+
 #include "MyAIController.generated.h"
 
 enum class ECurrentGameState : uint8;
 
 /**
  * Characters controlled by bots.
-* @see Access its data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
+ * @see Access its data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
  */
 UCLASS()
 class BOMBER_API AMyAIController final : public AAIController
@@ -21,8 +22,8 @@ class BOMBER_API AMyAIController final : public AAIController
 
 public:
 	/* ---------------------------------------------------
-	*		Public functions
-	* --------------------------------------------------- */
+	 *		Public functions
+	 * --------------------------------------------------- */
 
 	/** Sets default values for this character's properties */
 	AMyAIController();
@@ -46,8 +47,8 @@ public:
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** Timer to update AI. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Update Handle"))
@@ -67,8 +68,8 @@ protected:
 	bool bCanSpawnBombs = true;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;

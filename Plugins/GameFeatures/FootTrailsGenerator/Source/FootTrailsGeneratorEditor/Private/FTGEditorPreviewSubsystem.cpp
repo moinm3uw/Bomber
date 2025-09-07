@@ -1,16 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "FTGEditorPreviewSubsystem.h"
-//---
+
+/// Bomber
 #include "FTGComponent.h"
 #include "FTGEditorUtils.h"
 #include "GeneratedMap.h"
+#include "InstancedStaticMeshActor.h"
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
-#include "InstancedStaticMeshActor.h"
-//---
+
+// UE
 #include "Engine/World.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(FTGEditorPreviewSubsystem)
 
 // Is called when the subsystem is initialized
@@ -35,7 +37,7 @@ void UFTGEditorPreviewSubsystem::Deinitialize()
 void UFTGEditorPreviewSubsystem::OnBeginPlay(UWorld* World, FWorldInitializationValues WorldInitializationValues)
 {
 	if (!FEditorUtilsLibrary::IsEditorNotPieWorld() // Only preview in editor, not in PIE
-		|| IsValid(FootTrailGeneratorInternal)) // skip if already initialized
+	    || IsValid(FootTrailGeneratorInternal)) // skip if already initialized
 	{
 		return;
 	}

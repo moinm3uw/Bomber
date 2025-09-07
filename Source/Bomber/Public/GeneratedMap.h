@@ -3,13 +3,16 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
-#include "Bomber.h"
+
+// Bomber
 #include "Structures/Cell.h"
-#include "Structures/MapComponentsContainer.h"
 #include "Structures/GeneratedMapSettings.h"
-//---
+#include "Structures/MapComponentsContainer.h"
+
 #include "GeneratedMap.generated.h"
+
+enum class ECurrentGameState : uint8;
+enum class EActorType : uint8;
 
 class UMapComponent;
 
@@ -120,8 +123,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void AddToGrid(UMapComponent* AddedComponent);
 
-	/** Internal client-only method to resolve a newly spawned Map Component. 
-	 * Unlike actors, components lack automatic FNetGUID resolution if the reference replicates 
+	/** Internal client-only method to resolve a newly spawned Map Component.
+	 * Unlike actors, components lack automatic FNetGUID resolution if the reference replicates
 	 * before the component is spawned. Manually binds the component to its replicated entry. */
 	void ResolveSpawnedMapComponent(UMapComponent& AddedComponent);
 
@@ -201,14 +204,14 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Grid Cells", ShowOnlyInnerProperties))
 	TArray<FCell> LocalGridCellsInternal = FCell::EmptyCellsArr;
 
-	/** Stores and replicates map components of currently spawned level actors. 
-	 * Updates dynamically during level regeneration, explosions, player movement, and item spawns. 
-	 * Uses a fast array to replicate efficiently while minimizing network usage. 
+	/** Stores and replicates map components of currently spawned level actors.
+	 * Updates dynamically during level regeneration, explosions, player movement, and item spawns.
+	 * Uses a fast array to replicate efficiently while minimizing network usage.
 	 * Ensures reliable replication even when the number of components remains unchanged. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Map Components"))
 	FMapComponentsContainer MapComponentsInternal;
 
-	/** Is exposed to track when the Generate Level Actors is completed on the client. 
+	/** Is exposed to track when the Generate Level Actors is completed on the client.
 	 * Server updates this token on every Generate Level Actors call.
 	 * Client monitors updates and confirms when tokens match to broadcast the On Generated Level Actors event. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Generate Level Actors Token"))
@@ -221,7 +224,7 @@ protected:
 	/** Specify for which level actors should show debug renders, is not available in shipping build.
 	 * Can be overridden by `Bomber.Debug.DisplayCells VALUES` cheat. */
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "C++", meta = (DevelopmentOnly, DisplayName = "Display Cells Actor Types", Bitmask, BitmaskEnum = "/Script/Bomber.EActorType"))
-	int32 DisplayCellsActorTypesInternal = TO_FLAG(EAT::None);
+	int32 DisplayCellsActorTypesInternal = 0;
 
 	/* ---------------------------------------------------
 	 *		Protected functions

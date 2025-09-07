@@ -4,14 +4,14 @@
 
 #include "Bomber.generated.h"
 
-#define IS_TRANSIENT(Obj) ( FTransientChecker::IsTransient(Obj) )
+#define IS_TRANSIENT(Obj) (FTransientChecker::IsTransient(Obj))
 
 namespace FTransientChecker
 {
 /** Returns true is specified object is pending kill, CDO or exists on the Transient level. */
 BOMBER_API bool IsTransient(const UObject* Obj);
 BOMBER_API bool IsTransientLevel(const UObject* Obj);
-}
+} // namespace FTransientChecker
 
 /**
  * Is useful for work with bit flags.
@@ -35,10 +35,10 @@ BOMBER_API bool IsTransientLevel(const UObject* Obj);
 BOMBER_API DECLARE_LOG_CATEGORY_EXTERN(LogBomber, Log, All);
 
 /**
-* Types of all actors on the Generated Map
-* Where Walls, Boxes and Bombs are the physical barriers for players
-* It is possible to make a bitmask of actors types
-*/
+ * Types of all actors on the Generated Map
+ * Where Walls, Boxes and Bombs are the physical barriers for players
+ * It is possible to make a bitmask of actors types
+ */
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
 enum class EActorType : uint8
 {

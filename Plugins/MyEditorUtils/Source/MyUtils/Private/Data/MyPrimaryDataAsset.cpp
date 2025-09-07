@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPrimaryDataAsset)
 
 // Loads the data asset by the specified soft pointer or returns the cached one

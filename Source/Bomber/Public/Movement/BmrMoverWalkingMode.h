@@ -3,7 +3,7 @@
 #pragma once
 
 #include "DefaultMovementSet/Modes/WalkingMode.h"
-//---
+
 #include "BmrMoverWalkingMode.generated.h"
 
 /**
@@ -36,9 +36,9 @@ protected:
 	 * Overrides
 	 ********************************************************************************************* */
 protected:
-    /** Called when the mode is registered, initializes cached settings. */
+	/** Called when the mode is registered, initializes cached settings. */
 	virtual void OnRegistered(const FName ModeName) override;
-    
-    /** Is overridden to handle walking-related movement. */
+
+	/** Is overridden to handle walking-related movement. */
 	virtual void GenerateMove_Implementation(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const override;
 };

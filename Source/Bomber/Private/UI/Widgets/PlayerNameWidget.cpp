@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/Widgets/PlayerNameWidget.h"
-//---
+
+// Bomber
 #include "DataAssets/PlayerDataAsset.h"
-//---
+
+// UE
 #include "Components/Image.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextBlock.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerNameWidget)
 
 /*********************************************************************************************

@@ -1,10 +1,11 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Movement/BmrMoverTurnGenerator.h"
-//---
+
+// Bomber
 #include "MoverDataModelTypes.h"
 #include "MoverSimulationTypes.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrMoverTurnGenerator)
 
 // Is overridden to handle orientation-related movement

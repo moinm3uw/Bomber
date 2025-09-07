@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "BomberEditorModule.h"
-//---
+
+// Bomber
 #include "AttachedMeshCustomization.h"
 #include "BmrPowerupTagCustomization.h"
 #include "PlayerTagCustomization.h"
-//---
+
+// UE
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_GAME_MODULE(FBomberEditorModule, BomberEditor);

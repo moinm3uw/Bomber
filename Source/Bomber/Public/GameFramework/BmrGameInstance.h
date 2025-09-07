@@ -3,7 +3,7 @@
 #pragma once
 
 #include "AdvancedFriendsGameInstance.h"
-//---
+
 #include "BmrGameInstance.generated.h"
 
 /**

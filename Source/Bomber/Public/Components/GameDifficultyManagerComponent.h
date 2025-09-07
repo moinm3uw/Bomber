@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-//---
+
 #include "GameDifficultyManagerComponent.generated.h"
 
 enum class EGameDifficulty : uint8;
@@ -46,8 +46,8 @@ public:
 	bool HasDifficulty(UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 DifficultiesBitmask) const;
 
 	/** Returns current difficulty level, where:
-	* 0 - EGameDifficulty::Easy; 1 - EGameDifficulty::Medium; 2 - EGameDifficulty::Hard
-	* Use GetDifficultyType() if is needed to obtain enum type instead of level. */
+	 * 0 - EGameDifficulty::Easy; 1 - EGameDifficulty::Medium; 2 - EGameDifficulty::Hard
+	 * Use GetDifficultyType() if is needed to obtain enum type instead of level. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetDifficultyLevel() const { return ReplicatedDifficultyLevelInternal != INDEX_NONE ? ReplicatedDifficultyLevelInternal : DifficultyLevelInternal; }
 
@@ -74,7 +74,7 @@ protected:
 	 * Data
 	 ********************************************************************************************* */
 protected:
-	/** The game difficulty level, where: 
+	/** The game difficulty level, where:
 	 * 0 - EGameDifficulty::Easy; 1 - EGameDifficulty::Medium; 2 - EGameDifficulty::Hard etc.
 	 * It uses integer to be able to work with Settings menu.
 	 * Is config property, can be set in Settings menu. */

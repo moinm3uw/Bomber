@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UtilityLibraries/MyTagUtilsLibrary.h"
-//---
+
+// Bomber
 #include "Structures/BmrPowerupTag.h"
 #include "Structures/PlayerTag.h"
-//---
+
+// UE
 #include "GameplayTagContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyTagUtilsLibrary)
 
 // Converts a PlayerTag to a GameplayTag

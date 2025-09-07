@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/UIDataAsset.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UIDataAsset)
 
 // All UI widget tags registered in Widgets Subsystem, used to obtain widget data or widget instance
