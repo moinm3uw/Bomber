@@ -12,13 +12,11 @@
 
 #include "UIDataAsset.generated.h"
 
-/** All UI widget tags registered in Widgets Subsystem, used to obtain widget data or widget instance. */
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_HUD);
+/** Some of UI widget tags registered in Widgets Subsystem and used in code to obtain widget data or widget instance.
+ * All other widget tags are defined in DefaultUITags.ini */
 BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_SETTINGS);
 BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_NICKNAME);
 BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_FPSCOUNTER);
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_MULTIPLAYER);
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_POWERUPS);
 
 enum class EEndGameState : uint8;
 enum class EPlayerType : uint8;
@@ -38,6 +36,10 @@ public:
 	/** Returns widget data associated with the given tag, or invalid widget data if not found. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FManageableWidgetData& GetWidgetDataByTag(FGameplayTag InTag) const;
+
+	/** Returns widget data associated with the given widget class, or invalid widget data if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const FManageableWidgetData& GetWidgetDataByClass(TSubclassOf<class UUserWidget> WidgetClass) const;
 
 	/** Returns all widgets to create, each identified by a gameplay tag.
 	 * @see UUIDataAsset::AllWidgetData. */

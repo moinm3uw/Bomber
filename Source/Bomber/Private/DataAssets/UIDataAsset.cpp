@@ -6,15 +6,15 @@
 #include "Bomber.h"
 #include "DataAssets/DataAssetsContainer.h"
 
+// UE
+#include "Blueprint/UserWidget.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UIDataAsset)
 
 // All UI widget tags registered in Widgets Subsystem, used to obtain widget data or widget instance
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_HUD, "UI.Widget.HUD");
 UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_SETTINGS, "UI.Widget.Settings");
 UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_NICKNAME, "UI.Widget.Nickname");
 UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_FPSCOUNTER, "UI.Widget.FPSCounter");
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_MULTIPLAYER, "UI.Widget.Multiplayer");
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_POWERUPS, "UI.Widget.Powerups");
 
 // Returns the UI data asset
 const UUIDataAsset& UUIDataAsset::Get()
@@ -28,6 +28,16 @@ const UUIDataAsset& UUIDataAsset::Get()
 const FManageableWidgetData& UUIDataAsset::GetWidgetDataByTag(FGameplayTag InTag) const
 {
 	const FManageableWidgetData* FoundWidgetData = AllWidgetData.FindByKey(InTag);
+	return FoundWidgetData ? *FoundWidgetData : FManageableWidgetData::Empty;
+}
+
+// Returns widget data associated with the given widget class, or null if not found
+const FManageableWidgetData& UUIDataAsset::GetWidgetDataByClass(TSubclassOf<UUserWidget> WidgetClass) const
+{
+	const FManageableWidgetData* FoundWidgetData = AllWidgetData.FindByPredicate([WidgetClass](const FManageableWidgetData& It)
+	{
+		return It.WidgetClass == WidgetClass;
+	});
 	return FoundWidgetData ? *FoundWidgetData : FManageableWidgetData::Empty;
 }
 

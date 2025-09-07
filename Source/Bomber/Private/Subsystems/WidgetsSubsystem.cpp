@@ -7,9 +7,6 @@
 #include "DataAssets/UIDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "MyUtilsLibraries/WidgetUtilsLibrary.h"
-#include "UI/SettingsWidget.h"
-#include "UI/Widgets/HUDWidget.h"
-#include "UI/Widgets/PlayerNameWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 // UE
@@ -48,39 +45,53 @@ UWidgetsSubsystem& UWidgetsSubsystem::Get(const UObject* OptionalWorldContext)
 // Create specified widget and add it to Manageable widgets list, so its visibility can be changed globally
 UUserWidget* UWidgetsSubsystem::CreateManageableWidget(const FManageableWidgetData& WidgetData, const UObject* OptionalWorldContext /* = nullptr*/)
 {
-	if (!ensureMsgf(WidgetData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'WidgetData' is not valid: %s"), __LINE__, __FUNCTION__, *WidgetData.ToString()))
+	if (!ensureMsgf(WidgetData.IsValid(), TEXT("ASSERT: [%i] %hs:\n'WidgetData' is not valid, likely not set in the UI Data Asset: %s"), __LINE__, __FUNCTION__, *WidgetData.ToString()))
 	{
 		return nullptr;
 	}
 
 	UUserWidget* Widget = FWidgetUtilsLibrary::CreateWidgetByClass(WidgetData.WidgetClass, WidgetData.bAddToViewport, WidgetData.ZOrder, OptionalWorldContext);
-	AllManageableWidgetsInternal.Add(WidgetData.WidgetTag, Widget);
+	FBmrManageableWidgetsContainer& WidgetsContainer = AllManageableWidgetsInternal.FindOrAdd(WidgetData.WidgetTag);
+	WidgetsContainer.WidgetInstances.Add(Widget);
+
 	return Widget;
 }
 
-// Returns the widget instance by its tag
-UUserWidget* UWidgetsSubsystem::GetWidgetByTag(FGameplayTag WidgetTag) const
+// The same as CreateManageableWidget, but finds widget data by tag from the UI Data Asset
+UUserWidget* UWidgetsSubsystem::CreateManageableWidgetByTag(FGameplayTag WidgetTag, const UObject* OptionalWorldContext)
 {
-	const TSoftObjectPtr<UUserWidget>* WidgetPtr = AllManageableWidgetsInternal.Find(WidgetTag);
-	return WidgetPtr ? WidgetPtr->Get() : nullptr;
+	return CreateManageableWidget(UUIDataAsset::Get().GetWidgetDataByTag(WidgetTag), OptionalWorldContext);
 }
 
-// Removes given widget from the list and destroys it
-void UWidgetsSubsystem::DestroyManageableWidget(UUserWidget* Widget)
+// Returns the widget instance by its tag
+UUserWidget* UWidgetsSubsystem::GetWidgetByTag(FGameplayTag WidgetTag, int32 OptionalIndex /* = 0*/) const
 {
-	if (!IsValid(Widget))
+	const FBmrManageableWidgetsContainer* WidgetsContainer = AllManageableWidgetsInternal.Find(WidgetTag);
+	if (!WidgetsContainer
+	    || !WidgetsContainer->WidgetInstances.IsValidIndex(OptionalIndex))
 	{
-		return;
+		return nullptr;
 	}
 
-	if (const FGameplayTag* WidgetTag = AllManageableWidgetsInternal.FindKey(Widget))
+	return WidgetsContainer->WidgetInstances[OptionalIndex].Get();
+}
+
+// Returns all widgets associated with the given tag
+void UWidgetsSubsystem::GetAllWidgetsByTag(FGameplayTag WidgetTag, TArray<UUserWidget*>& OutWidgets) const
+{
+	for (const TPair<FGameplayTag, FBmrManageableWidgetsContainer>& PairIt : AllManageableWidgetsInternal)
 	{
-		AllManageableWidgetsInternal.Remove(*WidgetTag);
+		if (PairIt.Key.MatchesTag(WidgetTag))
+		{
+			for (UUserWidget* Widget : PairIt.Value.WidgetInstances)
+			{
+				if (Widget)
+				{
+					OutWidgets.Add(Widget);
+				}
+			}
+		}
 	}
-
-	AllHiddenWidgetsInternal.RemoveSwap(Widget);
-
-	FWidgetUtilsLibrary::DestroyWidget(*Widget);
 }
 
 // Removes given widget from the list and destroys it by its tag
@@ -91,12 +102,27 @@ void UWidgetsSubsystem::DestroyManageableWidgetByTag(FGameplayTag WidgetTag)
 		return;
 	}
 
-	const TSoftObjectPtr<UUserWidget>* WidgetPtr = AllManageableWidgetsInternal.Find(WidgetTag);
-	UUserWidget* Widget = WidgetPtr ? WidgetPtr->Get() : nullptr;
-	if (Widget)
+	FBmrManageableWidgetsContainer* WidgetsContainer = AllManageableWidgetsInternal.Find(WidgetTag);
+	if (!WidgetsContainer)
 	{
-		DestroyManageableWidget(Widget);
+		// Such widget tag is not even registered
+		return;
 	}
+
+	// The same tag might be associated with multiple widgets (like player nicknames), so destroy them all
+	for (int32 Index = WidgetsContainer->WidgetInstances.Num() - 1; Index >= 0; --Index)
+	{
+		if (UUserWidget* WidgetIt = WidgetsContainer->WidgetInstances[Index].Get())
+		{
+			FWidgetUtilsLibrary::DestroyWidget(*WidgetIt);
+		}
+
+		WidgetsContainer->WidgetInstances.RemoveAtSwap(Index);
+	}
+
+	AllManageableWidgetsInternal.Remove(WidgetTag);
+
+	AllHiddenWidgetsInternal.RemoveTag(WidgetTag);
 }
 
 /*********************************************************************************************
@@ -128,23 +154,7 @@ void UWidgetsSubsystem::InitWidgets()
 	for (const FManageableWidgetData& WidgetDataIt : AllWidgetData)
 	{
 		// Automatically create and add all widgets to the viewport from the UI Data Asset
-		UUserWidget& NewWidget = CreateManageableWidgetChecked(WidgetDataIt);
-
-		// Handle extra initialization logic for some widgets
-		if (WidgetDataIt.WidgetTag == TAG_UI_WIDGET_SETTINGS)
-		{
-			USettingsWidget& SettingsWidget = *CastChecked<USettingsWidget>(&NewWidget);
-			SettingsWidget.TryConstructSettings();
-		}
-		else if (WidgetDataIt.WidgetTag == TAG_UI_WIDGET_NICKNAME)
-		{
-			static constexpr int32 MaxPlayersNum = 4;
-			for (int32 Index = 0; Index < MaxPlayersNum; ++Index)
-			{
-				UPlayerNameWidget& NicknameWidget = CreateManageableWidgetChecked<UPlayerNameWidget>(WidgetDataIt);
-				NicknameWidgetsInternal.Add(&NicknameWidget);
-			}
-		}
+		CreateManageableWidget(WidgetDataIt);
 	}
 
 	bAreWidgetInitializedInternal = true;
@@ -166,8 +176,7 @@ void UWidgetsSubsystem::CleanupWidgets()
 	}
 
 	AllManageableWidgetsInternal.Empty();
-	AllHiddenWidgetsInternal.Empty();
-	NicknameWidgetsInternal.Empty();
+	AllHiddenWidgetsInternal = FGameplayTagContainer::EmptyContainer;
 
 	bAreWidgetInitializedInternal = false;
 }
@@ -180,58 +189,52 @@ void UWidgetsSubsystem::CleanupWidgets()
 void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRestoreVisibilityLater /* = true*/)
 {
 	const ESlateVisibility DesiredVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
-	const TArray<TSoftObjectPtr<UUserWidget>> WidgetsToProcess = [&]()
+	const FGameplayTagContainer TagsToProcess = [&]()
 	{
-		TArray<TSoftObjectPtr<UUserWidget>> Result;
+		FGameplayTagContainer Result = FGameplayTagContainer::EmptyContainer;
 		if (bMakeVisible)
 		{
 			Result = AllHiddenWidgetsInternal;
 		}
 		else
 		{
-			AllManageableWidgetsInternal.GenerateValueArray(Result);
+			TArray<FGameplayTag> AllTags;
+			AllManageableWidgetsInternal.GenerateKeyArray(AllTags);
+			Result = FGameplayTagContainer::CreateFromArray(AllTags);
 		}
 		return Result;
 	}();
 
 	if (!bMakeVisible)
 	{
-		AllHiddenWidgetsInternal.Empty();
+		AllHiddenWidgetsInternal = FGameplayTagContainer::EmptyContainer;
 	}
 
-	for (const TSoftObjectPtr<UUserWidget>& Widget : WidgetsToProcess)
+	for (const FGameplayTag& WidgetTag : TagsToProcess)
 	{
-		if (Widget && Widget->GetVisibility() != DesiredVisibility)
+		const FBmrManageableWidgetsContainer* Container = AllManageableWidgetsInternal.Find(WidgetTag);
+		if (!Container)
 		{
-			Widget->SetVisibility(DesiredVisibility);
+			continue;
+		}
 
-			if (!bMakeVisible
-			    && bCanRestoreVisibilityLater)
+		for (UUserWidget* Widget : Container->WidgetInstances)
+		{
+			if (Widget && Widget->GetVisibility() != DesiredVisibility)
 			{
-				AllHiddenWidgetsInternal.Add(Widget);
+				Widget->SetVisibility(DesiredVisibility);
+
+				if (!bMakeVisible && bCanRestoreVisibilityLater)
+				{
+					AllHiddenWidgetsInternal.AddTag(WidgetTag);
+				}
 			}
 		}
 	}
 
 	if (bMakeVisible)
 	{
-		AllHiddenWidgetsInternal.Empty();
-	}
-}
-
-/*********************************************************************************************
- * FPS Counter
- ********************************************************************************************* */
-
-// Set true to show the FPS counter widget on the HUD
-void UWidgetsSubsystem::SetFPSCounterEnabled(bool bEnable)
-{
-	UUserWidget* FPSCounterWidget = GetWidgetByTag(TAG_UI_WIDGET_FPSCOUNTER);
-	if (ensureMsgf(FPSCounterWidget, TEXT("ASSERT: [%i] %hs:\n'FPSCounterWidget' was not found!"), __LINE__, __FUNCTION__))
-	{
-		const ESlateVisibility NewVisibility = bEnable ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
-		FPSCounterWidget->SetVisibility(NewVisibility);
-		bIsFPSCounterEnabledInternal = bEnable;
+		AllHiddenWidgetsInternal = FGameplayTagContainer::EmptyContainer;
 	}
 }
 

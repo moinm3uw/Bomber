@@ -48,14 +48,21 @@ void UBmrPlayerNameWidgetComponent::Init(AMyPlayerState* PlayerState)
 		return;
 	}
 
+	UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
+	if (!WidgetsSubsystem)
+	{
+		// UI Subsystem is not initialized yet or called on remote clients
+		return;
+	}
+
 	AssociatedPlayerStateInternal = PlayerState;
 
-	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
-	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem ? WidgetsSubsystem->GetNicknameWidget(PlayerState->GetPlayerId()) : nullptr;
+	const int32 PlayerId = PlayerState->GetPlayerId();
+	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem->GetWidgetByTag<UPlayerNameWidget>(TAG_UI_WIDGET_NICKNAME, PlayerId);
 	if (!PlayerNameWidget)
 	{
-		// Widget is not created yet, might be called before UI Subsystem is initialized
-		return;
+		// Widget is not created yet for specified player ID, request it now
+		PlayerNameWidget = &WidgetsSubsystem->CreateManageableWidgetByTagChecked<UPlayerNameWidget>(TAG_UI_WIDGET_NICKNAME);
 	}
 
 	// Configure widget content and association

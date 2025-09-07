@@ -3,7 +3,9 @@
 #include "GameFramework/MyGameUserSettings.h"
 
 // Bomber
+#include "DataAssets/UIDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
@@ -424,6 +426,23 @@ void UMyGameUserSettings::UpdateSupportedLanguages()
 	if (CurrentLanguageIndexInternal == INDEX_NONE)
 	{
 		CurrentLanguageIndexInternal = CulturesInternal.IndexOfByKey(AppliedCultureInternal);
+	}
+}
+
+/*********************************************************************************************
+ * FPS Counter
+ ********************************************************************************************* */
+
+// Set true to show the FPS counter widget on the HUD
+void UMyGameUserSettings::SetFPSCounterEnabled(bool bEnable)
+{
+	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
+	UUserWidget* FPSCounterWidget = WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag(TAG_UI_WIDGET_FPSCOUNTER) : nullptr;
+	if (ensureMsgf(FPSCounterWidget, TEXT("ASSERT: [%i] %hs:\n'FPSCounterWidget' was not found!"), __LINE__, __FUNCTION__))
+	{
+		const ESlateVisibility NewVisibility = bEnable ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+		FPSCounterWidget->SetVisibility(NewVisibility);
+		bIsFPSCounterEnabledInternal = bEnable;
 	}
 }
 

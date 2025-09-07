@@ -201,6 +201,23 @@ protected:
 	FName AppliedCultureInternal;
 
 	/*********************************************************************************************
+	 * FPS Counter
+	 ********************************************************************************************* */
+public:
+	/** Set true to show the FPS counter widget on the HUD. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetFPSCounterEnabled(bool bEnable);
+
+	/** Returns true if the FPS counter widget is shown on the HUD. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE bool IsFPSCounterEnabled() const { return bIsFPSCounterEnabledInternal; }
+
+protected:
+	/** If true, shows FPS counter widget on the HUD, is config property. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Config, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Is FPS Counter Enabled"))
+	bool bIsFPSCounterEnabledInternal;
+
+	/*********************************************************************************************
 	 * Overrides
 	 ********************************************************************************************* */
 public:

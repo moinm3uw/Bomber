@@ -45,3 +45,16 @@ struct BOMBER_API FManageableWidgetData
 	/** Operators for finding widget data by tag. */
 	friend BOMBER_API bool operator==(const FManageableWidgetData& A, FGameplayTag B) { return A.WidgetTag == B; }
 };
+
+/**
+ * A container struct to hold multiple manageable widgets, which usually are created dynamically and associated with specific UI tag.
+ */
+USTRUCT(BlueprintType)
+struct BOMBER_API FBmrManageableWidgetsContainer
+{
+	GENERATED_BODY()
+
+	/** Widget instances managed by this container. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = "C++")
+	TArray<TObjectPtr<UUserWidget>> WidgetInstances;
+};
