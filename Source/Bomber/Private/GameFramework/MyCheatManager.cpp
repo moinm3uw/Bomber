@@ -303,6 +303,54 @@ void UMyCheatManager::SpawnActorByType(EActorType ActorType, int32 ColumnX, int3
 	GeneratedMap.SpawnActorWithMesh(ActorType, Cell, {Row});
 }
 
+// Overrides the percentage of walls spawn during the level generation
+void UMyCheatManager::SetWallsChance(int32 WallsChance)
+{
+	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
+	FGeneratedMapSettings CurrentSettings = GeneratedMap.GetGenerationSetting();
+
+	// Use default from data asset if -1, otherwise use provided value
+	constexpr int32 MaxChance = 100;
+	WallsChance = FMath::Min(WallsChance, MaxChance);
+	CurrentSettings.WallsChance = WallsChance >= 0 ? WallsChance : UGeneratedMapDataAsset::Get().GetGenerationSettings().WallsChance;
+	GeneratedMap.SetOverriddenGenerationSettings(/*bEnableOverride*/ true, CurrentSettings);
+
+	// Restart the level
+	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	{
+		MyGameState->SetGameState(ECurrentGameState::GameStarting);
+	}
+	else
+	{
+		GeneratedMap.GenerateLevelActors();
+	}
+}
+
+// Overrides the percentage of boxes spawn during the level generation
+void UMyCheatManager::SetBoxesChance(int32 BoxesChance)
+{
+	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
+	FGeneratedMapSettings CurrentSettings = GeneratedMap.GetGenerationSetting();
+
+	// Use default from data asset if -1, otherwise use provided value
+	constexpr int32 MaxChance = 100;
+	BoxesChance = FMath::Min(BoxesChance, MaxChance);
+	CurrentSettings.BoxesChance = BoxesChance >= 0 ? BoxesChance : UGeneratedMapDataAsset::Get().GetGenerationSettings().BoxesChance;
+	GeneratedMap.SetOverriddenGenerationSettings(/*bEnableOverride*/ true, CurrentSettings);
+
+	// Restart the level
+	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	{
+		MyGameState->SetGameState(ECurrentGameState::GameStarting);
+	}
+	else
+	{
+		GeneratedMap.GenerateLevelActors();
+	}
+}
+
 /*********************************************************************************************
  * Camera
  ********************************************************************************************* */

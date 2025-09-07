@@ -149,8 +149,7 @@ public:
 public:
 	/** Sets the size for generated map, it will automatically regenerate the level for given size.
 	 * @param LevelSize The new size where length and width have to be unpaired (odd).
-	 * Bomber.Level.SetSize 9x7 - set the size of the level to 9 columns (width) and 7 rows (length).
-	 */
+	 * Bomber.Level.SetSize 9x7 - set the size of the level to 9 columns (width) and 7 rows (length). */
 	UFUNCTION(meta = (CheatName = "Bomber.Level.SetSize"))
 	static void SetLevelSize(const FString& LevelSize);
 
@@ -159,12 +158,24 @@ public:
 	 * @param ActorType The type of actor to spawn: Bomb, Box, Item, Player, Wall
 	 * @param ColumnX Position on the X-axis by column: 0, 1... N
 	 * @param RowY  Position on the Y-axis by row: 0, 1... N
-	 * @param RowIndex The row from Data Assets to select across different variants of the same actor type: 0, 1... N
+	 * @param SkinIndex The row from Data Assets to select across different variants of the same actor type: 0, 1... N
 	 * Bomber.Level.SpawnActorByType Bomb 1 1 0 - spawn a bomb at the position (1, 1) with the first variant of the bomb (row 0 - Maya).
 	 * Bomber.Level.SpawnActorByType Player 2 2 4 - spawn a player at the position (2, 2) with the fifth variant of the player (row 4 - AI).
 	 */
 	UFUNCTION(meta = (CheatName = "Bomber.Level.SpawnActorByType"))
-	static void SpawnActorByType(EActorType ActorType, int32 ColumnX, int32 RowY, int32 RowIndex);
+	static void SpawnActorByType(EActorType ActorType, int32 ColumnX, int32 RowY, int32 SkinIndex);
+
+	/** Overrides the percentage of walls spawn during the level generation, it will automatically regenerate the level for given chance.
+	 * @param WallsChance The new walls spawn chance where 100 is maximum, 0 is empty level with no walls, -1 will use the chance from GeneratedMapSettings.
+	 * Bomber.Level.SetWallsChance 100 - set 100% chance to spawn walls. */
+	UFUNCTION(meta = (CheatName = "Bomber.Level.SetWallsChance"))
+	static void SetWallsChance(int32 WallsChance);
+
+	/** Overrides the percentage of boxes spawn during the level generation, it will automatically regenerate the level for given chance.
+	 * @param BoxesChance The new boxes spawn chance where 100 is maximum, 0 is empty level with no boxes, -1 will use the chance from GeneratedMapSettings.
+	 * Bomber.Level.SetBoxesChance 100 - set 100% chance to spawn boxes. */
+	UFUNCTION(meta = (CheatName = "Bomber.Level.SetBoxesChance"))
+	static void SetBoxesChance(int32 BoxesChance);
 
 	/*********************************************************************************************
 	 * Camera

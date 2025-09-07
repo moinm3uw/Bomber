@@ -71,6 +71,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FGeneratedMapSettings& GetGenerationSetting() const;
 
+	/** Allows to override the default settings used for generating the map.
+	 * Is useful for mods, game features and cheats to change the level generation settings in runtime.
+	 * @param bEnableOverride If true, the InSettings will be used instead of the default ones from Data Asset.
+	 * @param InSettings The new settings to use for generating the map, if bEnableOverride is true.
+	 * @warning It will not regenerate the level automatically, call GenerateLevelActors() manually or restart the game (change the game state). */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "InSettings"))
+	void SetOverriddenGenerationSettings(bool bEnableOverride, const FGeneratedMapSettings& InSettings);
+
 	/* Allows to change the size for generated map in runtime, it will automatically regenerate the level.
 	 * Is server-only function, so it will replicate the new transform to clients.
 	 * @warning to change location or rotation, just call SetActorTransform, SetLocation or SetRotation.
@@ -185,13 +193,15 @@ protected:
 	friend class UCellsUtilsLibrary;
 	friend class ULevelActorsUtilsLibrary;
 
-	/** If toggled, custom data will be used for the level generation instead of the default one. */
+	/** If toggled, custom data will be used for the level generation instead of the default ones from Data Asset.
+	 * Can be set right in the Details Panel of the Generated Map actor on the scene, individually per each level.
+	 * Is also useful for mods, game features and cheats. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overide Generation Settings"))
 	bool bOverrideGenerationSettingsInternal = false;
 
 	/** Is optional settings to override the default data. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overidden Generation Settings", EditCondition = "bOverrideGenerationSettingsInternal == true", EditConditionHides))
-	FGeneratedMapSettings OverriddenGenerationSettingsInternal;
+	FGeneratedMapSettings OverriddenGenerationSettingsInternal = FGeneratedMapSettings::Empty;
 
 	/** The blueprint background actor  */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Collision Component"))
@@ -235,6 +245,8 @@ protected:
 	/* ---------------------------------------------------
 	 *		Protected functions
 	 * --------------------------------------------------- */
+
+	friend class UMyCheatManager;
 
 	/** Called when an instance of this class is placed (in editor) or spawned. */
 	virtual void OnConstruction(const FTransform& Transform) override;

@@ -28,6 +28,9 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMap)
 
+// Empty generation settings instance
+const FGeneratedMapSettings FGeneratedMapSettings::Empty = FGeneratedMapSettings();
+
 /* ---------------------------------------------------
  *		Generated Map public functions
  * --------------------------------------------------- */
@@ -100,8 +103,33 @@ const FGeneratedMapSettings& AGeneratedMap::GetGenerationSetting() const
 		return GeneratedMapDataAsset->GetGenerationSettings();
 	}
 
-	static const FGeneratedMapSettings DefaultSettings{};
-	return DefaultSettings;
+	return FGeneratedMapSettings::Empty;
+}
+
+// Allows to override the default settings used for generating the m
+void AGeneratedMap::SetOverriddenGenerationSettings(bool bEnableOverride, const FGeneratedMapSettings& InSettings)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bOverrideGenerationSettingsInternal = bEnableOverride;
+
+	if (!bEnableOverride)
+	{
+		// Disable override and cleanup
+		OverriddenGenerationSettingsInternal = FGeneratedMapSettings::Empty;
+		return;
+	}
+
+	OverriddenGenerationSettingsInternal = InSettings;
+
+	if (!OverriddenGenerationSettingsInternal.Generator)
+	{
+		// Generator is optional and might be not set, use the default one from Data Asset then
+		OverriddenGenerationSettingsInternal.Generator = UGeneratedMapDataAsset::Get().GetGenerationSettings().Generator;
+	}
 }
 
 // Allows to change the size for generated map in runtime, it will automatically regenerate the level
