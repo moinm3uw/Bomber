@@ -5,12 +5,15 @@
 // Bomber
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "AbilitySystemComponent.h"
+#include "DataAssets/UIDataAsset.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 // UE
+#include "Components/Image.h"
 #include "Components/RadialSlider.h"
+#include "Engine/Texture2D.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupWidget)
 
@@ -36,6 +39,32 @@ void UBmrPowerupWidget::SetTargetValue(float NewValue, float MaxValue, bool bImm
 		bNeedsUpdateInternal = true;
 		ElapsedLerpTimeInternal = 0.f;
 	}
+}
+
+// Updates the icon of the powerup item in the UI
+void UBmrPowerupWidget::SetPowerupIcon(FBmrPowerupTag NewItemType)
+{
+	if (!ensureMsgf(PowerUpIcon, TEXT("ASSERT: [%i] %hs:\n'PowerUpIcon' is not constructed!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	ItemTypeInternal = NewItemType;
+
+	UTexture2D* IconTexture = UUIDataAsset::Get().GetPowerupIcon(NewItemType);
+	ensureMsgf(PowerUpIcon, TEXT("ASSERT: [%i] %hs:\n'PowerUpIcon' is not set in UI Data Asset"), __LINE__, __FUNCTION__);
+	FSlateBrush CurrentBrush = PowerUpIcon->GetBrush();
+	CurrentBrush.SetResourceObject(IconTexture);
+	PowerUpIcon->SetBrush(CurrentBrush);
+}
+
+// Called before the underlying slate widget is constructed to update widget at design time
+void UBmrPowerupWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	// Update the icon brush in the editor when tag property is changed
+	SetPowerupIcon(ItemTypeInternal);
 }
 
 // Called after the underlying slate widget is constructed

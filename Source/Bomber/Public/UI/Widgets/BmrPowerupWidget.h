@@ -25,10 +25,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetTargetValue(float NewValue, float MaxValue, bool bImmediateUpdate = false);
 
+	/** Updates the icon of the powerup item in the UI.
+	 * @param NewItemType The tag of powerup item to display. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetPowerupIcon(FBmrPowerupTag NewItemType);
+
 protected:
 	/** Exposed property to be set in Details Panel of the type of item this UI or data element is associated with (e.g., Speed, BombCount, etc.) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Item Type", ExposeOnSpawn = "true"))
 	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
+
+	/** The image UI widget used to display the icon of the power-up item.
+	 * It automatically sets the icon based on the ItemType property. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
+	TObjectPtr<class UImage> PowerUpIcon = nullptr;
 
 	/** Exposed property to be set in Details Panel of the duration of the interpolation when updating visual feedback (e.g., slider value change) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Design", meta = (BlueprintProtected, DisplayName = "Lerp Duration", ClampMin = "0.01"))
@@ -54,6 +64,9 @@ protected:
 	 * Overrides
 	 ********************************************************************************************* */
 protected:
+	/** Called before the underlying slate widget is constructed to update widget at design time. */
+	virtual void NativePreConstruct() override;
+
 	/** Called after the underlying slate widget is constructed.
 	 * May be called multiple times due to adding and removing from the hierarchy. */
 	virtual void NativeConstruct() override;

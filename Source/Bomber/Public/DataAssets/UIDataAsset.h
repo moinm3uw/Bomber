@@ -5,10 +5,11 @@
 #include "Data/MyPrimaryDataAsset.h"
 
 // Bomber
+#include "Structures/BmrPowerupTag.h"
 #include "Structures/ManageableWidgetData.h"
 
 // UE
-#include "NativeGameplayTags.h"
+#include "NativeGameplayTags.h" // UE_DECLARE_GAMEPLAY_TAG_EXTERN
 
 #include "UIDataAsset.generated.h"
 
@@ -56,6 +57,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class UTexture2D* GetDefaultAvatar(EPlayerType PlayerType) const;
 
+	/** Returns the icon for the specified powerup type to display in the UI.
+	 * @see UUIDataAsset::PowerupIconsInternal. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	class UTexture2D* GetPowerupIcon(FBmrPowerupTag PowerupTag) const;
+
 protected:
 	/** List of all widgets to create, each identified by a gameplay tag. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets", meta = (BlueprintProtected))
@@ -65,7 +71,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "End-Game Names"))
 	TMap<EEndGameState, FText> EndGameTextsInternal;
 
-	/** Returns the default avatar for the specified player type. */
+	/** Contains all default avatar for the specified player type when playing against AI or without internet connection. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Default Avatars"))
 	TMap<EPlayerType, TObjectPtr<class UTexture2D>> DefaultAvatarsInternal;
+
+	/** Contains all icons for powerup types to display in the UI. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Powerup Icons"))
+	TMap<FBmrPowerupTag, TObjectPtr<class UTexture2D>> PowerupIconsInternal;
 };

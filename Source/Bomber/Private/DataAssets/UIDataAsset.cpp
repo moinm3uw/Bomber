@@ -63,3 +63,15 @@ UTexture2D* UUIDataAsset::GetDefaultAvatar(EPlayerType PlayerType) const
 	const TObjectPtr<UTexture2D>* FoundTexturePtr = DefaultAvatarsInternal.Find(PlayerType);
 	return FoundTexturePtr ? *FoundTexturePtr : nullptr;
 }
+
+// Returns the icon for the specified powerup type to display in the UI
+class UTexture2D* UUIDataAsset::GetPowerupIcon(FBmrPowerupTag PowerupTag) const
+{
+	if (!PowerupTag.IsValid())
+	{
+		return nullptr;
+	}
+
+	const TObjectPtr<UTexture2D>* FoundTexturePtr = PowerupIconsInternal.Find(PowerupTag);
+	return FoundTexturePtr ? *FoundTexturePtr : nullptr;
+}
