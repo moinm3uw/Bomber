@@ -9,6 +9,8 @@
 
 #include "BmrPowerupsAttributeSet.generated.h"
 
+struct FBmrPowerupTag;
+
 /**
  * Attribute set for powerup-related attributes (items pick-up, character stats, etc.).
  */
@@ -24,6 +26,22 @@ public:
 
 	/** Returns the powerups attribute set for the specified owner. It will crash if can't be obtained. */
 	static const UBmrPowerupsAttributeSet& Get(const UObject* InOwner);
+
+	/** Returns the attribute associated with the specified powerup tag, or an empty attribute if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static FGameplayAttribute GetPowerupBaseAttributeByTag(FBmrPowerupTag InTag);
+
+	/** Returns the max attribute associated with the specified powerup tag, or an empty attribute if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static FGameplayAttribute GetPowerupMaxAttributeByTag(FBmrPowerupTag InTag);
+
+	/** Returns the value of the attribute associated with the specified powerup tag, or -1 if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	float GetPowerupValueByTag(FBmrPowerupTag InTag) const;
+
+	/** Returns the value of the max attribute associated with the specified powerup tag, or -1 if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	float GetPowerupMaxValueByTag(FBmrPowerupTag InTag) const;
 
 	/*********************************************************************************************
 	 * Data attributes

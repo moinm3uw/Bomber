@@ -11,18 +11,17 @@
 #include "Controllers/MyDebugCameraController.h"
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/DataAssetsContainer.h"
+#include "DataAssets/GeneratedMapDataAsset.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "Structures/BmrPowerupTag.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-
-// UE
-#include "DataAssets/GeneratedMapDataAsset.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyCheatManager)
 
@@ -165,11 +164,18 @@ void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 {
 	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
-	if (ASC)
+	if (!ensureMsgf(ASC, TEXT("ASSERT: [%i] %hs:\n'ASC' is not valid!"), __LINE__, __FUNCTION__))
 	{
-		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewLevel);
-		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_FireAttribute(), EGameplayModOp::Override, NewLevel);
-		ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewLevel);
+		return;
+	}
+
+	for (const FGameplayTag& PowerupTagIt : FBmrPowerupTag::GetAll())
+	{
+		const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(PowerupTagIt);
+		if (PowerupAttribute.IsValid())
+		{
+			ASC->ApplyModToAttributeUnsafe(PowerupAttribute, EGameplayModOp::Override, NewLevel);
+		}
 	}
 }
 

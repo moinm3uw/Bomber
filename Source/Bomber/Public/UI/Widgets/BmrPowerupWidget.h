@@ -82,16 +82,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
 
-	/** Called when the power-up data is updated and the UI should reflect new values */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Powerups", meta = (BlueprintProtected))
-	void OnPowerUpsChanged(float NewValue, float MaxValue, struct FBmrPowerupTag PowerupType);
-
-	/** Is called when the Skate attribute is changed, e.g: when player picked up a Skate item. */
-	void OnSkateAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
-
-	/** Is called when the Fire attribute is changed, e.g: when player picked up a Fire item. */
-	void OnFireAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
-
-	/** Is called when the Bomb attribute is changed, e.g: when player picked up a Bomb item. */
-	void OnBombAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
+	/** Is called when the Skate attribute is changed, e.g: when player picked up given item. */
+	void OnPowerupAttributeChanged(const struct FOnAttributeChangeData& OnAttributeChangeData);
 };

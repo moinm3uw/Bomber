@@ -6,6 +6,7 @@
 #include "AbilitySystemGlobals.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
+#include "Structures/BmrPowerupTag.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupsAttributeSet)
 
@@ -27,6 +28,76 @@ const UBmrPowerupsAttributeSet& UBmrPowerupsAttributeSet::Get(const UObject* InO
 	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = GetPowerupsAttributeSet(InOwner);
 	checkf(PowerupsAttributeSet, TEXT("ERROR: [%i] %hs:\n'PowerupsAttributeSet' is null!"), __LINE__, __FUNCTION__);
 	return *PowerupsAttributeSet;
+}
+
+// Returns the powerup attribute associated with the given tag, or an empty attribute if not found
+FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(FBmrPowerupTag InTag)
+{
+	if (!InTag.IsValid())
+	{
+		return FGameplayAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Fire)
+	{
+		return GetPowerup_FireAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Skate)
+	{
+		return GetPowerup_SkateAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Bomb)
+	{
+		return GetPowerup_BombsAvailableAttribute();
+	}
+
+	ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\n'%s' powerup tag is not recognized!"), __LINE__, __FUNCTION__, *InTag.ToString());
+	return FGameplayAttribute();
+}
+
+// Returns the max powerup attribute associated with the given tag, or an empty attribute if not found
+FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupMaxAttributeByTag(struct FBmrPowerupTag InTag)
+{
+	if (!InTag.IsValid())
+	{
+		return FGameplayAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Fire)
+	{
+		return GetPowerup_MaxFireAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Skate)
+	{
+		return GetPowerup_MaxSkateAttribute();
+	}
+
+	if (InTag == FBmrPowerupTag::Bomb)
+	{
+		return GetPowerup_MaxBombsAttribute();
+	}
+
+	ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\n'%s' powerup tag is not recognized!"), __LINE__, __FUNCTION__, *InTag.ToString());
+	return FGameplayAttribute();
+}
+
+// Returns the value of the powerup attribute associated with the given tag, or -1 if not found
+float UBmrPowerupsAttributeSet::GetPowerupValueByTag(FBmrPowerupTag InTag) const
+{
+	const FGameplayAttribute PowerupAttribute = GetPowerupBaseAttributeByTag(InTag);
+	constexpr float InvalidPowerupValue = -1.f;
+	return PowerupAttribute.IsValid() ? PowerupAttribute.GetNumericValue(this) : InvalidPowerupValue;
+}
+
+// Returns the value of the max powerup attribute associated with the given tag, or -1 if not found
+float UBmrPowerupsAttributeSet::GetPowerupMaxValueByTag(FBmrPowerupTag InTag) const
+{
+	const FGameplayAttribute PowerupMaxAttribute = GetPowerupMaxAttributeByTag(InTag);
+	constexpr float InvalidPowerupValue = -1.f;
+	return PowerupMaxAttribute.IsValid() ? PowerupMaxAttribute.GetNumericValue(this) : InvalidPowerupValue;
 }
 
 /*********************************************************************************************
