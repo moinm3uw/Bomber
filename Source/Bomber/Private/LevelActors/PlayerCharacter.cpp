@@ -681,5 +681,8 @@ void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponen
 	// @todo JanSeliv aW0hdfky Replace with effect application
 	// Increment current bomb count back
 	constexpr float AddBombValue = 1.f;
-	GetAbilitySystemComponentChecked().ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, AddBombValue);
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, AddBombValue);
+	}
 }
