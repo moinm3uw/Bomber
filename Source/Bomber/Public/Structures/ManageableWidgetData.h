@@ -25,7 +25,7 @@ struct BOMBER_API FManageableWidgetData
 	TSubclassOf<class UUserWidget> WidgetClass = nullptr;
 
 	/** The tag associated with this widget, is used for obtaining its widget data or widget instance. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (Categories = "UI"))
 	FGameplayTag WidgetTag = FGameplayTag::EmptyTag;
 
 	/** If true, adds the widget to the viewport, so it will be registered in slate and ready to use. */

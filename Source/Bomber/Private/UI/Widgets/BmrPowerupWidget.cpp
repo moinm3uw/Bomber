@@ -53,9 +53,7 @@ void UBmrPowerupWidget::SetPowerupIcon(FBmrPowerupTag NewItemType)
 
 	UTexture2D* IconTexture = UUIDataAsset::Get().GetPowerupIcon(NewItemType);
 	ensureMsgf(PowerUpIcon, TEXT("ASSERT: [%i] %hs:\n'PowerUpIcon' is not set in UI Data Asset"), __LINE__, __FUNCTION__);
-	FSlateBrush CurrentBrush = PowerUpIcon->GetBrush();
-	CurrentBrush.SetResourceObject(IconTexture);
-	PowerUpIcon->SetBrush(CurrentBrush);
+	PowerUpIcon->SetBrushResourceObject(IconTexture);
 }
 
 // Called before the underlying slate widget is constructed to update widget at design time
