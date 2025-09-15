@@ -54,6 +54,22 @@ void AItemActor::SetItemType(FBmrPowerupTag NewItemType)
 	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ItemTypeInternal, this);
 }
 
+// Is called on client when item type is replicated
+void AItemActor::OnRep_ItemType()
+{
+	UpdateItemMesh();
+}
+
+// Is called on both server and clients to update the item mesh based on the item type
+void AItemActor::UpdateItemMesh()
+{
+	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
+	{
+		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+		MapComponentInternal->SetLocalMesh(FoundItemRow->Mesh);
+	}
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
@@ -98,12 +114,7 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::GetAll().Num() - 1);
 		const FBmrPowerupTag NewItemType = FBmrPowerupTag::GetAll().GetByIndex(RandomIndex);
 		SetItemType(NewItemType);
-	}
-
-	// Override mesh
-	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
-	{
-		MapComponent->SetLocalMesh(FoundItemRow->Mesh);
+		UpdateItemMesh();
 	}
 }
 
