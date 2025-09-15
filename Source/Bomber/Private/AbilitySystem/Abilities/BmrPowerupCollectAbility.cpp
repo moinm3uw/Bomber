@@ -6,6 +6,7 @@
 #include "Components/MapComponent.h"
 #include "DataAssets/ItemDataAsset.h"
 #include "GeneratedMap.h"
+#include "LevelActors/ItemActor.h"
 #include "Structures/BmrPowerupTag.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
@@ -21,22 +22,35 @@ void UBmrPowerupCollectAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 
 	check(ActorInfo && TriggerEventData);
 
-	// Destroy powerup actor on overlapping
-	UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(TriggerEventData->Instigator);
-	AGeneratedMap::Get().DestroyLevelActor(InstigatorMapComponent, ActorInfo->AvatarActor.Get());
-
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
+	const AItemActor& ItemActor = *CastChecked<AItemActor>(TriggerEventData->Instigator);
 
 	// Apply the collect gameplay effect to increase own attribute
 	const FBmrPowerupTag PowerupTag = TriggerEventData->InstigatorTags.GetByIndex(0);
 	const UItemRow* ItemRow = UItemDataAsset::Get().GetRowByItemType(PowerupTag, UMyBlueprintFunctionLibrary::GetLevelType());
 	const TSubclassOf<UGameplayEffect> CollectGameplayEffect = ItemRow ? ItemRow->CollectGameplayEffect : nullptr;
 	ensureMsgf(CollectGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'CollectGameplayEffect' failed to obtain!"), __LINE__, __FUNCTION__);
-	const FGameplayEffectSpecHandle CollectSpecHandle = ASC->MakeOutgoingSpec(CollectGameplayEffect, GetAbilityLevel(), ASC->MakeEffectContext());
+	FGameplayEffectContextHandle CollectContext = ASC->MakeEffectContext();
+	CollectContext.AddSourceObject(TriggerEventData->Instigator);
+	const FGameplayEffectSpecHandle CollectSpecHandle = ASC->MakeOutgoingSpec(CollectGameplayEffect, GetAbilityLevel(), CollectContext);
 	if (const FGameplayEffectSpec* CollectSpec = CollectSpecHandle.Data.Get())
 	{
-		ASC->ApplyGameplayEffectSpecToSelf(*CollectSpec);
+		const FPredictionKey PredictionKey = ASC->GetPredictionKeyForNewAction();
+		ASC->ApplyGameplayEffectSpecToSelf(*CollectSpec, PredictionKey);
+	}
+
+	// @TODO JanSeliv uL3AzYIa - BEGIN: remove next once provided support for predicted destroy pooled actors
+	if (!ItemActor.HasAuthority())
+	{
+		const_cast<AItemActor&>(ItemActor).SetActorHiddenInGame(true);
+	}
+	// @TODO JanSeliv uL3AzYIa - END
+	else
+	{
+		// Finally, destroy powerup actor at the end
+		UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(&ItemActor);
+		AGeneratedMap::Get().DestroyLevelActor(InstigatorMapComponent, ActorInfo->AvatarActor.Get());
 	}
 
 	K2_EndAbilityLocally();

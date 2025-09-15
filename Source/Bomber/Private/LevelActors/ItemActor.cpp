@@ -121,6 +121,12 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 // Triggers when this item starts overlap a player character to destroy itself
 void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
 {
+	if (IsHidden())
+	{
+		// Might happen on predicted client when the item is already collected
+		return;
+	}
+
 	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor);
 	if (!ASC)
 	{
