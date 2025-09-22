@@ -171,7 +171,7 @@ void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 
 	for (const FGameplayTag& PowerupTagIt : FBmrPowerupTag::GetAll())
 	{
-		const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(PowerupTagIt);
+		const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::Conv_TagToBaseAttribute(PowerupTagIt);
 		if (PowerupAttribute.IsValid())
 		{
 			ASC->ApplyModToAttributeUnsafe(PowerupAttribute, EGameplayModOp::Override, NewLevel);

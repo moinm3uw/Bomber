@@ -31,7 +31,7 @@ const UBmrPowerupsAttributeSet& UBmrPowerupsAttributeSet::Get(const UObject* InO
 }
 
 // Returns the powerup attribute associated with the given tag, or an empty attribute if not found
-FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(FBmrPowerupTag InTag)
+FGameplayAttribute UBmrPowerupsAttributeSet::Conv_TagToBaseAttribute(FBmrPowerupTag InTag)
 {
 	if (!InTag.IsValid())
 	{
@@ -58,7 +58,7 @@ FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(FBmrPo
 }
 
 // Returns the max powerup attribute associated with the given tag, or an empty attribute if not found
-FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupMaxAttributeByTag(struct FBmrPowerupTag InTag)
+FGameplayAttribute UBmrPowerupsAttributeSet::Conv_TagToMaxAttribute(FBmrPowerupTag InTag)
 {
 	if (!InTag.IsValid())
 	{
@@ -84,10 +84,40 @@ FGameplayAttribute UBmrPowerupsAttributeSet::GetPowerupMaxAttributeByTag(struct 
 	return FGameplayAttribute();
 }
 
+// Returns the powerup tag associated with the specified attribute, or an invalid tag if not found
+FBmrPowerupTag UBmrPowerupsAttributeSet::Conv_AttributeToTag(const FGameplayAttribute& InAttribute)
+{
+	if (!InAttribute.IsValid())
+	{
+		return FBmrPowerupTag::None;
+	}
+
+	if (InAttribute == GetPowerup_FireAttribute()
+	    || InAttribute == GetPowerup_MaxFireAttribute())
+	{
+		return FBmrPowerupTag::Fire;
+	}
+
+	if (InAttribute == GetPowerup_SkateAttribute()
+	    || InAttribute == GetPowerup_MaxSkateAttribute())
+	{
+		return FBmrPowerupTag::Skate;
+	}
+
+	if (InAttribute == GetPowerup_BombsAvailableAttribute()
+	    || InAttribute == GetPowerup_MaxBombsAttribute())
+	{
+		return FBmrPowerupTag::Bomb;
+	}
+
+	ensureMsgf(false, TEXT("ASSERT: [%i] %hs:\n'%s' attribute is not recognized!"), __LINE__, __FUNCTION__, *InAttribute.GetName());
+	return FBmrPowerupTag::None;
+}
+
 // Returns the value of the powerup attribute associated with the given tag, or -1 if not found
 float UBmrPowerupsAttributeSet::GetPowerupValueByTag(FBmrPowerupTag InTag) const
 {
-	const FGameplayAttribute PowerupAttribute = GetPowerupBaseAttributeByTag(InTag);
+	const FGameplayAttribute PowerupAttribute = Conv_TagToBaseAttribute(InTag);
 	constexpr float InvalidPowerupValue = -1.f;
 	return PowerupAttribute.IsValid() ? PowerupAttribute.GetNumericValue(this) : InvalidPowerupValue;
 }
@@ -95,9 +125,15 @@ float UBmrPowerupsAttributeSet::GetPowerupValueByTag(FBmrPowerupTag InTag) const
 // Returns the value of the max powerup attribute associated with the given tag, or -1 if not found
 float UBmrPowerupsAttributeSet::GetPowerupMaxValueByTag(FBmrPowerupTag InTag) const
 {
-	const FGameplayAttribute PowerupMaxAttribute = GetPowerupMaxAttributeByTag(InTag);
+	const FGameplayAttribute PowerupMaxAttribute = Conv_TagToMaxAttribute(InTag);
 	constexpr float InvalidPowerupValue = -1.f;
 	return PowerupMaxAttribute.IsValid() ? PowerupMaxAttribute.GetNumericValue(this) : InvalidPowerupValue;
+}
+
+// Returns true if the current value of the powerup associated with the given tag is at its maximum
+bool UBmrPowerupsAttributeSet::IsPowerupValueAtMax(FBmrPowerupTag InTag) const
+{
+	return GetPowerupValueByTag(InTag) >= GetPowerupMaxValueByTag(InTag);
 }
 
 /*********************************************************************************************
@@ -144,6 +180,7 @@ void UBmrPowerupsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	FDoRepLifetimeParams Params;
+	Params.Condition = COND_OwnerOnly; // Only owner can know about powerups
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_Always;
 
@@ -156,23 +193,31 @@ void UBmrPowerupsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 }
 
 // Called just before any modification happens to an attribute
+void UBmrPowerupsAttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
+{
+	Super::PreAttributeBaseChange(Attribute, NewValue);
+
+	PreAttributeChangeClamped(Attribute, NewValue);
+}
+
 void UBmrPowerupsAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
+	PreAttributeChangeClamped(Attribute, NewValue);
+}
+
+void UBmrPowerupsAttributeSet::PreAttributeChangeClamped(const FGameplayAttribute& Attribute, float& NewValue) const
+{
 	// E.g: if base attribute became larger than max, then clamp the base attribute to its max
-	constexpr float MinPowerup = 0.f;
-	if (Attribute == GetPowerup_FireAttribute())
+	const FBmrPowerupTag MaxPowerup = Conv_AttributeToTag(Attribute);
+	const FGameplayAttribute MaxAttribute = Conv_TagToMaxAttribute(MaxPowerup);
+	const bool bIsBaseAttribute = Attribute != MaxAttribute;
+	if (bIsBaseAttribute)
 	{
-		NewValue = FMath::Clamp(NewValue, MinPowerup, GetPowerup_MaxFire());
-	}
-	else if (Attribute == GetPowerup_SkateAttribute())
-	{
-		NewValue = FMath::Clamp(NewValue, MinPowerup, GetPowerup_MaxSkate());
-	}
-	else if (Attribute == GetPowerup_BombsAvailableAttribute())
-	{
-		NewValue = FMath::Clamp(NewValue, MinPowerup, GetPowerup_MaxBombs());
+		constexpr float MinValue = 0.f;
+		const float MaxValue = MaxAttribute.GetNumericValue(this);
+		NewValue = FMath::Clamp(NewValue, MinValue, MaxValue);
 	}
 }
 
@@ -181,23 +226,18 @@ void UBmrPowerupsAttributeSet::PostAttributeChange(const FGameplayAttribute& Att
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 
-	UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
-	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
-
 	// E.g: if max attribute was dynamically decreased, so base attribute became larger than max, then clamp the base attribute to new max
-	if (Attribute == GetPowerup_MaxFireAttribute()
-	    && GetPowerup_Fire() > NewValue)
+	const FBmrPowerupTag MaxPowerup = Conv_AttributeToTag(Attribute);
+	const FGameplayAttribute BaseAttribute = Conv_TagToBaseAttribute(MaxPowerup);
+	const bool bIsMaxAttribute = Attribute != BaseAttribute;
+	if (bIsMaxAttribute)
 	{
-		ASC->ApplyModToAttribute(GetPowerup_FireAttribute(), EGameplayModOp::Override, NewValue);
-	}
-	else if (Attribute == GetPowerup_MaxSkateAttribute()
-	         && GetPowerup_Skate() > NewValue)
-	{
-		ASC->ApplyModToAttribute(GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewValue);
-	}
-	else if (Attribute == GetPowerup_MaxBombsAttribute()
-	         && GetPowerup_BombsAvailable() > NewValue)
-	{
-		ASC->ApplyModToAttribute(GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewValue);
+		const float BaseValue = BaseAttribute.GetNumericValue(this);
+		if (BaseValue > NewValue)
+		{
+			UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
+			checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
+			ASC->ApplyModToAttribute(BaseAttribute, EGameplayModOp::Override, NewValue);
+		}
 	}
 }

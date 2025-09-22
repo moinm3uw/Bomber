@@ -115,7 +115,7 @@ void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(APlayerCharacter* C
 	checkf(Character, TEXT("ERROR: [%i] %hs:\n'Character' is null!"), __LINE__, __FUNCTION__);
 
 	UAbilitySystemComponent& ASC = Character->GetAbilitySystemComponentChecked();
-	const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::GetPowerupBaseAttributeByTag(ItemTypeInternal);
+	const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::Conv_TagToBaseAttribute(ItemTypeInternal);
 	ASC.GetGameplayAttributeValueChangeDelegate(PowerupAttribute).AddUObject(this, &ThisClass::OnPowerupAttributeChanged);
 
 	constexpr bool bImmediateUpdate = true;

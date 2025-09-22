@@ -27,13 +27,17 @@ public:
 	/** Returns the powerups attribute set for the specified owner. It will crash if can't be obtained. */
 	static const UBmrPowerupsAttributeSet& Get(const UObject* InOwner);
 
-	/** Returns the attribute associated with the specified powerup tag, or an empty attribute if not found. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	static FGameplayAttribute GetPowerupBaseAttributeByTag(FBmrPowerupTag InTag);
+	/** Converts powerup tag to base attribute */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (DisplayName = "To Base Attribute (Powerup Tag)", CompactNodeTitle = "->", BlueprintAutocast))
+	static FGameplayAttribute Conv_TagToBaseAttribute(FBmrPowerupTag InTag);
 
-	/** Returns the max attribute associated with the specified powerup tag, or an empty attribute if not found. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	static FGameplayAttribute GetPowerupMaxAttributeByTag(FBmrPowerupTag InTag);
+	/** Converts powerup tag to max attribute */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (DisplayName = "To Max Attribute (Powerup Tag)", CompactNodeTitle = "->"))
+	static FGameplayAttribute Conv_TagToMaxAttribute(FBmrPowerupTag InTag);
+
+	/** Converts attribute to powerup tag */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (DisplayName = "To Powerup Tag (Attribute)", CompactNodeTitle = "->", BlueprintAutocast))
+	static FBmrPowerupTag Conv_AttributeToTag(const FGameplayAttribute& InAttribute);
 
 	/** Returns the value of the attribute associated with the specified powerup tag, or -1 if not found. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -42,6 +46,10 @@ public:
 	/** Returns the value of the max attribute associated with the specified powerup tag, or -1 if not found. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	float GetPowerupMaxValueByTag(FBmrPowerupTag InTag) const;
+
+	/** Returns true if the current value of the powerup associated with the specified tag is at its maximum. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	bool IsPowerupValueAtMax(FBmrPowerupTag InTag) const;
 
 	/*********************************************************************************************
 	 * Data attributes
@@ -107,7 +115,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Called just before any modification happens to an attribute. */
+	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	void PreAttributeChangeClamped(const FGameplayAttribute& Attribute, float& NewValue) const;
 
 	/** Is overridden to reclamp after changing dynamic max attributes. */
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
