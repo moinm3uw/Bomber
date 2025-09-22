@@ -3,8 +3,8 @@
 #include "GameFramework/MyGameUserSettings.h"
 
 // Bomber
-#include "DataAssets/UIDataAsset.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
@@ -437,7 +437,7 @@ void UMyGameUserSettings::UpdateSupportedLanguages()
 void UMyGameUserSettings::SetFPSCounterEnabled(bool bEnable)
 {
 	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
-	UUserWidget* FPSCounterWidget = WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag(TAG_UI_WIDGET_FPSCOUNTER) : nullptr;
+	UUserWidget* FPSCounterWidget = WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag(BmrGameplayTags::UI::Widget_FpsCounter) : nullptr;
 	if (ensureMsgf(FPSCounterWidget, TEXT("ASSERT: [%i] %hs:\n'FPSCounterWidget' was not found!"), __LINE__, __FUNCTION__))
 	{
 		const ESlateVisibility NewVisibility = bEnable ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;

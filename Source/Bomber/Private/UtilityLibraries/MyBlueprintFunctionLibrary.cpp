@@ -9,7 +9,6 @@
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/LevelActorDataAsset.h"
-#include "DataAssets/UIDataAsset.h"
 #include "Engine/MyGameViewportClient.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -18,6 +17,7 @@
 #include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/GeneratedMapSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
@@ -150,7 +150,7 @@ UMyGameUserSettings* UMyBlueprintFunctionLibrary::GetMyGameUserSettings(const UO
 USettingsWidget* UMyBlueprintFunctionLibrary::GetSettingsWidget(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem(OptionalWorldContext);
-	return WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag<USettingsWidget>(TAG_UI_WIDGET_SETTINGS) : nullptr;
+	return WidgetsSubsystem ? WidgetsSubsystem->GetWidgetByTag<USettingsWidget>(BmrGameplayTags::UI::Widget_Settings) : nullptr;
 }
 
 // Returns the Camera Component used on level

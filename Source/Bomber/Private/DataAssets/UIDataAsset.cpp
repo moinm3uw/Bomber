@@ -11,11 +11,6 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UIDataAsset)
 
-// All UI widget tags registered in Widgets Subsystem, used to obtain widget data or widget instance
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_SETTINGS, "UI.Widget.Settings");
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_NICKNAME, "UI.Widget.Nickname");
-UE_DEFINE_GAMEPLAY_TAG(TAG_UI_WIDGET_FPSCOUNTER, "UI.Widget.FPSCounter");
-
 // Returns the UI data asset
 const UUIDataAsset& UUIDataAsset::Get()
 {

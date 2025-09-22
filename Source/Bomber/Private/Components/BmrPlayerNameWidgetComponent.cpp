@@ -3,9 +3,9 @@
 #include "Components/BmrPlayerNameWidgetComponent.h"
 
 // Bomber
-#include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/Widgets/PlayerNameWidget.h"
@@ -58,11 +58,11 @@ void UBmrPlayerNameWidgetComponent::Init(AMyPlayerState* PlayerState)
 	AssociatedPlayerStateInternal = PlayerState;
 
 	const int32 PlayerId = PlayerState->GetPlayerId();
-	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem->GetWidgetByTag<UPlayerNameWidget>(TAG_UI_WIDGET_NICKNAME, PlayerId);
+	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem->GetWidgetByTag<UPlayerNameWidget>(BmrGameplayTags::UI::Widget_Nickname, PlayerId);
 	if (!PlayerNameWidget)
 	{
 		// Widget is not created yet for specified player ID, request it now
-		PlayerNameWidget = &WidgetsSubsystem->CreateManageableWidgetByTagChecked<UPlayerNameWidget>(TAG_UI_WIDGET_NICKNAME);
+		PlayerNameWidget = &WidgetsSubsystem->CreateManageableWidgetByTagChecked<UPlayerNameWidget>(BmrGameplayTags::UI::Widget_Nickname);
 	}
 
 	// Configure widget content and association

@@ -8,16 +8,7 @@
 #include "Structures/BmrPowerupTag.h"
 #include "Structures/ManageableWidgetData.h"
 
-// UE
-#include "NativeGameplayTags.h" // UE_DECLARE_GAMEPLAY_TAG_EXTERN
-
 #include "UIDataAsset.generated.h"
-
-/** Some of UI widget tags registered in Widgets Subsystem and used in code to obtain widget data or widget instance.
- * All other widget tags are defined in DefaultUITags.ini */
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_SETTINGS);
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_NICKNAME);
-BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_UI_WIDGET_FPSCOUNTER);
 
 enum class EEndGameState : uint8;
 enum class EPlayerType : uint8;

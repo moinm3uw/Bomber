@@ -7,18 +7,16 @@
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/ItemDataAsset.h"
 #include "GeneratedMap.h"
+#include "Structures/BmrGameplayTags.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 // UE
 #include "Abilities/GameplayAbilityTypes.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "NativeGameplayTags.h"
 #include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemActor)
-
-UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_EVENT_POWERUP_COLLECTED, "Event.Powerup.Collected", "Event that activates collecting powerup ability.");
 
 // Sets default values
 AItemActor::AItemActor()
@@ -136,7 +134,7 @@ void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AAct
 	FGameplayEventData EventData;
 	EventData.Instigator = this;
 	EventData.InstigatorTags.AddTag(ItemTypeInternal);
-	ASC->HandleGameplayEvent(TAG_EVENT_POWERUP_COLLECTED, &EventData);
+	ASC->HandleGameplayEvent(BmrGameplayTags::Event::Powerup_Collected, &EventData);
 }
 
 // Called when this level actor is destroyed from the Generated Map
