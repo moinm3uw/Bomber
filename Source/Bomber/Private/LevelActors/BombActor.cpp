@@ -10,7 +10,6 @@
 #include "GameFramework/MyCheatManager.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GeneratedMap.h"
-#include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
@@ -23,6 +22,7 @@
 // UE
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -56,22 +56,26 @@ ABombActor::ABombActor()
  ********************************************************************************************* */
 
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
-void ABombActor::InitBomb(const UObject* OptionalBombPlacer /* = nullptr*/)
+void ABombActor::InitBomb(APawn* OptionalInstigator /* = nullptr*/)
 {
-	SetBombPlacer(OptionalBombPlacer);
-
 	constexpr int32 MinFireRadius = 1;
 	int32 InFireRadius = MinFireRadius;
 
 	// Is bomb placer is a player character, then apply its fire radius and player type
-	if (const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(OptionalBombPlacer))
+	if (OptionalInstigator)
 	{
-		InFireRadius = UBmrPowerupsAttributeSet::Get(OwnerCharacter).GetPowerup_Fire();
+		SetInstigator(OptionalInstigator);
 
-		// Override default mesh with one with the player type (each character has own bomb)
-		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		const ULevelActorRow* BombRow = UBombDataAsset::Get().GetRowByLevelType(OwnerCharacter->GetPlayerType());
-		MapComponentInternal->SetLocalMesh(BombRow->Mesh);
+		InFireRadius = UBmrPowerupsAttributeSet::Get(OptionalInstigator).GetPowerup_Fire();
+
+		// If instigator has map component, associate its mesh with bomb mesh, e.g each character has own bomb
+		const UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(OptionalInstigator);
+		const ULevelActorRow* BombRow = InstigatorMapComponent ? UBombDataAsset::Get().GetRowByLevelType(InstigatorMapComponent->GetLevelType()) : nullptr;
+		if (BombRow)
+		{
+			checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+			MapComponentInternal->SetLocalMesh(BombRow->Mesh);
+		}
 	}
 
 #if !UE_BUILD_SHIPPING
@@ -102,19 +106,6 @@ void ABombActor::SetFireRadius(int32 InFireRadius)
 
 	FireRadiusInternal = InFireRadius;
 	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, FireRadiusInternal, this);
-}
-
-// Sets the character who placed the bomb, can be called on the server-only
-void ABombActor::SetBombPlacer(const UObject* InBombPlacer)
-{
-	if (!HasAuthority()
-	    || BombPlacerInternal == InBombPlacer)
-	{
-		return;
-	}
-
-	BombPlacerInternal = InBombPlacer;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, BombPlacerInternal, this);
 }
 
 // Show current explosion cells if the bomb type is allowed to be displayed, is not available in shipping build
@@ -184,12 +175,12 @@ void ABombActor::UpdateExplosionCells()
 	TryDisplayExplosionCells();
 }
 
-// Is called on client to update current bomb placer
-void ABombActor::OnRep_BombPlacer()
+// Is overridden to init bomb on clients when instigator is replicated
+void ABombActor::OnRep_Instigator()
 {
-	if (BombPlacerInternal)
+	if (APawn* InInstigator = GetInstigator())
 	{
-		InitBomb(BombPlacerInternal);
+		InitBomb(InInstigator);
 	}
 }
 
@@ -268,12 +259,13 @@ void ABombActor::ApplyMaterial()
 	TObjectPtr<class UMaterialInterface> NewBombMaterial = nullptr;
 
 	// If bot character, override material with the player type
-	const APlayerCharacter* OwnerCharacter = Cast<APlayerCharacter>(BombPlacerInternal);
-	if (OwnerCharacter
+	const APawn* OwnerCharacter = GetInstigator<APawn>();
+	const APlayerState* OwnerPlayerState = OwnerCharacter ? OwnerCharacter->GetPlayerState<APlayerState>() : nullptr;
+	if (OwnerPlayerState
 	    && OwnerCharacter->IsBotControlled())
 	{
 		// If bot character, set material for its default bomb with the same mesh
-		const int32 PlayerIndex = OwnerCharacter->GetPlayerId();
+		const int32 PlayerIndex = OwnerPlayerState->GetPlayerId();
 		const UBombDataAsset& BombDataAsset = UBombDataAsset::Get();
 		const int32 BombMaterialsNum = BombDataAsset.GetBombMaterialsNum();
 		if (PlayerIndex != INDEX_NONE // Is not debug character
@@ -325,7 +317,6 @@ void ABombActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 	Params.bIsPushBased = true;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, FireRadiusInternal, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, BombPlacerInternal, Params);
 }
 
 // Set the lifespan of this actor. When it expires the object will be destroyed
@@ -407,7 +398,7 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 		MapComponentInternal->OnCellChanged.RemoveAll(this);
 	}
 
-	SetBombPlacer(nullptr);
+	SetInstigator(nullptr);
 
 	LocalExplosionCellsInternal = FCell::EmptyCells;
 }
@@ -415,19 +406,22 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 // Is called when character leaves the bomb to update collision response
 void ABombActor::OnPlayerCellChanged_Implementation(UMapComponent* PlayerMapComponent, const FCell& NewCell, const FCell& PreviousCell)
 {
-	checkf(PlayerMapComponent && MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerMapComponent || MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	const APlayerCharacter& PlayerCharacter = *CastChecked<APlayerCharacter>(PlayerMapComponent->GetOwner());
-
-	const UBoxComponent* BoxCollisionComponent = MapComponentInternal ? MapComponentInternal->GetBoxCollisionComponent() : nullptr;
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	const UBoxComponent* BoxCollisionComponent = MapComponentInternal->GetBoxCollisionComponent();
 	checkf(BoxCollisionComponent, TEXT("ERROR: [%i] %hs:\n'BoxCollisionComponent' is null!"), __LINE__, __FUNCTION__);
 	FCollisionResponseContainer CollisionResponses = BoxCollisionComponent->GetCollisionResponseToChannels();
 
 	// true: player left the bomb, block collision (all other channels and players will stay as they are)
 	// false: client player with high ping might be teleported back into blocked bomb, so release collision
 	const bool bIsPlayerLeft = NewCell != MapComponentInternal->GetCell();
-
 	const ECollisionResponse NewResponse = bIsPlayerLeft ? ECR_Block : ECR_Overlap;
-	GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerCharacter.GetPlayerId(), NewResponse);
+
+	checkf(PlayerMapComponent, TEXT("ERROR: [%i] %hs:\n'PlayerMapComponent' is null!"), __LINE__, __FUNCTION__);
+	const APawn* Pawn = PlayerMapComponent ? PlayerMapComponent->GetOwner<APawn>() : nullptr;
+	const APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState<APlayerState>() : nullptr;
+	const int32 PlayerId = PlayerState ? PlayerState->GetPlayerId() : INDEX_NONE;
+
+	GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerId, NewResponse);
 	MapComponentInternal->SetCollisionResponses(CollisionResponses);
 }
 
@@ -458,18 +452,19 @@ void ABombActor::InitCollisionResponseToAllPlayers()
 	// Unlock (allow overlap) those players which overlap with this bomb
 	for (const UMapComponent* OverlapMapComponentIt : OverlapMapComponents)
 	{
-		const APlayerCharacter* PlayerCharacter = OverlapMapComponentIt ? OverlapMapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
-		if (!PlayerCharacter)
+		const APawn* Pawn = OverlapMapComponentIt ? OverlapMapComponentIt->GetOwner<APawn>() : nullptr;
+		const APlayerState* PlayerState = Pawn ? Pawn->GetPlayerState<APlayerState>() : nullptr;
+		if (!PlayerState)
 		{
 			// Is different overlapped actor, likely bomb itself
 			continue;
 		}
 
 		// Change response for the player which overlaps with this bomb (all other channels and players will stay as they are)
-		GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerCharacter->GetPlayerId(), ECR_Overlap);
+		GetCollisionResponseToPlayerByID(/*InOut*/ CollisionResponses, PlayerState->GetPlayerId(), ECR_Overlap);
 
 		// Listen when character end to overlaps with this bomb to block collision
-		UMapComponent* PlayerMapComponent = UMapComponent::GetMapComponent(PlayerCharacter);
+		UMapComponent* PlayerMapComponent = UMapComponent::GetMapComponent(Pawn);
 		checkf(PlayerMapComponent, TEXT("ERROR: [%i] %hs:\n'PlayerMapComponent' is null!"), __LINE__, __FUNCTION__);
 		PlayerMapComponent->OnCellChanged.AddUniqueDynamic(this, &ThisClass::OnPlayerCellChanged);
 	}

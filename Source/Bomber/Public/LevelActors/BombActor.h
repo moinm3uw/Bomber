@@ -37,9 +37,9 @@ protected:
 public:
 	/** Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.).
 	 * Can be called on both server and clients.
-	 * @param OptionalBombPlacer - who placed the bomb (usually player), is used to track the destroy causer, e.g: scoreboard. */
+	 * @param OptionalInstigator - player which placed the bomb, can be accessed as GetInstigator(), is used to track the destroy causer, e.g: scoreboard. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void InitBomb(const UObject* OptionalBombPlacer = nullptr);
+	void InitBomb(APawn* OptionalInstigator = nullptr);
 
 	/** Returns cells are going to explode by this bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -54,14 +54,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void SetFireRadius(int32 InFireRadius);
 
-	/** Returns the owner who placed the bomb (can be null). */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE UObject* GetBombPlacer() const { return BombPlacerInternal; }
-
-	/** Sets the owner who placed the bomb, can be called on the server-only. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetBombPlacer(const UObject* InBombPlacer);
-
 	/** Show current explosion cells if the bomb type is allowed to be displayed, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly))
 	void TryDisplayExplosionCells();
@@ -75,12 +67,6 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Explosion Cells"))
 	TSet<FCell> LocalExplosionCellsInternal = FCell::EmptyCells;
 
-	/** Represents the owned who placed the bomb and can be null (is player in most cases).
-	 * Is set by InitBomb on spawning.
-	 * Is used to track the destroy causer, e.g: scoreboard. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_BombPlacer", AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Bomb Placer"))
-	TObjectPtr<const UObject> BombPlacerInternal = nullptr;
-
 	/** Is server-only, immediately detonates the bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
 	void DetonateBomb();
@@ -89,9 +75,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void UpdateExplosionCells();
 
-	/** Is called on client to update current bomb placer. */
-	UFUNCTION()
-	void OnRep_BombPlacer();
+	/** Is overridden to init bomb on clients when instigator is replicated. */
+	virtual void OnRep_Instigator() override;
 
 	/** Is called on client to recalculate the explosion cells. */
 	UFUNCTION()

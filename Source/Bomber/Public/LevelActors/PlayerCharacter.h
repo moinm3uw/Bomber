@@ -28,10 +28,6 @@ public:
 	/** Sets default values for this character's properties */
 	APlayerCharacter();
 
-	/** Returns level type associated with player, e.g: Water level type for Roger character. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	ELevelType GetPlayerType() const;
-
 	/** Returns the Player Tag associated with player. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	const struct FPlayerTag& GetPlayerTag() const;

@@ -228,6 +228,13 @@ EActorType UMapComponent::GetActorType() const
 	return ActorDataAsset ? ActorDataAsset->GetActorType() : EActorType::None;
 }
 
+// Returns level type associated with actor, e.g: Fori character -> Third (Forest) actor type
+ELevelType UMapComponent::GetLevelType() const
+{
+	const ULevelActorRow* MeshRow = GetMeshRow();
+	return MeshRow ? MeshRow->LevelType : ELT::None;
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */

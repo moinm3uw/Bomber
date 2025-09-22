@@ -88,13 +88,6 @@ APlayerCharacter::APlayerCharacter()
 	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
 }
 
-// Returns level type associated with player, e.g: Water level type for Roger character
-ELevelType APlayerCharacter::GetPlayerType() const
-{
-	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
-	return PlayerRow ? PlayerRow->LevelType : ELT::None;
-}
-
 // Returns the Player Tag associated with player
 const FPlayerTag& APlayerCharacter::GetPlayerTag() const
 {
@@ -308,13 +301,13 @@ void APlayerCharacter::OnPreRemovedFromLevel_Implementation(UMapComponent* MapCo
 	// In the KillerPlayerState, mark this player as killed by DestroyCauser
 	AMyPlayerState* KillerPlayerState = [DestroyCauser]
 	{
-		const APlayerCharacter* CauserCharacter = Cast<APlayerCharacter>(DestroyCauser);
-		if (!CauserCharacter)
+		const APawn* Causer = Cast<APawn>(DestroyCauser);
+		if (!Causer)
 		{
-			const ABombActor* Bomb = DestroyCauser ? Cast<ABombActor>(DestroyCauser) : nullptr;
-			CauserCharacter = Bomb ? Cast<APlayerCharacter>(Bomb->GetBombPlacer()) : nullptr;
+			const AActor* CauserActor = Cast<AActor>(DestroyCauser);
+			Causer = CauserActor ? CauserActor->GetInstigator() : nullptr;
 		}
-		return CauserCharacter ? CauserCharacter->GetPlayerState<AMyPlayerState>() : nullptr;
+		return Causer ? Causer->GetPlayerState<AMyPlayerState>() : nullptr;
 	}();
 	if (KillerPlayerState)
 	{
