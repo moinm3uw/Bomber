@@ -237,17 +237,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
-	// Apply the Restart Effect to reset attributes
-	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent()) // Might be null before Player State is initialized
-	{
-		const TSubclassOf<UGameplayEffect> RestartGameplayEffect = UPlayerDataAsset::Get().GetRestartGameplayEffect();
-		ensureMsgf(RestartGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'RestartGameplayEffect' condition is FALSE"), __LINE__, __FUNCTION__);
-		const FGameplayEffectSpecHandle RestartSpecHandle = ASC->MakeOutgoingSpec(RestartGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext());
-		if (const FGameplayEffectSpec* RestartSpec = RestartSpecHandle.Data.Get())
-		{
-			ASC->ApplyGameplayEffectSpecToSelf(*RestartSpec);
-		}
-	}
+	ApplyCharacterConfig();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
 }
@@ -416,6 +406,18 @@ void APlayerCharacter::UpdateCollisionObjectType()
 // Sets current config: each character has its own configuration, like different starting attributes
 void APlayerCharacter::ApplyCharacterConfig()
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// Firstly, reset attributes
+	if (AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
+	{
+		MyPlayerState->ApplyDefaultAttributes();
+	}
+
+	// Secondly, apply config gameplay effect
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	const UPlayerRow* PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(GetPlayerTag());
 	const TSubclassOf<UGameplayEffect> ConfigGameplayEffect = PlayerRow ? PlayerRow->ConfigGameplayEffect : nullptr;

@@ -150,11 +150,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
 
-	/** Returns the gameplay effect that is applied to the player on each match start.
-	 * @see ::RestartGameplayEffectInternal */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE TSubclassOf<class UGameplayEffect> GetRestartGameplayEffect() const { return RestartGameplayEffectInternal; }
-
 protected:
 	/** All materials that are used by nameplate meshes. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Nameplate Materials", ShowOnlyInnerProperties))
@@ -175,8 +170,4 @@ protected:
 	/** Contains all abilities to grant on the player at the start of the game. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Startup Abilities", ShowOnlyInnerProperties))
 	TArray<TSubclassOf<class UGameplayAbility>> StartupAbilitiesInternal;
-
-	/** Gameplay Effect which is applied to the player on each match start. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Restart Gameplay Effect", ShowOnlyInnerProperties))
-	TSubclassOf<class UGameplayEffect> RestartGameplayEffectInternal = nullptr;
 };

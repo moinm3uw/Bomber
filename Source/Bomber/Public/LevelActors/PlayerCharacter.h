@@ -115,7 +115,7 @@ protected:
 	void UpdateCollisionObjectType();
 
 	/** Sets current config: each character has its own configuration, like different starting attributes. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
 	void ApplyCharacterConfig();
 
 	/*********************************************************************************************

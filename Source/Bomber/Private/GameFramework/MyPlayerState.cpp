@@ -74,6 +74,26 @@ UAbilitySystemComponent& AMyPlayerState::GetAbilitySystemComponentChecked() cons
 	return *AbilitySystemComponentInternal;
 }
 
+// Initializes all attributes with default values
+void AMyPlayerState::ApplyDefaultAttributes()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+
+	// Initialize all attributes with default values
+	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
+	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
+	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'AttributeSetInitter' is null!"), __LINE__, __FUNCTION__))
+	{
+		static const FName GroupName = TEXT("Default");
+		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
+	}
+}
+
 /*********************************************************************************************
  * End Game State
  ********************************************************************************************* */
@@ -621,25 +641,16 @@ void AMyPlayerState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
-
-	// Initialize all attributes with default values
-	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
-	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
-	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'AttributeSetInitter' is null!"), __LINE__, __FUNCTION__))
-	{
-		static const FName GroupName = TEXT("Default");
-		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
-	}
-
 	if (HasAuthority())
 	{
+		ApplyDefaultAttributes();
+
 		const UPlayerDataAsset& PlayerDataAsset = UPlayerDataAsset::Get();
 		const int32 StartupAbilitiesNum = PlayerDataAsset.GetStartupAbilitiesNum();
 		for (int32 Idx = 0; Idx < StartupAbilitiesNum; ++Idx)
 		{
 			const FGameplayAbilitySpec AbilitySpec = PlayerDataAsset.GetStartupAbility(Idx);
-			AbilitySystemComponentInternal->GiveAbility(AbilitySpec);
+			GetAbilitySystemComponentChecked().GiveAbility(AbilitySpec);
 		}
 	}
 }

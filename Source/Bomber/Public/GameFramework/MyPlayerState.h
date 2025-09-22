@@ -46,6 +46,10 @@ public:
 	virtual FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponentInternal; }
 	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
 
+	/** Initializes all attributes with default values. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void ApplyDefaultAttributes();
+
 protected:
 	/** Ability System Component that is used to manage abilities (like place bomb) and attributes (like powerups) for owned player. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
