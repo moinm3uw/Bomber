@@ -48,7 +48,7 @@ public:
 	static const class UPlayerInputDataAsset* GetPlayerInputDataAsset();
 
 	/** Returns the Sounds Data Asset. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintPure, Category = "C++", meta = (Keywords = "Sound"))
 	static const class USoundsDataAsset* GetSoundsDataAsset();
 
 	/** Returns the Game State Data Asset. */

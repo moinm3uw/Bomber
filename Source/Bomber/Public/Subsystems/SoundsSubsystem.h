@@ -123,10 +123,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void StopInGameMusic();
 
-	/** Play the blast sound of the bomb. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void PlayExplosionSFX();
-
 	/** Play the sound that is played right before the match ends. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void PlayEndGameCountdownSFX();

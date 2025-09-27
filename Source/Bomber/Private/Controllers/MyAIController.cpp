@@ -375,7 +375,7 @@ void AMyAIController::UpdateAI()
 		BoxesAndPlayers.Remove(MapComponent->GetCell());
 		if (BoxesAndPlayers.Num() > 0) // Are bombs or players in own bomb radius
 		{
-			OwnerInternal->ServerSpawnBomb();
+			OwnerInternal->SpawnBomb();
 			Free.Empty(); // Delete all cells to make new choice
 
 #if WITH_EDITOR // [Editor]

@@ -3,7 +3,6 @@
 #include "LevelActors/PlayerCharacter.h"
 
 // Bomber
-#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Components/BmrMoverComponent.h"
 #include "Components/BmrPlayerNameWidgetComponent.h"
 #include "Components/MapComponent.h"
@@ -15,8 +14,8 @@
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
 #include "GeneratedMap.h"
-#include "LevelActors/BombActor.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
@@ -615,69 +614,14 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin /* = false
  ********************************************************************************************* */
 
 // Spawns bomb on character position
-void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce /* = false*/)
+void APlayerCharacter::SpawnBomb()
 {
-	const AController* OwnedController = GetController();
-	if (!ensureMsgf(OwnedController, TEXT("ASSERT: [%i] %hs:\n'OwnedController' is not valid!"), __LINE__, __FUNCTION__)
-	    || !ensureMsgf(MapComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MapComponentInternal' is not valid!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	if (!bForce)
-	{
-		if (UUtilsLibrary::IsEditorNotPieWorld()
-		    || UBmrPowerupsAttributeSet::Get(this).GetPowerup_BombsAvailable() <= 0
-		    || OwnedController->IsMoveInputIgnored())
-		{
-			return;
-		}
-	}
-
 	// Bomb is spawned on the current location, so make sure it's synced
 	UpdateLocation();
 
-	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this)](UMapComponent& MapComponent)
-	{
-		APlayerCharacter* PlayerCharacter = WeakThis.Get();
-		if (!PlayerCharacter)
-		{
-			return;
-		}
-
-		// @todo JanSeliv aW0hdfky Replace with effect application
-		constexpr float SubtractBombValue = -1.f;
-		PlayerCharacter->GetAbilitySystemComponentChecked().ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, SubtractBombValue);
-
-		// Init Bomb
-		ABombActor& BombActor = *CastChecked<ABombActor>(MapComponent.GetOwner());
-		BombActor.InitBomb(PlayerCharacter);
-
-		// Start listening this bomb
-		MapComponent.OnPostRemovedFromLevel.AddUniqueDynamic(PlayerCharacter, &ThisClass::OnBombDestroyed);
-	};
-
-	// Spawn bomb
-	AGeneratedMap::Get().SpawnActorByType(EAT::Bomb, MapComponentInternal->GetCell(), OnBombSpawned);
-}
-
-// Event triggered when the bomb has been explicitly destroyed.
-void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser /* = nullptr*/)
-{
-	if (!MapComponent
-	    || MapComponent->GetActorType() != EAT::Bomb)
-	{
-		return;
-	}
-
-	// Stop listening this bomb
-	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
-
-	// @todo JanSeliv aW0hdfky Replace with effect application
-	// Increment current bomb count back
-	constexpr float AddBombValue = 1.f;
-	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
-	{
-		ASC->ApplyModToAttribute(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::AddBase, AddBombValue);
-	}
+	// Activate bomb ability
+	FGameplayEventData EventData;
+	EventData.Instigator = this;
+	EventData.EventMagnitude = UCellsUtilsLibrary::GetIndexByCellLevel(MapComponentInternal->GetCell());
+	GetAbilitySystemComponentChecked().HandleGameplayEvent(BmrGameplayTags::Event::Bomb_Placed, &EventData);
 }

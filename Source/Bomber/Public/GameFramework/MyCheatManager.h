@@ -84,14 +84,6 @@ public:
 	static TAutoConsoleVariable<int32> CVarPowerupsChance;
 
 	/*********************************************************************************************
-	 * Bomb
-	 ********************************************************************************************* */
-public:
-	/** Override blast radius of all bombs.
-	 * Bomber.Bomb.SetRadius 5 - set five cells radius to each side of all bombs. */
-	static TAutoConsoleVariable<int32> CVarBombRadius;
-
-	/*********************************************************************************************
 	 * Player
 	 ********************************************************************************************* */
 public:

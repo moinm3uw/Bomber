@@ -180,7 +180,6 @@ void UBmrPowerupsAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	FDoRepLifetimeParams Params;
-	Params.Condition = COND_OwnerOnly; // Only owner can know about powerups
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_Always;
 

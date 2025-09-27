@@ -7,7 +7,9 @@
 #include "BmrPowerupCollectAbility.generated.h"
 
 /**
- * Is activated when player collects a powerup item.
+ * Is activated when player or AI collects a powerup item.
+ * Ability is triggered by the TAG_EVENT_POWERUP_COLLECTED, where:
+ * - EventData.Instigator: item actor, which was collected.
  */
 UCLASS()
 class BOMBER_API UBmrPowerupCollectAbility : public UGameplayAbility

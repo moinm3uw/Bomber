@@ -329,6 +329,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InCell"))
 	static void GetPositionByCellOnLevel(const FCell& InCell, int32& OutColumnX, int32& OutRowY);
 
+	/** Returns array index for cell in grid data structure, otherwise -1 if not found.
+	 * Might be useful as cell ID for networking or data association (e.g. cell(200,400) at position [1,2] has index 15) */
+	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InCell"))
+	static int32 GetIndexByCellLevel(const FCell& InCell);
+
+	/** Gets cell from array index in grid data structure, otherwise invalid cell if not found.
+	 * Might be useful as cell ID for networking or data association (e.g. index 15 → cell(200,400) at position [1,2]) */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	static FCell GetCellByIndexOnLevel(int32 CellIndex);
+
 	/** Returns all grid cell locations on the Generated Map as Set. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static FORCEINLINE TSet<FCell> GetAllCellsOnLevel() { return FCells{GetAllCellsOnLevelAsArray()}; }
@@ -596,7 +606,7 @@ public:
 	/** Gets actor location snapped to nearest cell on the level grid.
 	 * @param Actor The actor to obtain location and snap to the grid. Is not `const` because of `BlueprintAutocast` limitation to make Drag & Drop work from Actor parameter to Cell parameter. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (BlueprintAutocast))
-	static FCell SnapActorOnLevel(class AActor* Actor);
+	static FCell SnapActorOnLevel(const class AActor* Actor);
 
 	/** Returns nearest free cell to given cell, where free means cell with no other level actors except players. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell"))

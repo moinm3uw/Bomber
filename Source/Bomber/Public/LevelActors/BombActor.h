@@ -7,9 +7,11 @@
 // Bomber
 #include "Structures/Cell.h"
 
-#include "BombActor.generated.h"
+// UE
+#include "AbilitySystemInterface.h"
+#include "ActiveGameplayEffectHandle.h"
 
-#define DEFAULT_LIFESPAN -1.f
+#include "BombActor.generated.h"
 
 enum class ELevelType : uint8;
 
@@ -18,7 +20,8 @@ enum class ELevelType : uint8;
  * @see Access its data with UBombDataAsset (Content/Bomber/DataAssets/DA_Bomb).
  */
 UCLASS()
-class BOMBER_API ABombActor final : public AActor
+class BOMBER_API ABombActor final : public AActor,
+                                    public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -41,31 +44,35 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void InitBomb(APawn* OptionalInstigator = nullptr);
 
+	/** If set, the bomb will detonate when this effect is removed.
+	 * Otherwise, the bomb must be manually detonated by destroying the level actor on generated map. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void SetActiveDurationEffectHandle(const struct FActiveGameplayEffectHandle& InHandle);
+
+	/** Clears the active duration effect handle as part of cleanup process. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void ClearActiveDurationEffectHandle();
+
 	/** Returns cells are going to explode by this bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FORCEINLINE TSet<FCell>& GetExplosionCells() const { return LocalExplosionCellsInternal; }
 
-	/** Returns radius of the blast to each side.
-	 * It might be overriden by the cheat manager. */
+	/** Returns explosion radius from instigator, or -1 if can not be obtained. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE int32 GetFireRadius() const { return FireRadiusInternal; }
-
-	/** Sets new radius of the blast to each side of the bomb, can be called on the server-only. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetFireRadius(int32 InFireRadius);
+	int32 GetFireRadius() const;
 
 	/** Show current explosion cells if the bomb type is allowed to be displayed, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly))
 	void TryDisplayExplosionCells();
 
 protected:
-	/** The radius of the blast to each side, is primarily used for the explosion cells calculation and replication. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_FireRadius", AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Fire Radius"))
-	int32 FireRadiusInternal = 0;
-
 	/** Is not replicated, is calculated locally on the server and clients from the FireRadiusInternal. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Explosion Cells"))
 	TSet<FCell> LocalExplosionCellsInternal = FCell::EmptyCells;
+
+	/** Is applied at bomb ability activation, detonates the bomb when removed. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Applied Duration Effect"))
+	FActiveGameplayEffectHandle AppliedDurationEffectInternal;
 
 	/** Is server-only, immediately detonates the bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
@@ -78,29 +85,22 @@ protected:
 	/** Is overridden to init bomb on clients when instigator is replicated. */
 	virtual void OnRep_Instigator() override;
 
-	/** Is called on client to recalculate the explosion cells. */
-	UFUNCTION()
-	void OnRep_FireRadius();
-
 	/*********************************************************************************************
-	 * Cue Visuals: VFXs, SFXs, Materials
+	 * Visuals: VFXs, SFXs, Mesh, Materials
 	 ********************************************************************************************* */
 public:
-	/** Spawns VFXs and SFXs, is allowed to call both on server and clients. */
+	/** Spawns VFXs and SFXs, is allowed to call both on server and clients.
+	 * Immediate visual feedback executed locally when bomb detonates while damage itself is server-authority only. */
 	UFUNCTION(Blueprintable, Category = "C++")
 	void PlayExplosionsCue();
+
+	/** Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void ApplyMesh();
 
 	/** Updates current material for this bomb actor, based on this bomb and Player placer types. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void ApplyMaterial();
-
-protected:
-	/** All currently playing VFXs. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Spawned VFXs"))
-	TArray<TObjectPtr<class UNiagaraComponent>> SpawnedVFXsInternal;
-
-	/** The duration of the bomb VFX. */
-	FTimerHandle VFXDurationExpiredTimerHandle;
 
 	/*********************************************************************************************
 	 * Overrides
@@ -109,15 +109,10 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Returns properties that are replicated for the lifetime of the actor channel. */
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	/** Set the lifespan of this actor. When it expires the object will be destroyed.
-	 * @param InLifespan overriden with a default value, time will be got from the data asset. */
-	virtual void SetLifeSpan(float InLifespan = DEFAULT_LIFESPAN) override;
-
-	/** Called when the lifespan of an actor expires (if he has one). */
-	virtual void LifeSpanExpired() override;
+	/** Returns the Ability System Component from the Instigator or local player if none.
+	 * In blueprints, call 'Get Ability System Component' as interface function. */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
 
 	/*********************************************************************************************
 	 * Events

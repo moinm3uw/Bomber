@@ -7,12 +7,12 @@
 #include "Bomber.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/BombDataAsset.h"
-#include "GameFramework/MyCheatManager.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GeneratedMap.h"
-#include "Subsystems/SoundsSubsystem.h"
+#include "Structures/BmrGameplayTags.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
+#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
@@ -20,13 +20,10 @@
 #endif
 
 // UE
+#include "AbilitySystemGlobals.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerState.h"
-#include "Net/UnrealNetwork.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
-#include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BombActor)
 
@@ -58,54 +55,64 @@ ABombActor::ABombActor()
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
 void ABombActor::InitBomb(APawn* OptionalInstigator /* = nullptr*/)
 {
-	constexpr int32 MinFireRadius = 1;
-	int32 InFireRadius = MinFireRadius;
+	SetInstigator(OptionalInstigator);
 
-	// Is bomb placer is a player character, then apply its fire radius and player type
-	if (OptionalInstigator)
-	{
-		SetInstigator(OptionalInstigator);
-
-		InFireRadius = UBmrPowerupsAttributeSet::Get(OptionalInstigator).GetPowerup_Fire();
-
-		// If instigator has map component, associate its mesh with bomb mesh, e.g each character has own bomb
-		const UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(OptionalInstigator);
-		const ULevelActorRow* BombRow = InstigatorMapComponent ? UBombDataAsset::Get().GetRowByLevelType(InstigatorMapComponent->GetLevelType()) : nullptr;
-		if (BombRow)
-		{
-			checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-			MapComponentInternal->SetLocalMesh(BombRow->Mesh);
-		}
-	}
-
-#if !UE_BUILD_SHIPPING
-	const int32 CheatOverride = UMyCheatManager::CVarBombRadius.GetValueOnAnyThread();
-	if (CheatOverride > MinFireRadius)
-	{
-		InFireRadius = CheatOverride;
-	}
-#endif // !UE_BUILD_SHIPPING
-
-	// Set fire radius (from player, cheat manager or default) and update explosion cells
-	SetFireRadius(InFireRadius);
 	UpdateExplosionCells();
 
 	InitCollisionResponseToAllPlayers();
 
+	ApplyMesh();
+
 	ApplyMaterial();
 }
 
-// Sets new radius of the blast to each side of the bomb, can be called on the server-only
-void ABombActor::SetFireRadius(int32 InFireRadius)
+// If set, the bomb will detonate when this effect is removed
+void ABombActor::SetActiveDurationEffectHandle(const FActiveGameplayEffectHandle& InHandle)
 {
 	if (!HasAuthority()
-	    || FireRadiusInternal == InFireRadius)
+	    || !ensureMsgf(InHandle.IsValid(), TEXT("ASSERT: [%i] %hs:\n'InHandle' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
-	FireRadiusInternal = InFireRadius;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, FireRadiusInternal, this);
+	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetAbilitySystemComponentChecked().OnGameplayEffectRemoved_InfoDelegate(InHandle);
+	if (!ensureMsgf(OnEffectRemoved, TEXT("ASSERT: [%i] %hs:\n'OnEffectRemoved' is not found, can not listen its removal!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	OnEffectRemoved->AddWeakLambda(this, [this](const FGameplayEffectRemovalInfo& RemovalInfo)
+	{
+		AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, this);
+	});
+
+	AppliedDurationEffectInternal = InHandle;
+}
+
+// Clears the active duration effect handle as part of cleanup process
+void ABombActor::ClearActiveDurationEffectHandle()
+{
+	if (!HasAuthority()
+	    || !AppliedDurationEffectInternal.IsValid())
+	{
+		// Is already cleared
+		return;
+	}
+
+	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetAbilitySystemComponentChecked().OnGameplayEffectRemoved_InfoDelegate(AppliedDurationEffectInternal);
+	if (OnEffectRemoved)
+	{
+		OnEffectRemoved->RemoveAll(this);
+	}
+
+	AppliedDurationEffectInternal.Invalidate();
+}
+
+// Returns explosion radius from instigator, or -1 if can not be obtained
+int32 ABombActor::GetFireRadius() const
+{
+	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(this);
+	return PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : INDEX_NONE;
 }
 
 // Show current explosion cells if the bomb type is allowed to be displayed, is not available in shipping build
@@ -139,12 +146,6 @@ void ABombActor::DetonateBomb()
 	// Make sure cells are up-to-date
 	UpdateExplosionCells();
 
-	// Start countdown to destroy the bomb
-	SetLifeSpan();
-
-	// Reset Fire Radius to avoid destroying the bomb again
-	SetFireRadius(0);
-
 	PlayExplosionsCue();
 
 	// Destroy all actors from array of cells
@@ -154,17 +155,18 @@ void ABombActor::DetonateBomb()
 // Calculates the explosion cells based on current fire radius
 void ABombActor::UpdateExplosionCells()
 {
-	if (!MapComponentInternal
-	    || MapComponentInternal->GetCell().IsInvalidCell()
-	    || FireRadiusInternal <= 0)
+	const int32 FireRadius = GetFireRadius();
+	if (FireRadius <= 0
+	    || !MapComponentInternal
+	    || MapComponentInternal->GetCell().IsInvalidCell())
 	{
 		// On client some data might be not replicated yet
 		return;
 	}
 
-	const FCells NewExplosionCells = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadiusInternal);
+	const FCells NewExplosionCells = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadius);
 
-	const bool bIsAlreadySetByDefault = !LocalExplosionCellsInternal.IsEmpty() && FireRadiusInternal <= 1 && NewExplosionCells.Num() == LocalExplosionCellsInternal.Num();
+	const bool bIsAlreadySetByDefault = !LocalExplosionCellsInternal.IsEmpty() && FireRadius <= 1 && NewExplosionCells.Num() == LocalExplosionCellsInternal.Num();
 	if (bIsAlreadySetByDefault)
 	{
 		return;
@@ -184,17 +186,6 @@ void ABombActor::OnRep_Instigator()
 	}
 }
 
-// Is called on client to recalculate the explosion cells
-void ABombActor::OnRep_FireRadius()
-{
-	if (FireRadiusInternal > 0
-	    && MapComponentInternal
-	    && MapComponentInternal->GetCell().IsValid())
-	{
-		UpdateExplosionCells();
-	}
-}
-
 /*********************************************************************************************
  * Cue Visuals: VFXs, SFXs, Materials
  ********************************************************************************************* */
@@ -202,61 +193,42 @@ void ABombActor::OnRep_FireRadius()
 // Spawns VFXs and SFXs, is allowed to call both on server and clients
 void ABombActor::PlayExplosionsCue()
 {
-	if (AMyGameStateBase::GetCurrentGameState() != ECGS::InGame
+	if (!(TO_FLAG(AMyGameStateBase::GetCurrentGameState()) & TO_FLAG(ECGS::InGame | ECGS::EndGame))
 	    || !ensureMsgf(!LocalExplosionCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'LocalExplosionCellsInternal' is empty!"), __LINE__, __FUNCTION__))
 	{
+		// Play cue only during the match (InGame or EndGame states) and if explosion cells are valid
 		return;
 	}
 
-	TRACE_CPUPROFILER_EVENT_SCOPE(ABombActor::PlayExplosionsCue);
+	FGameplayCueParameters Parameters;
+	Parameters.Instigator = this;
+	GetAbilitySystemComponentChecked().InvokeGameplayCueEvent(BmrGameplayTags::GameplayCue::Bomb_Explosion, EGameplayCueEvent::Executed, Parameters);
+}
+
+// Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator
+void ABombActor::ApplyMesh()
+{
+	// If it has instigator with map component, then associate its mesh with bomb mesh, e.g when each character has own bomb
+	// Otherwise just apply random mesh from data asset
+	const UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(GetInstigator());
+	const ELevelType FinalMeshType = InstigatorMapComponent
+	                                     ? InstigatorMapComponent->GetLevelType()
+	                                     : TO_ENUM(ELevelType, ELT_FIRST_FLAG << FMath::RandRange(0, FMath::FloorLog2(ELT_LAST_FLAG)));
+
+	const ULevelActorRow* BombRow = UBombDataAsset::Get().GetRowByLevelType(FinalMeshType);
+	if (!ensureMsgf(BombRow, TEXT("ASSERT: [%i] %hs:\n'BombRow' is not valid, can not apply mesh!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
 
 	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	const UBombRow* BombRow = MapComponentInternal->GetMeshRow<UBombRow>();
-	UNiagaraSystem* BombVFX = BombRow ? BombRow->BombVFX : nullptr;
-	if (!ensureMsgf(BombVFX, TEXT("ASSERT: [%i] %hs:\n'BombVFX' is not set!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	// Play SFX
-	USoundsSubsystem::Get().PlayExplosionSFX();
-
-	// Spawn VFXs
-	for (const FCell& Cell : LocalExplosionCellsInternal)
-	{
-		SpawnedVFXsInternal.Add(UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BombVFX, Cell.Location, GetActorRotation(), GetActorScale()));
-	}
-
-	// Stop VFXs after the duration, so they all have the same duration
-	auto OnVFXDurationExpired = [WeakThis = TWeakObjectPtr(this)]()
-	{
-		ABombActor* This = WeakThis.Get();
-		if (!This)
-		{
-			return;
-		}
-
-		for (UNiagaraComponent* VfxIt : This->SpawnedVFXsInternal)
-		{
-			if (VfxIt)
-			{
-				VfxIt->Deactivate();
-			}
-		}
-
-		This->SpawnedVFXsInternal.Empty();
-	};
-
-	constexpr bool bLoop = false;
-	FTimerManager& TimerManager = GetWorldTimerManager();
-	TimerManager.ClearTimer(TimerHandle_LifeSpanExpired);
-	TimerManager.SetTimer(VFXDurationExpiredTimerHandle, OnVFXDurationExpired, UBombDataAsset::Get().GetVFXDuration(), bLoop);
+	MapComponentInternal->SetLocalMesh(BombRow->Mesh);
 }
 
 // Updates current material for this bomb actor, based on this bomb and Player placer types
 void ABombActor::ApplyMaterial()
 {
-	TObjectPtr<class UMaterialInterface> NewBombMaterial = nullptr;
+	TObjectPtr<UMaterialInterface> NewBombMaterial = nullptr;
 
 	// If bot character, override material with the player type
 	const APawn* OwnerCharacter = GetInstigator<APawn>();
@@ -308,47 +280,24 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Returns properties that are replicated for the lifetime of the actor channel
-void ABombActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+// Returns the Ability System Component from the Instigator or local player if none
+UAbilitySystemComponent* ABombActor::GetAbilitySystemComponent() const
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	FDoRepLifetimeParams Params;
-	Params.bIsPushBased = true;
-
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, FireRadiusInternal, Params);
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator());
+	if (!ASC)
+	{
+		// Instigator is optional for some type of bombs like environmental ones, so try to get local player ASC
+		ASC = UMyBlueprintFunctionLibrary::GetLocalAbilitySystemComponent();
+	}
+	return ASC;
 }
 
-// Set the lifespan of this actor. When it expires the object will be destroyed
-void ABombActor::SetLifeSpan(float InLifespan /* = DEFAULT_LIFESPAN*/)
+// Returns the Ability System Component from the Instigator or local player if none, will crash if can't be obtained
+UAbilitySystemComponent& ABombActor::GetAbilitySystemComponentChecked() const
 {
-	if (InLifespan == DEFAULT_LIFESPAN
-	    && AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
-	{
-		InLifespan = UBombDataAsset::Get().GetLifeSpan();
-	}
-
-	// Don't call Super to allow its execution on clients
-
-	InitialLifeSpan = InLifespan;
-
-	// Initialize a timer for the actors lifespan if there is one. Otherwise clear any existing timer
-	if (InLifespan > 0.0f)
-	{
-		GetWorldTimerManager().SetTimer(TimerHandle_LifeSpanExpired, this, &AActor::LifeSpanExpired, InLifespan);
-	}
-	else
-	{
-		GetWorldTimerManager().ClearTimer(TimerHandle_LifeSpanExpired);
-	}
-}
-
-// Called when the lifespan of an actor expires (if he has one)
-void ABombActor::LifeSpanExpired()
-{
-	// Super::LifeSpanExpired() is not called here intentionally, because bomb actor shouldn't be destroyed directly, but handled by its own
-	// Instead, call DestroyLevelActor from Generated Map to destroy it properly
-	AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, this);
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
+	return *ASC;
 }
 
 /*********************************************************************************************
@@ -360,11 +309,12 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 
-	// Init bomb by default, if it's spawned from player, it will be reinitialized again
-	InitBomb();
-
-	// Start countdown to destroy the bomb
-	SetLifeSpan();
+	if (!GetInstigator())
+	{
+		// This is likely environmental bomb or not fully replicated one
+		// Init bomb by default, if it's spawned from player, it will be reinitialized again
+		InitBomb();
+	}
 
 	// Listen when this bomb is destroyed on the Generated Map by itself or by other actors
 	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
@@ -397,6 +347,8 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 		MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
 		MapComponentInternal->OnCellChanged.RemoveAll(this);
 	}
+
+	ClearActiveDurationEffectHandle();
 
 	SetInstigator(nullptr);
 

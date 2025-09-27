@@ -17,5 +17,16 @@ namespace BmrGameplayTags
 	namespace Event
 	{
 		BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Powerup_Collected);
+		BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Bomb_Placed);
 	} // namespace Event
+
+	namespace SetByCaller
+	{
+		BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Bomb_Duration);
+	} // namespace SetByCaller
+
+	namespace GameplayCue
+	{
+		BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Bomb_Explosion);
+	} // namespace GameplayCue
 } // namespace BmrGameplayTags

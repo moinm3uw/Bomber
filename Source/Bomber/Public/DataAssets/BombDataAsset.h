@@ -36,30 +36,31 @@ public:
 	static const UBombDataAsset& Get();
 
 	/** Get the bomb lifetime. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE float GetLifeSpan() const { return LifeSpanInternal; }
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE float GetDuration() const { return DurationInternal; }
 
-	/** Returns the duration of the bomb VFX. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE float GetVFXDuration() const { return VFXDurationInternal; }
+	/** Returns the durational gameplay effect applied while the bomb is active.
+	 * @see UBombDataAsset::DurationGameplayEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetDurationGameplayEffect() const { return DurationGameplayEffectInternal; }
 
 	/** Returns the amount of bomb materials. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetBombMaterialsNum() const { return BombMaterialsInternal.Num(); }
 
 	/** Returns the bomb material by specified index.
 	 * @see UBombDataAsset::BombMaterialInternal */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class UMaterialInterface* GetBombMaterial(int32 Index) const { return BombMaterialsInternal.IsValidIndex(Index) ? BombMaterialsInternal[Index] : nullptr; }
 
 protected:
 	/** The lifetime of a bomb. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Life Span", ShowOnlyInnerProperties))
-	float LifeSpanInternal = 2.f;
+	float DurationInternal = 2.f;
 
-	/** The duration of the bomb VFX. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "VFX Duration", ShowOnlyInnerProperties))
-	float VFXDurationInternal = 1.f;
+	/** Durational gameplay effect applied while the bomb is active. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration Gameplay Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> DurationGameplayEffectInternal = nullptr;
 
 	/** All bomb materials. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Bomb Materials", ShowOnlyInnerProperties))

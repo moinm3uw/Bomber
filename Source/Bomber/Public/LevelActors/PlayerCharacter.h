@@ -200,13 +200,7 @@ protected:
 	 * Bomb Placement
 	 ********************************************************************************************* */
 public:
-	/** Spawns bomb on character position.
-	 * @param bForce If true, will force spawning bomb without any checks, might be useful for testing or modding. */
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "C++")
-	void ServerSpawnBomb(bool bForce = false);
-
-protected:
-	/** Event triggered when the bomb has been explicitly destroyed. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnBombDestroyed(class UMapComponent* MapComponent, UObject* DestroyCauser = nullptr);
+	/** Spawns bomb on character position. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SpawnBomb();
 };

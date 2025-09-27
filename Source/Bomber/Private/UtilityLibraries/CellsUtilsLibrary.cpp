@@ -108,6 +108,33 @@ void UCellsUtilsLibrary::GetPositionByCellOnLevel(const FCell& InCell, int32& Ou
 	OutRowY = CellPosition.Y;
 }
 
+// Returns array index for cell in grid data structure, -1 if not found
+int32 UCellsUtilsLibrary::GetIndexByCellLevel(const FCell& InCell)
+{
+	if (!InCell.IsValid())
+	{
+		return INDEX_NONE;
+	}
+
+	const FCellsArr& AllGridCells = GetAllCellsOnLevelAsArray();
+	return AllGridCells.IndexOfByPredicate([&InCell](const FCell& CellIt)
+	{
+		return CellIt == InCell;
+	});
+}
+
+// Gets cell from array index in grid data structure
+FCell UCellsUtilsLibrary::GetCellByIndexOnLevel(int32 CellIndex)
+{
+	if (CellIndex < 0)
+	{
+		return FCell::InvalidCell;
+	}
+
+	const FCellsArr& AllGridCells = GetAllCellsOnLevelAsArray();
+	return AllGridCells.IsValidIndex(CellIndex) ? AllGridCells[CellIndex] : FCell::InvalidCell;
+}
+
 // Returns all grid cell location on the Generated Map
 const FCellsArr& UCellsUtilsLibrary::GetAllCellsOnLevelAsArray()
 {
@@ -510,7 +537,7 @@ FCell UCellsUtilsLibrary::RotateCellAroundLevelOrigin(const FCell& Cell, float A
 }
 
 // Gets actor location snapped to nearest cell on the level grid
-FCell UCellsUtilsLibrary::SnapActorOnLevel(AActor* Actor)
+FCell UCellsUtilsLibrary::SnapActorOnLevel(const AActor* Actor)
 {
 	return Actor ? SnapVectorOnLevel(Actor->GetActorLocation()) : FCell::InvalidCell;
 }

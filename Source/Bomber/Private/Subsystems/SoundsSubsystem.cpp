@@ -236,21 +236,6 @@ void USoundsSubsystem::StopInGameMusic()
 	}
 }
 
-// Play the blast sound of the bomb
-void USoundsSubsystem::PlayExplosionSFX()
-{
-	if (!CanPlaySounds()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame)
-	{
-		return;
-	}
-
-	if (USoundBase* ExplosionSFX = USoundsDataAsset::Get().GetExplosionSFX())
-	{
-		UGameplayStatics::PlaySound2D(GetWorld(), ExplosionSFX);
-	}
-}
-
 /** Play the sound that is played right before the match ends. */
 void USoundsSubsystem::PlayEndGameCountdownSFX()
 {
