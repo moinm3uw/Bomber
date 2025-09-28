@@ -3,6 +3,7 @@
 #include "GameFramework/MyPlayerState.h"
 
 // Bomber
+#include "AbilitySystem/Attributes/BmrHealthAttributeSet.h"
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "AdvancedIdentityLibrary.h"
 #include "AdvancedSteamFriendsLibrary.h"
@@ -41,6 +42,7 @@ AMyPlayerState::AMyPlayerState()
 	AbilitySystemComponentInternal->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	PowerupsSetInternal = CreateDefaultSubobject<UBmrPowerupsAttributeSet>(TEXT("PowerupsAttributeSet"));
+	HealthSetInternal = CreateDefaultSubobject<UBmrHealthAttributeSet>(TEXT("HealthAttributeSet"));
 
 	// Reset default value to -1 to avoid conflicts with first player of 0 ID
 	SetPlayerId(INDEX_NONE);

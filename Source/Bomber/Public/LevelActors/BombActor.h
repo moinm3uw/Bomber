@@ -82,9 +82,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void UpdateExplosionCells();
 
-	/** Is overridden to init bomb on clients when instigator is replicated. */
-	virtual void OnRep_Instigator() override;
-
 	/*********************************************************************************************
 	 * Visuals: VFXs, SFXs, Mesh, Materials
 	 ********************************************************************************************* */
@@ -113,6 +110,9 @@ protected:
 	 * In blueprints, call 'Get Ability System Component' as interface function. */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+
+	/** Is overridden to init bomb on clients when instigator is replicated. */
+	virtual void OnRep_Instigator() override;
 
 	/*********************************************************************************************
 	 * Events

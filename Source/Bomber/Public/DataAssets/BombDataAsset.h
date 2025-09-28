@@ -44,6 +44,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE TSubclassOf<class UGameplayEffect> GetDurationGameplayEffect() const { return DurationGameplayEffectInternal; }
 
+	/** Returns the explosion damage gameplay effect applied when the bomb detonates.
+	 * @see UBombDataAsset::ExplosionDamageEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetExplosionDamageEffect() const { return ExplosionDamageEffectInternal; }
+
 	/** Returns the amount of bomb materials. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetBombMaterialsNum() const { return BombMaterialsInternal.Num(); }
@@ -55,12 +60,16 @@ public:
 
 protected:
 	/** The lifetime of a bomb. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Life Span", ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration", ShowOnlyInnerProperties))
 	float DurationInternal = 2.f;
 
 	/** Durational gameplay effect applied while the bomb is active. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration Gameplay Effect", ShowOnlyInnerProperties))
 	TSubclassOf<class UGameplayEffect> DurationGameplayEffectInternal = nullptr;
+
+	/** Explosion damage gameplay effect applied when the bomb detonates. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Explosion Damage Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> ExplosionDamageEffectInternal = nullptr;
 
 	/** All bomb materials. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Bomb Materials", ShowOnlyInnerProperties))

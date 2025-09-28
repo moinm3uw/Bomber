@@ -148,7 +148,38 @@ void ABombActor::DetonateBomb()
 
 	PlayExplosionsCue();
 
-	// Destroy all actors from array of cells
+	FMapComponents TargetMapComponents;
+	ULevelActorsUtilsLibrary::GetLevelActorsOnCells(/*out*/ TargetMapComponents, LocalExplosionCellsInternal);
+
+	for (UMapComponent* TargetMapComponent : TargetMapComponents)
+	{
+		const AActor* TargetActor = TargetMapComponent ? TargetMapComponent->GetOwner() : nullptr;
+		if (!TargetActor
+		    || TargetActor == this)
+		{
+			continue;
+		}
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
+		if (!TargetASC)
+		{
+			// @TODO JanSeliv 5hgPqJaI - uncomment next once death ability is implemented, so environmental actors are destroyed individually
+			//AGeneratedMap::Get().DestroyLevelActor(TargetMapComponent, this);
+			continue;
+		}
+
+		// Actor has ASC: apply damage through GAS
+		UAbilitySystemComponent& InstigatorASC = GetAbilitySystemComponentChecked();
+		FGameplayEffectContextHandle EffectContext = InstigatorASC.MakeEffectContext();
+		EffectContext.AddInstigator(GetInstigator(), this);
+		const FGameplayEffectSpecHandle DamageSpecHandle = InstigatorASC.MakeOutgoingSpec(UBombDataAsset::Get().GetExplosionDamageEffect(), 1.f, EffectContext);
+		if (const FGameplayEffectSpec* DamageSpec = DamageSpecHandle.Data.Get())
+		{
+			InstigatorASC.ApplyGameplayEffectSpecToTarget(*DamageSpec, TargetASC);
+		}
+	}
+
+	// @TODO JanSeliv 5hgPqJaI - remove next once death ability is implemented, so only environmental actors are destroyed
 	AGeneratedMap::Get().DestroyLevelActorsOnCells(LocalExplosionCellsInternal, this);
 }
 
@@ -175,15 +206,6 @@ void ABombActor::UpdateExplosionCells()
 	LocalExplosionCellsInternal = NewExplosionCells;
 
 	TryDisplayExplosionCells();
-}
-
-// Is overridden to init bomb on clients when instigator is replicated
-void ABombActor::OnRep_Instigator()
-{
-	if (APawn* InInstigator = GetInstigator())
-	{
-		InitBomb(InInstigator);
-	}
 }
 
 /*********************************************************************************************
@@ -298,6 +320,15 @@ UAbilitySystemComponent& ABombActor::GetAbilitySystemComponentChecked() const
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
 	return *ASC;
+}
+
+// Is overridden to init bomb on clients when instigator is replicated
+void ABombActor::OnRep_Instigator()
+{
+	if (APawn* InInstigator = GetInstigator())
+	{
+		InitBomb(InInstigator);
+	}
 }
 
 /*********************************************************************************************

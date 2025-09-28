@@ -15,6 +15,7 @@ namespace BmrGameplayTags
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Powerup_Collected, "Event.Powerup.Collected", "Event that activates collecting powerup ability.");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bomb_Placed, "Event.Bomb.Placed", "Event that attempts to activate the bomb ability");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Player_Death, "Event.Player.Death", "Event that fires on death");
 	} // namespace Event
 
 	namespace SetByCaller

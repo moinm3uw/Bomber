@@ -61,6 +61,12 @@ protected:
 	UPROPERTY(Transient)
 	TObjectPtr<class UBmrPowerupsAttributeSet> PowerupsSetInternal = nullptr;
 
+	/** Attribute set for health-related attributes (health, max health, damage).
+	 * For read access, can be obtained with UBmrHealthAttributeSet::GetHealthAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrHealthAttributeSet> HealthSetInternal = nullptr;
+
 	/*********************************************************************************************
 	 * End Game State
 	 * Is personal for each player: Win, Lose or Draw.
