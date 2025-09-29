@@ -3,14 +3,15 @@
 #include "UI/Widgets/BmrPowerupWidget.h"
 
 // Bomber
-#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "DataAssets/UIDataAsset.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 // UE
+#include "GameplayEffectExtension.h"
 #include "Components/Image.h"
 #include "Components/RadialSlider.h"
 #include "Engine/Texture2D.h"
@@ -128,7 +129,12 @@ void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(APlayerCharacter* C
 // Is called when the Skate attribute is changed, e.g: when player picked up given item
 void UBmrPowerupWidget::OnPowerupAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
 {
-	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(GetOwningPlayerPawn());
+	if (!OnAttributeChangeData.GEModData)
+	{
+		return;
+	}
+
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(&OnAttributeChangeData.GEModData->Target);
 	const float MaxValue = PowerupsAttributeSet.GetPowerupMaxValueByTag(ItemTypeInternal);
 	SetTargetValue(OnAttributeChangeData.NewValue, MaxValue);
 }
