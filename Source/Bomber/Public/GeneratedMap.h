@@ -37,13 +37,6 @@ public:
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnGeneratedLevelActors OnGeneratedLevelActors;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPostDestroyedLevelActors, const TSet<FCell>&, DestroyedCells);
-
-	/** Called each time when any level actors were destroyed.
-	 * @warning is called only on the server as destroying level actors is an authority-only operation, use UMapComponent::OnPostRemovedFromLevel for both server and clients. */
-	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
-	FOnPostDestroyedLevelActors OnPostDestroyedLevelActors;
-
 	/** Contains outside added dangerous cells, is useful for Game Features to notify bots that some cells are not safe.
 	 * @todo JanSeliv 3JBOo7L8 Remove after NewAI implementation. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++")

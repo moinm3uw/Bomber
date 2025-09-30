@@ -445,12 +445,6 @@ void AGeneratedMap::DestroyLevelActorsOnCells(const FCells& Cells, UObject* Dest
 		}
 	}
 	MapComponentsInternal.Items.Shrink();
-
-	if (OnPostDestroyedLevelActors.IsBound())
-	{
-		// Broadcast about already destroyed actors
-		OnPostDestroyedLevelActors.Broadcast(Cells);
-	}
 }
 
 // Destroy level actor by specified Map Component from the level

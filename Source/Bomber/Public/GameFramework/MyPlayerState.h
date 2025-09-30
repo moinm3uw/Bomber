@@ -198,7 +198,7 @@ protected:
 
 	/** Is called at the end of frame when this character received dead status. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPostCharacterDead(const TSet<struct FCell>& Cells);
+	void OnPostCharacterDead();
 
 	/*********************************************************************************************
 	 * Killed Opponents Num

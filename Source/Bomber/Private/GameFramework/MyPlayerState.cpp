@@ -27,6 +27,7 @@
 #include "GameplayAbilitiesModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerState)
 
@@ -350,7 +351,11 @@ void AMyPlayerState::ApplyIsCharacterDead()
 {
 	if (HasAuthority())
 	{
-		AGeneratedMap::Get().OnPostDestroyedLevelActors.AddUniqueDynamic(this, &ThisClass::OnPostCharacterDead);
+		// @TODO JanSeliv 5oWCcakc - Implement the player state manager to avoid using timer here
+		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			OnPostCharacterDead();
+		}));
 	}
 
 	if (OnCharacterDeadChanged.IsBound())
@@ -360,12 +365,10 @@ void AMyPlayerState::ApplyIsCharacterDead()
 }
 
 // Is called at the end of frame when this character received dead status
-void AMyPlayerState::OnPostCharacterDead_Implementation(const FCells& Cells)
+void AMyPlayerState::OnPostCharacterDead_Implementation()
 {
 	if (bIsCharacterDeadInternal)
 	{
-		AGeneratedMap::Get().OnPostDestroyedLevelActors.RemoveAll(this);
-
 		UpdateEndGameState();
 	}
 }
