@@ -59,6 +59,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
 	TObjectPtr<class UAnimSequence> DanceAnimation = nullptr;
 
+	/** Death animation montage that is played on the character death. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	TObjectPtr<class UAnimMontage> DeathMontage = nullptr;
+
 	/** Returns the num of skin textures in the array of diffuse maps specified a player material instance.
 	 * @return The num of skin textures or INDEX_NONE if not found. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -148,7 +152,7 @@ public:
 	/** Returns the startup ability by index.
 	 * @see ::StartupAbilitiesInternal */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
+	FORCEINLINE TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
 
 protected:
 	/** All materials that are used by nameplate meshes. */

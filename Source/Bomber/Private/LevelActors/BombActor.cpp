@@ -163,8 +163,7 @@ void ABombActor::DetonateBomb()
 		UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
 		if (!TargetASC)
 		{
-			// @TODO JanSeliv 5hgPqJaI - uncomment next once death ability is implemented, so environmental actors are destroyed individually
-			//AGeneratedMap::Get().DestroyLevelActor(TargetMapComponent, this);
+			AGeneratedMap::Get().DestroyLevelActor(TargetMapComponent, this);
 			continue;
 		}
 
@@ -178,9 +177,6 @@ void ABombActor::DetonateBomb()
 			InstigatorASC.ApplyGameplayEffectSpecToTarget(*DamageSpec, TargetASC);
 		}
 	}
-
-	// @TODO JanSeliv 5hgPqJaI - remove next once death ability is implemented, so only environmental actors are destroyed
-	AGeneratedMap::Get().DestroyLevelActorsOnCells(LocalExplosionCellsInternal, this);
 }
 
 // Calculates the explosion cells based on current fire radius

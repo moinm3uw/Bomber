@@ -330,6 +330,11 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 
 	GetMeshComponentChecked().SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->CancelAllAbilities();
+	}
+
 	if (Controller)
 	{
 		Controller->SetIgnoreMoveInput(true);
