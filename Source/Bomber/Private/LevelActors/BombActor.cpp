@@ -75,7 +75,7 @@ void ABombActor::SetActiveDurationEffectHandle(const FActiveGameplayEffectHandle
 		return;
 	}
 
-	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetAbilitySystemComponentChecked().OnGameplayEffectRemoved_InfoDelegate(InHandle);
+	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetInstigatorAbilityComponentChecked().OnGameplayEffectRemoved_InfoDelegate(InHandle);
 	if (!ensureMsgf(OnEffectRemoved, TEXT("ASSERT: [%i] %hs:\n'OnEffectRemoved' is not found, can not listen its removal!"), __LINE__, __FUNCTION__))
 	{
 		return;
@@ -99,7 +99,7 @@ void ABombActor::ClearActiveDurationEffectHandle()
 		return;
 	}
 
-	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetAbilitySystemComponentChecked().OnGameplayEffectRemoved_InfoDelegate(AppliedDurationEffectInternal);
+	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetInstigatorAbilityComponentChecked().OnGameplayEffectRemoved_InfoDelegate(AppliedDurationEffectInternal);
 	if (OnEffectRemoved)
 	{
 		OnEffectRemoved->RemoveAll(this);
@@ -111,7 +111,7 @@ void ABombActor::ClearActiveDurationEffectHandle()
 // Returns explosion radius from instigator, or -1 if can not be obtained
 int32 ABombActor::GetFireRadius() const
 {
-	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(this);
+	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(GetInstigator());
 	return PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : INDEX_NONE;
 }
 
@@ -168,7 +168,7 @@ void ABombActor::DetonateBomb()
 		}
 
 		// Actor has ASC: apply damage through GAS
-		UAbilitySystemComponent& InstigatorASC = GetAbilitySystemComponentChecked();
+		UAbilitySystemComponent& InstigatorASC = GetInstigatorAbilityComponentChecked();
 		FGameplayEffectContextHandle EffectContext = InstigatorASC.MakeEffectContext();
 		EffectContext.AddInstigator(GetInstigator(), this);
 		const FGameplayEffectSpecHandle DamageSpecHandle = InstigatorASC.MakeOutgoingSpec(UBombDataAsset::Get().GetExplosionDamageEffect(), 1.f, EffectContext);
@@ -220,7 +220,7 @@ void ABombActor::PlayExplosionsCue()
 
 	FGameplayCueParameters Parameters;
 	Parameters.Instigator = this;
-	GetAbilitySystemComponentChecked().InvokeGameplayCueEvent(BmrGameplayTags::GameplayCue::Bomb_Explosion, EGameplayCueEvent::Executed, Parameters);
+	GetInstigatorAbilityComponentChecked().InvokeGameplayCueEvent(BmrGameplayTags::GameplayCue::Bomb_Explosion, EGameplayCueEvent::Executed, Parameters);
 }
 
 // Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator
@@ -299,7 +299,7 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 }
 
 // Returns the Ability System Component from the Instigator or local player if none
-UAbilitySystemComponent* ABombActor::GetAbilitySystemComponent() const
+UAbilitySystemComponent* ABombActor::GetInstigatorAbilityComponent() const
 {
 	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator());
 	if (!ASC)
@@ -311,9 +311,9 @@ UAbilitySystemComponent* ABombActor::GetAbilitySystemComponent() const
 }
 
 // Returns the Ability System Component from the Instigator or local player if none, will crash if can't be obtained
-UAbilitySystemComponent& ABombActor::GetAbilitySystemComponentChecked() const
+UAbilitySystemComponent& ABombActor::GetInstigatorAbilityComponentChecked() const
 {
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	UAbilitySystemComponent* ASC = GetInstigatorAbilityComponent();
 	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
 	return *ASC;
 }

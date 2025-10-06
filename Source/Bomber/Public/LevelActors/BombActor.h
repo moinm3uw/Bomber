@@ -8,7 +8,6 @@
 #include "Structures/Cell.h"
 
 // UE
-#include "AbilitySystemInterface.h"
 #include "ActiveGameplayEffectHandle.h"
 
 #include "BombActor.generated.h"
@@ -20,8 +19,7 @@ enum class ELevelType : uint8;
  * @see Access its data with UBombDataAsset (Content/Bomber/DataAssets/DA_Bomb).
  */
 UCLASS()
-class BOMBER_API ABombActor final : public AActor,
-                                    public IAbilitySystemInterface
+class BOMBER_API ABombActor final : public AActor
 {
 	GENERATED_BODY()
 
@@ -47,7 +45,7 @@ public:
 	/** If set, the bomb will detonate when this effect is removed.
 	 * Otherwise, the bomb must be manually detonated by destroying the level actor on generated map. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetActiveDurationEffectHandle(const struct FActiveGameplayEffectHandle& InHandle);
+	void SetActiveDurationEffectHandle(const FActiveGameplayEffectHandle& InHandle);
 
 	/** Clears the active duration effect handle as part of cleanup process. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
@@ -106,10 +104,9 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Returns the Ability System Component from the Instigator or local player if none.
-	 * In blueprints, call 'Get Ability System Component' as interface function. */
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+	/** Returns the Ability System Component from the Instigator or local player if none. */
+	UAbilitySystemComponent* GetInstigatorAbilityComponent() const;
+	UAbilitySystemComponent& GetInstigatorAbilityComponentChecked() const;
 
 	/** Is overridden to init bomb on clients when instigator is replicated. */
 	virtual void OnRep_Instigator() override;
