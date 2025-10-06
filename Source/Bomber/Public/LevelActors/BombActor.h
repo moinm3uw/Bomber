@@ -120,9 +120,13 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnAddedToLevel(UMapComponent* MapComponent);
 
-	/** Is called to listen when this bomb is destroyed on the Generated Map by itself or by other actors. */
+	/** Is used to self-detonate the bomb when it is removed from the level. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPreRemovedFromLevel(UMapComponent* MapComponent, UObject* DestroyCauser);
+
+	/** Is used for cleaning up the bomb's data after it was removed from the level. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPostRemovedFromLevel(UMapComponent* MapComponent, UObject* DestroyCauser);
 
 	/** Is called when character leaves the bomb to update collision response. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

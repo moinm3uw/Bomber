@@ -354,7 +354,7 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 }
 
-// Called when this level actor is destroyed on the Generated Map
+// Is used to self-detonate the bomb when it is removed from the level
 void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
 	if (HasAuthority())
@@ -368,12 +368,15 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 		UpdateExplosionCells();
 		PlayExplosionsCue();
 	}
+}
 
-	if (MapComponentInternal)
-	{
-		MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
-		MapComponentInternal->OnCellChanged.RemoveAll(this);
-	}
+// Is used for cleaning up the bomb's data after it was removed from the level
+void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
+{
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
+	MapComponentInternal->OnPostRemovedFromLevel.RemoveAll(this);
+	MapComponentInternal->OnCellChanged.RemoveAll(this);
 
 	ClearActiveDurationEffectHandle();
 
