@@ -463,13 +463,6 @@ void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* Dest
 		return;
 	}
 
-	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame
-	    && !ComponentOwner->CanBeDamaged())
-	{
-		// Do not destroy in-game actor during the play session if required
-		return;
-	}
-
 	MapComponentsInternal.Remove(MapComponent);
 
 	// Notify listeners right before destroying and reset the actor

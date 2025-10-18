@@ -181,6 +181,7 @@ protected:
 	TArray<TSubclassOf<class UGameplayAbility>> StartupAbilitiesInternal;
 
 	/** When applied, gives immortality to the player character.
+	 * Adds BmrGameplayTags::GameplayEffect::Player_DamageImmunity tag.
 	 * E.g: Is used by God cheat, might be useful for shield skill, or when player joins existing game in progress. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Damage Immunity Gameplay Effect", ShowOnlyInnerProperties))
 	TSubclassOf<class UGameplayEffect> DamageImmunityGameplayEffectInternal = nullptr;

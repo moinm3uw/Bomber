@@ -17,6 +17,7 @@
 #include "GameFramework/PlayerState.h"
 #include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Structures/BmrPowerupTag.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
@@ -106,8 +107,6 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 		return;
 	}
 
-	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
-
 	// Get all players
 	FCells CellsToDestroy;
 	FMapComponents MapComponents;
@@ -115,22 +114,21 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 	for (const UMapComponent* MapComponentIt : MapComponents)
 	{
 		const APlayerCharacter* PlayerCharacter = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
-		if (!PlayerCharacter)
+		UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+		if (!ASC)
 		{
 			continue;
 		}
 
 		const int32 PlayerIndex = PlayerCharacter->GetPlayerId();
-		const bool bDestroy = (1 << PlayerIndex & Bitmask) != 0;
-		if (bDestroy) // mark to destroy if specified in slot
+		const bool bIsMatchInSlot = (1 << PlayerIndex & Bitmask) != 0;
+		if (bIsMatchInSlot)
 		{
-			CellsToDestroy.Emplace(MapComponentIt->GetCell());
+			FGameplayEventData EventData;
+			EventData.Instigator = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+			ASC->HandleGameplayEvent(BmrGameplayTags::Event::Player_Death, &EventData);
 		}
 	}
-
-	// Destroy all specified
-	APlayerCharacter* DestroyCauser = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
-	GeneratedMap.DestroyLevelActorsOnCells(CellsToDestroy, DestroyCauser);
 }
 
 /*********************************************************************************************
@@ -151,7 +149,7 @@ TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
 // Is overridden to apply damage immunity effect for proper integration with Ability System
 void UMyCheatManager::God()
 {
-	Super::God();
+	// Super is not called intentionally to implement custom god mode through GAS
 
 	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
@@ -162,9 +160,8 @@ void UMyCheatManager::God()
 		return;
 	}
 
-	FGameplayEffectQuery Query;
-	Query.EffectDefinition = DamageImmunityGameplayEffect;
-	if (ASC->GetActiveEffects(Query).IsEmpty())
+	const FGameplayTag& DamageImmunityTag = BmrGameplayTags::GameplayEffect::Player_DamageImmunity.GetTag();
+	if (!ASC->HasMatchingGameplayTag(DamageImmunityTag))
 	{
 		// Effect is not applied yet, so apply it
 		ASC->ApplyGameplayEffectToSelf(DamageImmunityGameplayEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
@@ -172,8 +169,23 @@ void UMyCheatManager::God()
 	else
 	{
 		// Effect is already applied (in god mode), so remove it
-		ASC->RemoveActiveEffects(Query);
+		ASC->RemoveActiveEffectsWithGrantedTags(DamageImmunityTag.GetSingleTagContainer());
 	}
+}
+
+// Forcing locally controlled player to destroy itself immediately, resulting in loss
+void UMyCheatManager::Suicide()
+{
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	const int32 PlayerId = PlayerCharacter ? PlayerCharacter->GetPlayerId() : INDEX_NONE;
+	if (PlayerId < 0)
+	{
+		return;
+	}
+
+	FString SlotString = FString::ChrN(PlayerId, TEXT('0'));
+	SlotString.AppendChar(TEXT('1'));
+	DestroyPlayersBySlots(SlotString);
 }
 
 // Override the level of each powerup for a controlled player

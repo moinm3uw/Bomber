@@ -90,6 +90,11 @@ public:
 	/** Is overridden to apply damage immunity effect for proper integration with Ability System. */
 	virtual void God() override;
 
+	/** Forcing locally controlled player to destroy itself immediately, resulting in loss.
+	 * Cheat is called without parameters. */
+	UFUNCTION(meta = (CheatName = "Bomber.Player.Suicide"))
+	static void Suicide();
+
 	/**
 	 * Override the level of each powerup for a controlled player.
 	 * @param NewLevel 1 is minimum, 5 is maximum.
