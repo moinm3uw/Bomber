@@ -148,6 +148,34 @@ TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
  * Player
  ********************************************************************************************* */
 
+// Is overridden to apply damage immunity effect for proper integration with Ability System
+void UMyCheatManager::God()
+{
+	Super::God();
+
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+	const TSubclassOf<UGameplayEffect> DamageImmunityGameplayEffect = UPlayerDataAsset::Get().GetDamageImmunityGameplayEffect();
+	if (!ensureMsgf(ASC, TEXT("ASSERT: [%i] %hs:\n'ASC' is not valid!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(DamageImmunityGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'DamageImmunityGameplayEffect' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	FGameplayEffectQuery Query;
+	Query.EffectDefinition = DamageImmunityGameplayEffect;
+	if (ASC->GetActiveEffects(Query).IsEmpty())
+	{
+		// Effect is not applied yet, so apply it
+		ASC->ApplyGameplayEffectToSelf(DamageImmunityGameplayEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
+	}
+	else
+	{
+		// Effect is already applied (in god mode), so remove it
+		ASC->RemoveActiveEffects(Query);
+	}
+}
+
 // Override the level of each powerup for a controlled player
 void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 {

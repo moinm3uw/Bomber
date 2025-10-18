@@ -30,14 +30,12 @@ void UBmrPowerupCollectAbility::ActivateAbility(const FGameplayAbilitySpecHandle
 	const FBmrPowerupTag PowerupTag = TriggerEventData->InstigatorTags.GetByIndex(0);
 	const UItemRow* ItemRow = UItemDataAsset::Get().GetRowByItemType(PowerupTag, UMyBlueprintFunctionLibrary::GetLevelType());
 	const TSubclassOf<UGameplayEffect> CollectGameplayEffect = ItemRow ? ItemRow->CollectGameplayEffect : nullptr;
-	ensureMsgf(CollectGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'CollectGameplayEffect' failed to obtain!"), __LINE__, __FUNCTION__);
-	FGameplayEffectContextHandle CollectContext = ASC->MakeEffectContext();
-	CollectContext.AddSourceObject(TriggerEventData->Instigator);
-	const FGameplayEffectSpecHandle CollectSpecHandle = ASC->MakeOutgoingSpec(CollectGameplayEffect, GetAbilityLevel(), CollectContext);
-	if (const FGameplayEffectSpec* CollectSpec = CollectSpecHandle.Data.Get())
+	if (ensureMsgf(CollectGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'CollectGameplayEffect' failed to obtain!"), __LINE__, __FUNCTION__))
 	{
+		FGameplayEffectContextHandle CollectContext = ASC->MakeEffectContext();
+		CollectContext.AddSourceObject(TriggerEventData->Instigator);
 		const FPredictionKey PredictionKey = ASC->GetPredictionKeyForNewAction();
-		ASC->ApplyGameplayEffectSpecToSelf(*CollectSpec, PredictionKey);
+		ASC->ApplyGameplayEffectToSelf(CollectGameplayEffect.GetDefaultObject(), GetAbilityLevel(), CollectContext, PredictionKey);
 	}
 
 	// @TODO JanSeliv uL3AzYIa - BEGIN: remove next once provided support for predicted destroy pooled actors

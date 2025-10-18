@@ -118,6 +118,25 @@ void UBmrHealthAttributeSet::PostAttributeChange(const FGameplayAttribute& Attri
 	}
 }
 
+// Is overridden to prevent any damage in certain cases
+bool UBmrHealthAttributeSet::PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data)
+{
+	if (!Super::PreGameplayEffectExecute(Data))
+	{
+		return false;
+	}
+
+	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute()
+	    && Data.Target.HasMatchingGameplayTag(BmrGameplayTags::GameplayEffect::Player_DamageImmunity))
+	{
+		// Prevent damage when immunity is active
+		Data.EvaluatedData.Magnitude = 0.f;
+		return false;
+	}
+
+	return true;
+}
+
 // Is overridden to handle damage processing and trigger death events
 void UBmrHealthAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {

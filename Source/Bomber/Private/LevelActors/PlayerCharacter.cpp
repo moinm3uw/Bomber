@@ -418,10 +418,9 @@ void APlayerCharacter::ApplyCharacterConfig()
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	const UPlayerRow* PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(GetPlayerTag());
 	const TSubclassOf<UGameplayEffect> ConfigGameplayEffect = PlayerRow ? PlayerRow->ConfigGameplayEffect : nullptr;
-	const FGameplayEffectSpecHandle ConfigSpecHandle = ASC && ConfigGameplayEffect ? ASC->MakeOutgoingSpec(ConfigGameplayEffect, /*Level*/ 1, ASC->MakeEffectContext()) : FGameplayEffectSpecHandle();
-	if (const FGameplayEffectSpec* ConfigSpec = ConfigSpecHandle.Data.Get())
+	if (ASC && ConfigGameplayEffect)
 	{
-		ASC->ApplyGameplayEffectSpecToSelf(*ConfigSpec);
+		ASC->ApplyGameplayEffectToSelf(ConfigGameplayEffect.GetDefaultObject(), /*Level*/ 1, ASC->MakeEffectContext());
 	}
 }
 

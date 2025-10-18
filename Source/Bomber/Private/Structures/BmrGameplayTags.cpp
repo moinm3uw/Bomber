@@ -18,9 +18,14 @@ namespace BmrGameplayTags
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Player_Death, "Event.Player.Death", "Event that fires on death");
 	} // namespace Event
 
+	namespace GameplayEffect
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Player_DamageImmunity, "GameplayEffect.Player.DamageImmunity", "Is added by UPlayerDataAsset::DamageImmunityGameplayEffectInternal, defines a temporary damage immunity effect for the player, e.g., god mode, join game in progress etc");
+	} // namespace GameplayEffect
+
 	namespace SetByCaller
 	{
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bomb_Duration, "SetByCaller.Bomb.Duration", "SetByCaller tag to set bomb duration in seconds");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bomb_Duration, "SetByCaller.Bomb.Duration", "SetByCaller tag to set bomb duration in seconds, modifies original duration to compensate for network latency on server side");
 	} // namespace SetByCaller
 
 	namespace GameplayCue

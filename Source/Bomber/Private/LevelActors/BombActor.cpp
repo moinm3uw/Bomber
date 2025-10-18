@@ -171,10 +171,10 @@ void ABombActor::DetonateBomb()
 		UAbilitySystemComponent& InstigatorASC = GetInstigatorAbilityComponentChecked();
 		FGameplayEffectContextHandle EffectContext = InstigatorASC.MakeEffectContext();
 		EffectContext.AddInstigator(GetInstigator(), this);
-		const FGameplayEffectSpecHandle DamageSpecHandle = InstigatorASC.MakeOutgoingSpec(UBombDataAsset::Get().GetExplosionDamageEffect(), 1.f, EffectContext);
-		if (const FGameplayEffectSpec* DamageSpec = DamageSpecHandle.Data.Get())
+		TSubclassOf<UGameplayEffect> ExplosionDamageEffect = UBombDataAsset::Get().GetExplosionDamageEffect();
+		if (ensureMsgf(ExplosionDamageEffect, TEXT("ASSERT: [%i] %hs:\n'ExplosionDamageEffect' is not set!"), __LINE__, __FUNCTION__))
 		{
-			InstigatorASC.ApplyGameplayEffectSpecToTarget(*DamageSpec, TargetASC);
+			InstigatorASC.ApplyGameplayEffectToTarget(ExplosionDamageEffect.GetDefaultObject(), TargetASC);
 		}
 	}
 }

@@ -113,8 +113,8 @@ FActiveGameplayEffectHandle UBmrBombPlaceAbility::ApplyDurationalEffect(const TS
 		return FActiveGameplayEffectHandle();
 	}
 
-	const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect, 1.f, FGameplayEffectContextHandle());
-	const FGameplayEffectSpec* DurationSpec = SpecHandle.Data.Get();
+	const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect, /*Level*/ 1.f, FGameplayEffectContextHandle());
+	FGameplayEffectSpec* DurationSpec = SpecHandle.Data.Get();
 	if (!ensureMsgf(DurationSpec, TEXT("ASSERT: [%i] %hs:\n'DurationSpec' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return FActiveGameplayEffectHandle();
@@ -132,7 +132,7 @@ FActiveGameplayEffectHandle UBmrBombPlaceAbility::ApplyDurationalEffect(const TS
 		const float PlayerPing = Owner->GetPingInMilliseconds() * 0.001f;
 		BombDuration = FMath::Max(MaxCompensatedPing, BombDuration - PlayerPing);
 	}
-	SpecHandle.Data->SetSetByCallerMagnitude(BmrGameplayTags::SetByCaller::Bomb_Duration, BombDuration);
+	DurationSpec->SetSetByCallerMagnitude(BmrGameplayTags::SetByCaller::Bomb_Duration, BombDuration);
 
 	// Apply effect itself
 	const FPredictionKey PredictionKey = ASC->GetPredictionKeyForNewAction();

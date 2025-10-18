@@ -87,6 +87,9 @@ public:
 	 * Player
 	 ********************************************************************************************* */
 public:
+	/** Is overridden to apply damage immunity effect for proper integration with Ability System. */
+	virtual void God() override;
+
 	/**
 	 * Override the level of each powerup for a controlled player.
 	 * @param NewLevel 1 is minimum, 5 is maximum.

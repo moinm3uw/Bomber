@@ -86,6 +86,9 @@ protected:
 	/** Is overridden to reclamp after changing dynamic max attributes. */
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 
+	/** Is overridden to prevent any damage in certain cases. */
+	virtual bool PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data) override;
+
 	/** Is overridden to handle damage processing and trigger death events. */
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 };

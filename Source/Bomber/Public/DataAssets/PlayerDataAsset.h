@@ -154,6 +154,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
 
+	/** Returns the gameplay effect that gives immortality to the player character when applied.
+	 * @see ::DamageImmunityGameplayEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetDamageImmunityGameplayEffect() const { return DamageImmunityGameplayEffectInternal; }
+
 protected:
 	/** All materials that are used by nameplate meshes. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Nameplate Materials", ShowOnlyInnerProperties))
@@ -174,4 +179,9 @@ protected:
 	/** Contains all abilities to grant on the player at the start of the game. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Startup Abilities", ShowOnlyInnerProperties))
 	TArray<TSubclassOf<class UGameplayAbility>> StartupAbilitiesInternal;
+
+	/** When applied, gives immortality to the player character.
+	 * E.g: Is used by God cheat, might be useful for shield skill, or when player joins existing game in progress. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Damage Immunity Gameplay Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> DamageImmunityGameplayEffectInternal = nullptr;
 };
