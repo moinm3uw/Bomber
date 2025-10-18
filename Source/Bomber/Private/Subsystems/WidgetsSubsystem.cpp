@@ -11,6 +11,9 @@
 
 // UE
 #include "Components/Viewport.h"
+#include "GameFeatureData.h"
+#include "GameFeaturesSubsystem.h"
+#include "Misc/PackageName.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(WidgetsSubsystem)
 
@@ -239,8 +242,56 @@ void UWidgetsSubsystem::SetAllWidgetsVisibility(bool bMakeVisible, bool bCanRest
 }
 
 /*********************************************************************************************
- * Events
+ * Overrides and Events
  ********************************************************************************************* */
+
+// Is overridden to perform initial bindings (however, is too early to init widgets here until controller ready)
+void UWidgetsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+
+	UGameFeaturesSubsystem::Get().AddObserver(this);
+}
+
+// Is overridden to cleanup injected widgets to let them unload properly
+void UWidgetsSubsystem::OnGameFeatureDeactivating(const UGameFeatureData* GameFeatureData, FGameFeatureDeactivatingContext& Context, const FString& PluginURL)
+{
+	checkf(GameFeatureData, TEXT("ERROR: [%i] %hs:\n'GameFeatureData' is null!"), __LINE__, __FUNCTION__);
+
+	FString OutModuleRootPath;
+	FString OutPackagePath;
+	FString OutPackageName;
+	FPackageName::SplitLongPackageName(GameFeatureData->GetPathName(), OutModuleRootPath, OutPackagePath, OutPackageName);
+
+	FGameplayTagContainer WidgetsOwnedByModule = FGameplayTagContainer::EmptyContainer;
+	for (const TPair<FGameplayTag, FBmrManageableWidgetsContainer>& It : AllManageableWidgetsInternal)
+	{
+		for (const UUserWidget* WidgetInstanceIt : It.Value.WidgetInstances)
+		{
+			const TSubclassOf<UUserWidget> WidgetClassIt = WidgetInstanceIt ? WidgetInstanceIt->GetClass() : nullptr;
+			if (!WidgetClassIt)
+			{
+				continue;
+			}
+
+			FString OutWidgetRootPath;
+			FString OutWidgetPath;
+			FString OutWidgetName;
+			FPackageName::SplitLongPackageName(WidgetClassIt->GetPathName(), OutWidgetRootPath, OutWidgetPath, OutWidgetName);
+			if (OutWidgetRootPath == OutModuleRootPath)
+			{
+				WidgetsOwnedByModule.AddTagFast(It.Key);
+				break;
+			}
+		}
+	}
+
+	// Destroy all widgets that were created by this game feature module
+	for (const FGameplayTag& WidgetTagIt : WidgetsOwnedByModule)
+	{
+		DestroyManageableWidgetByTag(WidgetTagIt);
+	}
+}
 
 // Callback for when the player controller is changed on this subsystem's owning local player
 void UWidgetsSubsystem::PlayerControllerChanged(APlayerController* NewPlayerController)
@@ -268,6 +319,8 @@ void UWidgetsSubsystem::PlayerControllerChanged(APlayerController* NewPlayerCont
 void UWidgetsSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
+
+	UGameFeaturesSubsystem::Get().RemoveObserver(this);
 
 	CleanupWidgets();
 }

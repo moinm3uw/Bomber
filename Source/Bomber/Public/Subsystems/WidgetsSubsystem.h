@@ -7,6 +7,9 @@
 // Bomber
 #include "Structures/ManageableWidgetData.h"
 
+// UE
+#include "GameFeatureStateChangeObserver.h"
+
 #include "WidgetsSubsystem.generated.h"
 
 class UUserWidget;
@@ -18,7 +21,8 @@ struct FManageableWidgetData;
  * @see Access its data with UUIDataAsset (Content/Bomber/DataAssets/DA_UI).
  */
 UCLASS()
-class BOMBER_API UWidgetsSubsystem : public ULocalPlayerSubsystem
+class BOMBER_API UWidgetsSubsystem : public ULocalPlayerSubsystem,
+                                     public IGameFeatureStateChangeObserver
 {
 	GENERATED_BODY()
 
@@ -133,9 +137,15 @@ protected:
 	FGameplayTagContainer AllHiddenWidgetsInternal = FGameplayTagContainer::EmptyContainer;
 
 	/*********************************************************************************************
-	 * Events
+	 * Overrides and Events
 	 ********************************************************************************************* */
 protected:
+	/** Is overridden to perform initial bindings (however, is too early to init widgets here until controller ready). */
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+	/** Is overridden to cleanup injected widgets to let them unload properly. */
+	virtual void OnGameFeatureDeactivating(const UGameFeatureData* GameFeatureData, FGameFeatureDeactivatingContext& Context, const FString& PluginURL) override;
+
 	/** Callback for when the player controller is changed on this subsystem's owning local player. */
 	virtual void PlayerControllerChanged(APlayerController* NewPlayerController) override;
 

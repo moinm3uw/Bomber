@@ -20,6 +20,7 @@ public class Bomber : ModuleRules
                 , "UMG" // UUserWidget creation
                 , "EnhancedInput" // Created UMyInputAction, UMyInputMappingContext
                 , "DeveloperSettings" // Created UDataAssetsContainer
+                , "GameFeatures" // Inherited IGameFeatureStateChangeObserver
                 , "GameplayAbilities", "GameplayTags", "GameplayTasks" // Gameplay Ability System (GAS)
                 , "Mover" // Created UBmrMoverComponent, UBmrMoverWalkingMode
                 //My modules
@@ -41,7 +42,7 @@ public class Bomber : ModuleRules
 				, "AIModule" // AI
 				, "Niagara" // VFX
 				, "GameplayTags" // FGameplayTag
-                , "GameFeatures", "ModularGameplay" // Modular Game Features (MGF)
+                , "ModularGameplay" // Modular Game Features (MGF)
                 , "ModelViewViewModel" // MVVM UI pattern
 				//My modules
 				, "SettingsWidgetConstructor" // Generates settings
