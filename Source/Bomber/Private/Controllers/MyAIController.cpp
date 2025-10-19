@@ -49,7 +49,7 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 		return;
 	}
 
-	if (!IsMoveInputIgnored())
+	if (!MoverComponent->IsBlockedMovement())
 	{
 		const FCell& CurrentCell = MapComponent->GetCell();
 		const bool bHasArrived = CurrentCell == DestinationCell;
@@ -82,8 +82,9 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 bool AMyAIController::IsAIEnabled() const
 {
 	const APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
-	return InOwner
-	       && !InOwner->IsMoveInputIgnored()
+	const UBmrMoverComponent* MoverComponent = InOwner ? InOwner->GetMoverComponent() : nullptr;
+	return MoverComponent
+	       && !MoverComponent->IsBlockedMovement()
 	       && UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread();
 }
 
@@ -175,14 +176,6 @@ void AMyAIController::OnUnPossess()
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 	SetAI(false);
-}
-
-// Locks or unlocks movement input
-void AMyAIController::SetIgnoreMoveInput(bool bShouldIgnore)
-{
-	// Do not call super to avoid stacking, override it
-
-	IgnoreMoveInput = bShouldIgnore;
 }
 
 // Stops running to target
@@ -445,7 +438,11 @@ void AMyAIController::SetAI(bool bShouldEnable)
 
 	Reset();
 
-	SetIgnoreMoveInput(!bShouldEnable);
+	UBmrMoverComponent* MoverComponent = InOwner ? InOwner->GetMoverComponent() : nullptr;
+	if (MoverComponent)
+	{
+		MoverComponent->SetBlockMovement(!bShouldEnable);
+	}
 
 	// Handle the Ai updating timer
 	FTimerManager& TimerManager = GetWorldTimerManager();

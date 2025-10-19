@@ -79,9 +79,6 @@ protected:
 	/** Allows the controller to react on unpossessing the pawn to disable AI. */
 	virtual void OnUnPossess() override;
 
-	/** Locks or unlocks movement input. */
-	virtual void SetIgnoreMoveInput(bool bShouldIgnore) override;
-
 	/** Stops running to target. */
 	virtual void Reset() override;
 

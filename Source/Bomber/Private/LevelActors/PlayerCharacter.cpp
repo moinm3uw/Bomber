@@ -334,11 +334,6 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 	{
 		ASC->CancelAllAbilities();
 	}
-
-	if (Controller)
-	{
-		Controller->SetIgnoreMoveInput(true);
-	}
 }
 
 // Is called for everytime when character changed its cell on the Generated Map

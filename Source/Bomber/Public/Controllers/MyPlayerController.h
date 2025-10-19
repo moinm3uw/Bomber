@@ -61,11 +61,6 @@ protected:
 	/*********************************************************************************************
 	 * Overrides
 	 ********************************************************************************************* */
-public:
-	/** Locks or unlocks movement input, is declared in parent as UFUNCTION.
-	 * @param bShouldIgnore	If true, move input is ignored. If false, input is not ignored.*/
-	virtual void SetIgnoreMoveInput(bool bShouldIgnore) override;
-
 protected:
 	/** This is called only in the gameplay before calling begin play. */
 	virtual void PostInitializeComponents() override;

@@ -27,6 +27,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void RequestMoveByIntent(const FVector& Direction);
 
+	/** When blocked, all movement inputs are ignored and the owner pawn will not move.
+	 * Alternatively, UPlayerDataAsset::BlockMovementEffectInternal can be applied/removed directly. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetBlockMovement(bool bShouldBlock);
+
+	/** Returns true if move inputs are currently ignored and the owner pawn can not move.
+	 * Alternatively, BmrGameplayTags::GameplayEffect::Block::Movement tag can be checked directly. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	bool IsBlockedMovement() const;
+
 	/*********************************************************************************************
 	 * Data
 	 ********************************************************************************************* */
@@ -70,6 +80,10 @@ protected:
 	/** Called when owner is destroyed on the Generated Map. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPostRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
+
+	/** Event called after a pawn's controller has changed, on the server and owning client. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnControllerChanged(APawn* Pawn, AController* OldController, AController* NewController);
 
 	/** Broadcast at the end of a simulation tick after movement has occurred, but allowing additions/modifications to the state. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

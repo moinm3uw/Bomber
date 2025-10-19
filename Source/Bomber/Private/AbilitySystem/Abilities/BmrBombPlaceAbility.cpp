@@ -13,7 +13,6 @@
 // UE
 #include "AbilitySystemComponent.h"
 #include "DataAssets/BombDataAsset.h"
-#include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 
@@ -38,14 +37,6 @@ bool UBmrBombPlaceAbility::ShouldAbilityRespondToEvent(const FGameplayAbilityAct
 {
 	if (!Super::ShouldAbilityRespondToEvent(ActorInfo, TriggerEventData))
 	{
-		return false;
-	}
-
-	const APawn* AvatarPawn = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	const AController* Controller = AvatarPawn ? AvatarPawn->GetController() : nullptr;
-	if (!Controller || Controller->IsMoveInputIgnored())
-	{
-		// Can not activate ability if move input is ignored
 		return false;
 	}
 

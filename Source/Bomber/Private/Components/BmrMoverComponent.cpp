@@ -6,8 +6,10 @@
 #include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Bomber.h"
 #include "Components/MapComponent.h"
+#include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Structures/BmrMoverSyncState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
@@ -27,6 +29,37 @@ void UBmrMoverComponent::RequestMoveByIntent(const FVector& Direction)
 	CurrentMoveInputInternal = Direction;
 }
 
+// When blocked, all movement inputs are ignored and the owner pawn will not move
+void UBmrMoverComponent::SetBlockMovement(bool bShouldBlock)
+{
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	if (!ASC
+	    || bShouldBlock == IsBlockedMovement())
+	{
+		return;
+	}
+
+	if (bShouldBlock)
+	{
+		const TSubclassOf<UGameplayEffect> BlockMovementEffect = UPlayerDataAsset::Get().GetBlockMovementEffect();
+		ensureMsgf(BlockMovementEffect, TEXT("ASSERT: [%i] %hs:\n'BlockMovementEffect' is not valid!"), __LINE__, __FUNCTION__);
+		ASC->ApplyGameplayEffectToSelf(BlockMovementEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
+
+		RequestMoveByIntent(FVector::ZeroVector);
+	}
+	else
+	{
+		ASC->RemoveActiveEffectsWithGrantedTags(BmrGameplayTags::GameplayEffect::Block::Movement.GetTag().GetSingleTagContainer());
+	}
+}
+
+// Returns true if movement is currently disabled
+bool UBmrMoverComponent::IsBlockedMovement() const
+{
+	const UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwner());
+	return !ASC || ASC->HasMatchingGameplayTag(BmrGameplayTags::GameplayEffect::Block::Movement);
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
@@ -36,16 +69,20 @@ void UBmrMoverComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BIND_ON_CHARACTER_READY_PTR(this, ThisClass::OnCharacterReady, GetOwner<APlayerCharacter>());
+	APawn* OwnerPlayer = CastChecked<APawn>(GetOwner());
+
+	BIND_ON_CHARACTER_READY_PTR(this, ThisClass::OnCharacterReady, Cast<APlayerCharacter>(OwnerPlayer));
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
-	UMapComponent* MapComponent = UMapComponent::GetMapComponent(GetOwner());
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerPlayer);
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 	MapComponent->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnOwnerAddedToLevel);
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 
 	OnPostMovement.AddUniqueDynamic(this, &ThisClass::OnPostMove);
+
+	OwnerPlayer->ReceiveControllerChangedDelegate.AddUniqueDynamic(this, &ThisClass::OnControllerChanged);
 }
 
 // Consumes cached data (inputs and states) to be processed by other systems such as movement modes
@@ -60,19 +97,27 @@ void UBmrMoverComponent::ProduceInput(const int32 DeltaTimeMS, FMoverInputCmdCon
 	// (and non controlling clients) and B) the code is not rerun during reconcile/resimulates.
 
 	const APawn* InOwnerPawn = GetOwner<APawn>();
+	static const FCharacterDefaultInputs DoNothingInput;
 	FCharacterDefaultInputs& CharacterInputs = Cmd->InputCollection.FindOrAddMutableDataByType<FCharacterDefaultInputs>();
+
 	const AController* OwnedController = InOwnerPawn ? InOwnerPawn->GetController() : nullptr;
 	if (!OwnedController)
 	{
 		if (GetOwnerRole() == ROLE_Authority
 		    && GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy)
 		{
-			static const FCharacterDefaultInputs DoNothingInput;
 			// If we get here, that means this pawn is not currently possessed and we're choosing to provide default do-nothing input
 			CharacterInputs = DoNothingInput;
 		}
 
 		// We don't have a local controller so we can't run the code below. This is ok. Simulated proxies will just use previous input when extrapolating
+		return;
+	}
+
+	if (IsBlockedMovement())
+	{
+		// Pass a do nothing input
+		CharacterInputs = DoNothingInput;
 		return;
 	}
 
@@ -114,18 +159,8 @@ void UBmrMoverComponent::OnCharacterReady_Implementation(APlayerCharacter* Playe
 // Listen to react when entered to different game state
 void UBmrMoverComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
 {
-	switch (CurrentGameState)
-	{
-		case ECGS::Menu: // fallthrough
-		case ECGS::GameStarting:
-		{
-			RequestMoveByIntent(FVector::ZeroVector);
-			break;
-		}
-
-		default:
-			break;
-	}
+	const bool bShouldDisableMovement = CurrentGameState != ECurrentGameState::InGame;
+	SetBlockMovement(bShouldDisableMovement);
 }
 
 // Called when owner is added on the Generated Map, on both server and client
@@ -147,12 +182,24 @@ void UBmrMoverComponent::OnOwnerAddedToLevel_Implementation(UMapComponent* MapCo
 // Called when owner is destroyed on the Generated Map
 void UBmrMoverComponent::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
-	RequestMoveByIntent(FVector::ZeroVector);
+	SetBlockMovement(true);
+}
+
+// Event called after a pawn's controller has changed, on the server and owning client
+void UBmrMoverComponent::OnControllerChanged_Implementation(APawn* Pawn, AController* OldController, AController* NewController)
+{
+	const bool bShouldDisableMovement = !NewController || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame;
+	SetBlockMovement(bShouldDisableMovement);
 }
 
 // Broadcast at the end of a simulation tick after movement has occurred, but allowing additions/modifications to the state
 void UBmrMoverComponent::OnPostMove_Implementation(const FMoverTimeStep& TimeStep, FMoverSyncState& SyncState, FMoverAuxStateContext& AuxState)
 {
+	if (IsBlockedMovement())
+	{
+		return;
+	}
+
 	// Add powerup state to SyncState
 	FBmrMoverSyncState& BmrSyncStateRef = SyncState.SyncStateCollection.FindOrAddMutableDataByType<FBmrMoverSyncState>();
 	BmrSyncStateRef.SkatePowerupAttribute = CachedSkatePowerupAttributeInternal;
@@ -161,8 +208,7 @@ void UBmrMoverComponent::OnPostMove_Implementation(const FMoverTimeStep& TimeSte
 // Is called by Move Input Action when player pressed the move input button, e.g: WASD or Arrow keys
 void UBmrMoverComponent::OnMoveInputTriggered_Implementation(const FInputActionValue& ActionValue)
 {
-	const APawn* InOwnerPawn = GetOwner<APawn>();
-	if (!InOwnerPawn || InOwnerPawn->IsMoveInputIgnored())
+	if (IsBlockedMovement())
 	{
 		return;
 	}

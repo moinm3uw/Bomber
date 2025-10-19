@@ -105,30 +105,6 @@ void AMyPlayerController::ServerSetGameState_Implementation(ECurrentGameState Ne
  * Overrides
  ********************************************************************************************* */
 
-// Locks or unlocks movement input
-void AMyPlayerController::SetIgnoreMoveInput(bool bShouldIgnore)
-{
-	// Super is intentionally not called to avoid stacking, but override it
-
-	const bool bIsIgnored = IgnoreMoveInput != 0;
-	if (bIsIgnored == bShouldIgnore)
-	{
-		return;
-	}
-
-	IgnoreMoveInput = bShouldIgnore;
-
-	if (bShouldIgnore)
-	{
-		const APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>();
-		UBmrMoverComponent* MoverComponent = PlayerCharacter ? PlayerCharacter->GetMoverComponent() : nullptr;
-		if (MoverComponent)
-		{
-			MoverComponent->RequestMoveByIntent(FVector::ZeroVector);
-		}
-	}
-}
-
 // This is called only in the gameplay before calling begin play
 void AMyPlayerController::PostInitializeComponents()
 {
@@ -298,32 +274,6 @@ void AMyPlayerController::OnWidgetsInitialized_Implementation()
 // Listen to toggle movement input
 void AMyPlayerController::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
-	switch (CurrentGameState)
-	{
-		case ECurrentGameState::GameStarting:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::Menu:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::EndGame:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::InGame:
-		{
-			SetIgnoreMoveInput(false);
-			break;
-		}
-		default:
-			break;
-	}
-
 	ApplyAllInputContexts();
 }
 

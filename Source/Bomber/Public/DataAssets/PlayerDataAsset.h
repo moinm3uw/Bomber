@@ -159,6 +159,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE TSubclassOf<class UGameplayEffect> GetBlockIncomingDamageEffect() const { return BlockIncomingDamageEffectInternal; }
 
+	/** Returns the gameplay effect that disables movement for the player character when applied.
+	 * @see ::BlockMovementEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetBlockMovementEffect() const { return BlockMovementEffectInternal; }
+
 protected:
 	/** All materials that are used by nameplate meshes. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Nameplate Materials", ShowOnlyInnerProperties))
@@ -185,4 +190,10 @@ protected:
 	 * E.g: Is used by God cheat, might be useful for shield skill, or when player joins existing game in progress. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Block Incoming Damage Effect", ShowOnlyInnerProperties))
 	TSubclassOf<class UGameplayEffect> BlockIncomingDamageEffectInternal = nullptr;
+
+	/** When applied, disables movement for the player character.
+	 * Adds BmrGameplayTags::GameplayEffect::Block::Movement tag.
+	 * E.g: Is used when player is in a menu, during 3-2-1 timer, when died, in cinematics etc. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Block Movement Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> BlockMovementEffectInternal = nullptr;
 };

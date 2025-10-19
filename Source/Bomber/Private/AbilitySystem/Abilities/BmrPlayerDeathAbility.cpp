@@ -11,7 +11,7 @@
 
 // UE
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
-#include "GameFramework/PlayerController.h"
+#include "AbilitySystemComponent.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPlayerDeathAbility)
 
@@ -21,14 +21,12 @@ void UBmrPlayerDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	check(ActorInfo && TriggerEventData);
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
 
 	DeathCauserInternal = const_cast<AActor*>(TriggerEventData->Instigator.Get());
 
-	if (APlayerController* PlayerController = ActorInfo->PlayerController.Get())
-	{
-		PlayerController->SetIgnoreMoveInput(true);
-	}
-
+	// Play animation
 	const APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get());
 	const UPlayerRow* PlayerRow = PlayerCharacter ? UPlayerDataAsset::Get().GetRowByPlayerTag(PlayerCharacter->GetPlayerTag()) : nullptr;
 	UAnimMontage* DeathMontage = PlayerRow ? PlayerRow->DeathMontage : nullptr;
@@ -43,6 +41,12 @@ void UBmrPlayerDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	else
 	{
 		K2_EndAbilityLocally();
+	}
+
+	// Disable movement
+	if (const TSubclassOf<UGameplayEffect> BlockMovementEffect = UPlayerDataAsset::Get().GetBlockMovementEffect())
+	{
+		ASC->ApplyGameplayEffectToSelf(BlockMovementEffect.GetDefaultObject(), GetAbilityLevel(), ASC->MakeEffectContext());
 	}
 }
 
