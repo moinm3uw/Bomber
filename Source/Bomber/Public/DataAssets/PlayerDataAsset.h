@@ -154,10 +154,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
 
-	/** Returns the gameplay effect that gives immortality to the player character when applied.
-	 * @see ::DamageImmunityGameplayEffectInternal */
+	/** Returns the gameplay effect that gives immune to incoming damage when applied.
+	 * @see ::BlockIncomingDamageEffectInternal */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE TSubclassOf<class UGameplayEffect> GetDamageImmunityGameplayEffect() const { return DamageImmunityGameplayEffectInternal; }
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetBlockIncomingDamageEffect() const { return BlockIncomingDamageEffectInternal; }
 
 protected:
 	/** All materials that are used by nameplate meshes. */
@@ -180,9 +180,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Startup Abilities", ShowOnlyInnerProperties))
 	TArray<TSubclassOf<class UGameplayAbility>> StartupAbilitiesInternal;
 
-	/** When applied, gives immortality to the player character.
-	 * Adds BmrGameplayTags::GameplayEffect::Player_DamageImmunity tag.
+	/** When applied, gives immune to incoming damage.
+	 * Adds BmrGameplayTags::GameplayEffect::Block::IncomingDamage tag.
 	 * E.g: Is used by God cheat, might be useful for shield skill, or when player joins existing game in progress. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Damage Immunity Gameplay Effect", ShowOnlyInnerProperties))
-	TSubclassOf<class UGameplayEffect> DamageImmunityGameplayEffectInternal = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Block Incoming Damage Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> BlockIncomingDamageEffectInternal = nullptr;
 };

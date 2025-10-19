@@ -28,8 +28,11 @@ namespace BmrGameplayTags
 
 	namespace GameplayEffect
 	{
-		/** Is added by UPlayerDataAsset::DamageImmunityGameplayEffectInternal, defines a temporary damage immunity effect for the player, e.g., god mode, join game in progress etc. */
-		BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Player_DamageImmunity);
+		namespace Block
+		{
+			/** Is added by UPlayerDataAsset::BlockIncomingDamageEffectInternal, defines a temporary immunity effect for incoming damage, e.g., god mode, join game in progress etc. */
+			BOMBER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(IncomingDamage);
+		} // namespace Block
 	} // namespace GameplayEffect
 
 	namespace SetByCaller

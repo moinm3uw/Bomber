@@ -127,7 +127,7 @@ bool UBmrHealthAttributeSet::PreGameplayEffectExecute(struct FGameplayEffectModC
 	}
 
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute()
-	    && Data.Target.HasMatchingGameplayTag(BmrGameplayTags::GameplayEffect::Player_DamageImmunity))
+	    && Data.Target.HasMatchingGameplayTag(BmrGameplayTags::GameplayEffect::Block::IncomingDamage))
 	{
 		// Prevent damage when immunity is active
 		Data.EvaluatedData.Magnitude = 0.f;

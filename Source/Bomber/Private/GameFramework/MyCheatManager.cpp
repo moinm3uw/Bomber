@@ -153,23 +153,23 @@ void UMyCheatManager::God()
 
 	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
 	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
-	const TSubclassOf<UGameplayEffect> DamageImmunityGameplayEffect = UPlayerDataAsset::Get().GetDamageImmunityGameplayEffect();
+	const TSubclassOf<UGameplayEffect> BlockIncomingDamageEffect = UPlayerDataAsset::Get().GetBlockIncomingDamageEffect();
 	if (!ensureMsgf(ASC, TEXT("ASSERT: [%i] %hs:\n'ASC' is not valid!"), __LINE__, __FUNCTION__)
-	    || !ensureMsgf(DamageImmunityGameplayEffect, TEXT("ASSERT: [%i] %hs:\n'DamageImmunityGameplayEffect' is not valid!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(BlockIncomingDamageEffect, TEXT("ASSERT: [%i] %hs:\n'BlockIncomingDamageEffect' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
-	const FGameplayTag& DamageImmunityTag = BmrGameplayTags::GameplayEffect::Player_DamageImmunity.GetTag();
-	if (!ASC->HasMatchingGameplayTag(DamageImmunityTag))
+	const FGameplayTag BlockIncomingDamageTag = BmrGameplayTags::GameplayEffect::Block::IncomingDamage;
+	if (!ASC->HasMatchingGameplayTag(BlockIncomingDamageTag))
 	{
 		// Effect is not applied yet, so apply it
-		ASC->ApplyGameplayEffectToSelf(DamageImmunityGameplayEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
+		ASC->ApplyGameplayEffectToSelf(BlockIncomingDamageEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
 	}
 	else
 	{
 		// Effect is already applied (in god mode), so remove it
-		ASC->RemoveActiveEffectsWithGrantedTags(DamageImmunityTag.GetSingleTagContainer());
+		ASC->RemoveActiveEffectsWithGrantedTags(BlockIncomingDamageTag.GetSingleTagContainer());
 	}
 }
 

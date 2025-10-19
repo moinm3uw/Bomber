@@ -20,7 +20,10 @@ namespace BmrGameplayTags
 
 	namespace GameplayEffect
 	{
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Player_DamageImmunity, "GameplayEffect.Player.DamageImmunity", "Is added by UPlayerDataAsset::DamageImmunityGameplayEffectInternal, defines a temporary damage immunity effect for the player, e.g., god mode, join game in progress etc");
+		namespace Block
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(IncomingDamage, "GameplayEffect.Block.IncomingDamage", "Is added by UPlayerDataAsset::BlockIncomingDamageEffectInternal, defines a temporary immunity effect for incoming damage, e.g., god mode, join game in progress etc");
+		} // namespace Block
 	} // namespace GameplayEffect
 
 	namespace SetByCaller
