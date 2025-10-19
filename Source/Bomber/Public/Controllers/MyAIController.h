@@ -41,7 +41,7 @@ public:
 	FORCEINLINE bool CanAISpawnBomb() const { return bCanSpawnBombs; }
 
 	/** Enable or disable spawning bombs for this bot (might be useful for some game modes)
-	 * Main logic still will be running unless move input is ignored as well. */
+	 * Main logic still will be running unless move input is disabled as well. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DisplayName = "Set AI Can Spawn Bomb"))
 	void SetAICanSpawnBomb(bool bCanSpawn) { bCanSpawnBombs = bCanSpawn; }
 
@@ -55,24 +55,17 @@ protected:
 	FTimerHandle AIUpdateHandleInternal;
 
 	/** Cell position of current path segment's end */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, ShowOnlyInnerProperties, DisplayName = "AI Move To"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Move To"))
 	FCell AIMoveToInternal = FCell::InvalidCell;
 
-	/** Controlled character */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Owner Character"))
-	TObjectPtr<class APlayerCharacter> OwnerInternal = nullptr;
-
 	/** If disabled, AI will not be able to put any bombs. Might be useful for some game modes.
-	 * Main logic still will be running unless move input is ignored as well. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "NAME"))
+	 * Main logic still will be running unless move input is disabled as well. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Can Spawn Bombs"))
 	bool bCanSpawnBombs = true;
 
 	/* ---------------------------------------------------
 	 *		Protected functions
 	 * --------------------------------------------------- */
-
-	/** Called when an instance of this class is placed (in editor) or spawned */
-	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/** This is called only in the gameplay before calling begin play. */
 	virtual void PostInitializeComponents() override;

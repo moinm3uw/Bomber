@@ -40,8 +40,9 @@ AMyAIController::AMyAIController()
 // Makes AI go toward specified destination cell
 void AMyAIController::MoveToCell(const FCell& DestinationCell)
 {
-	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
-	UBmrMoverComponent* MoverComponent = OwnerInternal->GetMoverComponent();
+	APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
+	const UMapComponent* MapComponent = UMapComponent::GetMapComponent(InOwner);
+	UBmrMoverComponent* MoverComponent = InOwner ? InOwner->GetMoverComponent() : nullptr;
 	if (!MapComponent
 	    || !MoverComponent)
 	{
@@ -65,13 +66,13 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 		// Visualize and show destination cell
 		if (UUtilsLibrary::HasWorldBegunPlay()) // PIE
 		{
-			UCellsUtilsLibrary::ClearDisplayedCells(OwnerInternal);
+			UCellsUtilsLibrary::ClearDisplayedCells(InOwner);
 		}
 
 		if (MapComponent->bShouldShowRenders)
 		{
 			static const FDisplayCellsParams DisplayParams{FLinearColor::Gray, 255.f, 300.f, TEXT("x")};
-			UCellsUtilsLibrary::DisplayCell(OwnerInternal, DestinationCell, DisplayParams);
+			UCellsUtilsLibrary::DisplayCell(InOwner, DestinationCell, DisplayParams);
 		}
 	}
 #endif
@@ -80,26 +81,15 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 // Returns true if AI is enabled (move input is not ignored and cheat is not enabled)
 bool AMyAIController::IsAIEnabled() const
 {
-	return OwnerInternal
-	       && !OwnerInternal->IsMoveInputIgnored()
+	const APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
+	return InOwner
+	       && !InOwner->IsMoveInputIgnored()
 	       && UMyCheatManager::CVarAISetEnabled.GetValueOnAnyThread();
 }
 
 /* ---------------------------------------------------
  *					Protected functions
  * --------------------------------------------------- */
-
-// Called when an instance of this class is placed (in editor) or spawned
-void AMyAIController::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-	if (IS_TRANSIENT(this))
-	{
-		return;
-	}
-
-	Possess(OwnerInternal);
-}
 
 // This is called only in the gameplay before calling begin play
 void AMyAIController::PostInitializeComponents()
@@ -128,8 +118,8 @@ void AMyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	OwnerInternal = Cast<APlayerCharacter>(InPawn);
-	if (!OwnerInternal)
+	APlayerCharacter* InOwner = Cast<APlayerCharacter>(InPawn);
+	if (!InPawn)
 	{
 		return;
 	}
@@ -158,16 +148,16 @@ void AMyAIController::OnPossess(APawn* InPawn)
 		InitPlayerState();
 		AMyPlayerState* NewPlayerState = GetPlayerState<AMyPlayerState>();
 		checkf(NewPlayerState, TEXT("ERROR: [%i] %s:\n'NewPlayerState' was not spawned!"), __LINE__, *FString(__FUNCTION__));
-		OwnerInternal->SetPlayerState(NewPlayerState);
+		InOwner->SetPlayerState(NewPlayerState);
 
 		// Update default nickname for AI
 		NewPlayerState->SetDefaultPlayerName();
 	}
 
 	// Notify host about bot possession
-	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*OwnerInternal);
+	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*InOwner);
 
-	UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerInternal);
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(InOwner);
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 }
@@ -176,8 +166,6 @@ void AMyAIController::OnPossess(APawn* InPawn)
 void AMyAIController::OnUnPossess()
 {
 	Super::OnUnPossess();
-
-	OwnerInternal = nullptr;
 
 #if WITH_EDITOR // [IsEditorNotPieWorld]
 	if (UUtilsLibrary::IsEditorNotPieWorld())
@@ -210,7 +198,8 @@ void AMyAIController::Reset()
 // The main AI logic
 void AMyAIController::UpdateAI()
 {
-	const UMapComponent* MapComponent = OwnerInternal ? UMapComponent::GetMapComponent(OwnerInternal) : nullptr;
+	APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
+	const UMapComponent* MapComponent = InOwner ? UMapComponent::GetMapComponent(InOwner) : nullptr;
 	if (!MapComponent
 	    || !IsAIEnabled())
 	{
@@ -221,7 +210,7 @@ void AMyAIController::UpdateAI()
 
 	if (UUtilsLibrary::IsEditorNotPieWorld()) // [IsEditorNotPieWorld]
 	{
-		UCellsUtilsLibrary::ClearDisplayedCells(OwnerInternal);
+		UCellsUtilsLibrary::ClearDisplayedCells(InOwner);
 		AIMoveToInternal = FCell::InvalidCell;
 	}
 
@@ -370,19 +359,19 @@ void AMyAIController::UpdateAI()
 	    && !bIsFilteringFailed // filtering was not failed
 	    && !bIsItemInDirect) // was not found direct items
 	{
-		const float Fire = UBmrPowerupsAttributeSet::Get(OwnerInternal).GetPowerup_Fire();
+		const float Fire = UBmrPowerupsAttributeSet::Get(InOwner).GetPowerup_Fire();
 		FCells BoxesAndPlayers = UCellsUtilsLibrary::GetCellsAroundWithActors(F0, EPathType::Explosion, Fire, TO_FLAG(EAT::Box | EAT::Player));
 		BoxesAndPlayers.Remove(MapComponent->GetCell());
 		if (BoxesAndPlayers.Num() > 0) // Are bombs or players in own bomb radius
 		{
-			OwnerInternal->SpawnBomb();
+			InOwner->SpawnBomb();
 			Free.Empty(); // Delete all cells to make new choice
 
 #if WITH_EDITOR // [Editor]
 			if (MapComponent->bShouldShowRenders)
 			{
 				static const FDisplayCellsParams DisplayParams{FLinearColor::Red, 261.F, 95.F, TEXT("Attack")};
-				UCellsUtilsLibrary::DisplayCell(OwnerInternal, F0, DisplayParams);
+				UCellsUtilsLibrary::DisplayCell(InOwner, F0, DisplayParams);
 			}
 #endif // [Editor]
 		}
@@ -437,7 +426,7 @@ void AMyAIController::UpdateAI()
 			constexpr float TextHeight = 263.f;
 			constexpr float TextSize = 124.f;
 			const FDisplayCellsParams DisplayParams{Color, TextHeight, TextSize, Symbol, Position};
-			UCellsUtilsLibrary::DisplayCells(OwnerInternal, VisualizingStep, DisplayParams);
+			UCellsUtilsLibrary::DisplayCells(InOwner, VisualizingStep, DisplayParams);
 		} // [Loopy visualization]
 	}
 #endif // [Editor]
@@ -446,7 +435,8 @@ void AMyAIController::UpdateAI()
 // Enable or disable AI for this bot
 void AMyAIController::SetAI(bool bShouldEnable)
 {
-	const bool bWantsEnableDeadAI = !OwnerInternal && bShouldEnable;
+	const APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
+	const bool bWantsEnableDeadAI = !InOwner && bShouldEnable;
 	if (bWantsEnableDeadAI
 	    || !HasAuthority())
 	{
