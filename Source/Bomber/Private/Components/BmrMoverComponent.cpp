@@ -203,6 +203,11 @@ void UBmrMoverComponent::OnPostMove_Implementation(const FMoverTimeStep& TimeSte
 	// Add powerup state to SyncState
 	FBmrMoverSyncState& BmrSyncStateRef = SyncState.SyncStateCollection.FindOrAddMutableDataByType<FBmrMoverSyncState>();
 	BmrSyncStateRef.SkatePowerupAttribute = CachedSkatePowerupAttributeInternal;
+
+	if (APlayerCharacter* PlayerCharacter = GetOwner<APlayerCharacter>())
+	{
+		PlayerCharacter->UpdateLocation();
+	}
 }
 
 // Is called by Move Input Action when player pressed the move input button, e.g: WASD or Arrow keys

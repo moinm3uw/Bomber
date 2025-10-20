@@ -52,9 +52,6 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Called every frame, is disabled on start, tick interval is decreased. */
-	virtual void Tick(float DeltaTime) override;
-
 	/** Is overriden to handle the client login when is set new player state. */
 	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
 
@@ -79,10 +76,6 @@ protected:
 	/** Is called when the Row from current Data Asset is changed for owner on the level, on both server and clients. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnActorTypeChanged(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow);
-
-	/** Listen to manage the tick. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnGameStateChanged(ECurrentGameState CurrentGameState);
 
 	/** Called right before owner actor going to remove from the Generated Map, on both server and clients.
 	 * Is used for handling the in-game dying logic before this character is removed from the level. */

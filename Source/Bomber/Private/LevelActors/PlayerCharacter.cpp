@@ -32,7 +32,7 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	// Replicate an actor
@@ -153,14 +153,6 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Called every frame, is disabled on start, tick interval is decreased
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	UpdateLocation();
-}
-
 // Is overriden to handle the client login when is set new player state
 void APlayerCharacter::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
 {
@@ -227,8 +219,6 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	TryPossessController(EPlayerType::Any);
 
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-
 	ApplyCharacterConfig();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
@@ -239,27 +229,6 @@ void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapCompo
 {
 	// Handle character change: apply new config to update attributes
 	ApplyCharacterConfig();
-}
-
-// Listen to manage the tick
-void APlayerCharacter::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
-{
-	switch (CurrentGameState)
-	{
-		case ECurrentGameState::Menu: // fallthrough
-		case ECurrentGameState::GameStarting:
-		{
-			SetActorTickEnabled(false);
-			break;
-		}
-		case ECurrentGameState::InGame:
-		{
-			SetActorTickEnabled(true);
-			break;
-		}
-		default:
-			break;
-	}
 }
 
 // Is called on server when ANY human player joined the session
