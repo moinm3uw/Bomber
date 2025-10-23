@@ -77,9 +77,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnOwnerAddedToLevel(class UMapComponent* MapComponent);
 
-	/** Called when owner is destroyed on the Generated Map. */
+	/** Called when owner is unregistered from the Generated Map, on both server and client. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPostRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
+	void OnPreRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
 
 	/** Event called after a pawn's controller has changed, on the server and owning client. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

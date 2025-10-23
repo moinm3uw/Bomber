@@ -162,6 +162,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (DefaultToSelf = "DestroyCauser"))
 	void DestroyLevelActorsByType(EActorType ActorsType, UObject* DestroyCauser = nullptr);
 
+	/** Is called before Destroy happening, which only unregisters the Map Component.
+	 * It does not destroy its owner actor yet, so it wil remain on the scene as not interactable object until fully destroyed.
+	 * Is part of DestroyLevelActor() flow, but might be useful to call directly in cases when need to keep actor on level disabled (e.g: dead player). */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (DefaultToSelf = "Causer"))
+	void RemoveFromGrid(UMapComponent* MapComponent, UObject* RemoveCauser = nullptr);
+
 	/** Applies the snapped cell to the specified Map Component.
 	 * @param MapComponent The Map Component to apply the snapped cell.
 	 * @return true if changed: new cell was applied to given Map Component; false is already snapped or failed. */

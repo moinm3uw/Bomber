@@ -50,15 +50,16 @@ public:
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPreRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called right before owner actor going to remove from the Generated Map.
-	 * Is useful to listen for actor before it is exploded and its data being reset.
+	/** Called BEFORE unregistering, owner actor is still valid and located on the level.
+	 * Is useful when some logic relies on any data which will be lost after destroy.
 	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPreRemovedFromLevel OnPreRemovedFromLevel;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPostRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called each time after owner actor was removed from Generated Map.
+	/** Called AFTER destroy has happened, owner actor is not valid and no longer part of the level.
+	 * Is useful to perform final cleanups, like removing references to the destroyed actor.
 	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPostRemovedFromLevel OnPostRemovedFromLevel;

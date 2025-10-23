@@ -4,7 +4,6 @@
 
 // Bomber
 #include "Components/MapComponent.h"
-#include "Components/MySkeletalMeshComponent.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
@@ -21,10 +20,6 @@ void UBmrPlayerDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	check(ActorInfo && TriggerEventData);
-	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
-
-	DeathCauserInternal = const_cast<AActor*>(TriggerEventData->Instigator.Get());
 
 	// Play animation
 	const APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(ActorInfo->AvatarActor.Get());
@@ -33,9 +28,6 @@ void UBmrPlayerDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	if (ensureMsgf(DeathMontage, TEXT("ASSERT: [%i] %hs:\n'DeathMontage' failed to play!"), __LINE__, __FUNCTION__))
 	{
 		UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, DeathMontage);
-		MontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageEnd);
-		MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageEnd);
-		MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageEnd);
 		MontageTask->ReadyForActivation();
 	}
 	else
@@ -43,24 +35,6 @@ void UBmrPlayerDeathAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 		K2_EndAbilityLocally();
 	}
 
-	// Disable movement
-	if (const TSubclassOf<UGameplayEffect> BlockMovementEffect = UPlayerDataAsset::Get().GetBlockMovementEffect())
-	{
-		ASC->ApplyGameplayEffectToSelf(BlockMovementEffect.GetDefaultObject(), GetAbilityLevel(), ASC->MakeEffectContext());
-	}
-}
-
-// Called if an ability ends normally or abnormally
-void UBmrPlayerDeathAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
-{
-	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-
-	AGeneratedMap::Get().DestroyLevelActor(UMapComponent::GetMapComponent(ActorInfo->AvatarActor.Get()), DeathCauserInternal);
-	DeathCauserInternal = nullptr;
-}
-
-// Called when the death montage completed or interrupted
-void UBmrPlayerDeathAbility::OnMontageEnd_Implementation()
-{
-	K2_EndAbilityLocally();
+	AActor* DeathCauserInternal = const_cast<AActor*>(TriggerEventData->Instigator.Get());
+	AGeneratedMap::Get().RemoveFromGrid(UMapComponent::GetMapComponent(ActorInfo->AvatarActor.Get()), DeathCauserInternal);
 }

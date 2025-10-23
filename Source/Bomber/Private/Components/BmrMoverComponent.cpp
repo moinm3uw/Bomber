@@ -78,7 +78,7 @@ void UBmrMoverComponent::BeginPlay()
 	UMapComponent* MapComponent = UMapComponent::GetMapComponent(OwnerPlayer);
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 	MapComponent->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnOwnerAddedToLevel);
-	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
+	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
 
 	OnPostMovement.AddUniqueDynamic(this, &ThisClass::OnPostMove);
 
@@ -179,8 +179,8 @@ void UBmrMoverComponent::OnOwnerAddedToLevel_Implementation(UMapComponent* MapCo
 	QueueInstantMovementEffect(TeleportEffect);
 }
 
-// Called when owner is destroyed on the Generated Map
-void UBmrMoverComponent::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
+// Called when owner is unregistered from the Generated Map, on both server and client
+void UBmrMoverComponent::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
 	SetBlockMovement(true);
 }

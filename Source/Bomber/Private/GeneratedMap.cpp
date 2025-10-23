@@ -463,12 +463,12 @@ void AGeneratedMap::DestroyLevelActor(UMapComponent* MapComponent, UObject* Dest
 		return;
 	}
 
+	// First, unregister from the level
+	RemoveFromGrid(MapComponent, DestroyCauser);
+
 	MapComponentsInternal.Remove(MapComponent);
 
-	// Notify listeners right before destroying and reset the actor
-	MapComponent->OnPreRemoved(DestroyCauser);
-
-	// Deactivate the iterated owner
+	// Perform destroy itself
 	UPoolManagerSubsystem* PoolManager = UPoolManagerSubsystem::GetPoolManager(this);
 	if (PoolManager
 	    && PoolManager->ContainsObjectInPool(ComponentOwner))
@@ -527,10 +527,29 @@ void AGeneratedMap::DestroyLevelActorsByType(EActorType ActorsType, UObject* Des
 	DestroyLevelActorsOnCells(ExistingActorCells);
 }
 
+// Is called before Destroy happening, which only unregisters the Map Component
+void AGeneratedMap::RemoveFromGrid(UMapComponent* MapComponent, UObject* RemoveCauser)
+{
+	if (!HasAuthority()
+	    || !MapComponent)
+	{
+		return;
+	}
+
+	MapComponent->OnPreRemoved(RemoveCauser);
+
+	// Invalidate spec now (removal will be performed if only DestroyLevelActor called)
+	if (FMapComponentSpec* Spec = MapComponentsInternal.Find(MapComponent))
+	{
+		Spec->Cell = FCell::InvalidCell;
+		MapComponentsInternal.MarkItemDirty(*Spec);
+	}
+}
+
 // Applies the snapped cell to the specified Map Component
 bool AGeneratedMap::SetNearestCell(UMapComponent* MapComponent)
 {
-	AActor* LevelActor = MapComponent ? MapComponent->GetOwner() : nullptr;
+	const AActor* LevelActor = MapComponent ? MapComponent->GetOwner() : nullptr;
 	if (!HasAuthority()
 	    || !LevelActor)
 	{
