@@ -34,12 +34,4 @@ protected:
 	/** Applies given gameplay effect with bomb duration. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	static FActiveGameplayEffectHandle ApplyDurationalEffect(TSubclassOf<UGameplayEffect> GameplayEffect, const FGameplayAbilityActorInfo& ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo);
-
-	/*********************************************************************************************
-	 * Data
-	 ********************************************************************************************* */
-protected:
-	/** Is applied at bomb ability activation, detonates the bomb when removed. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Applied Duration Effect"))
-	FActiveGameplayEffectHandle AppliedDurationEffectInternal;
 };

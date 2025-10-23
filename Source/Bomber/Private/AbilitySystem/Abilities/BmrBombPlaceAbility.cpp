@@ -59,10 +59,10 @@ void UBmrBombPlaceAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 	CommitAbility(Handle, ActorInfo, ActivationInfo);
 
-	AppliedDurationEffectInternal = ApplyDurationalEffect(UBombDataAsset::Get().GetDurationGameplayEffect(), *ActorInfo, ActivationInfo);
+	const FActiveGameplayEffectHandle AppliedDurationEffect = ApplyDurationalEffect(UBombDataAsset::Get().GetDurationGameplayEffect(), *ActorInfo, ActivationInfo);
 
 	const TWeakObjectPtr InInstigator = const_cast<AActor*>(TriggerEventData->Instigator.Get());
-	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), InInstigator](const UMapComponent& MapComponent)
+	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), InInstigator, AppliedDurationEffect](const UMapComponent& MapComponent)
 	{
 		UBmrBombPlaceAbility* This = WeakThis.Get();
 		if (!This)
@@ -72,7 +72,7 @@ void UBmrBombPlaceAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 		ABombActor* BombActor = CastChecked<ABombActor>(MapComponent.GetOwner());
 		BombActor->InitBomb(Cast<APawn>(InInstigator.Get()));
-		BombActor->SetActiveDurationEffectHandle(This->AppliedDurationEffectInternal);
+		BombActor->SetActiveDurationEffectHandle(AppliedDurationEffect);
 
 		This->K2_EndAbility();
 	};

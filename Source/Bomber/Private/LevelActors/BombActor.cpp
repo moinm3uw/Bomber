@@ -174,7 +174,7 @@ void ABombActor::DetonateBomb()
 		TSubclassOf<UGameplayEffect> ExplosionDamageEffect = UBombDataAsset::Get().GetExplosionDamageEffect();
 		if (ensureMsgf(ExplosionDamageEffect, TEXT("ASSERT: [%i] %hs:\n'ExplosionDamageEffect' is not set!"), __LINE__, __FUNCTION__))
 		{
-			InstigatorASC.ApplyGameplayEffectToTarget(ExplosionDamageEffect.GetDefaultObject(), TargetASC);
+			InstigatorASC.ApplyGameplayEffectToTarget(ExplosionDamageEffect.GetDefaultObject(), TargetASC, /*Level*/ 1.f, EffectContext);
 		}
 	}
 }
