@@ -23,7 +23,6 @@
 
 // UE
 #include "Components/GameFrameworkComponentManager.h"
-#include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyAIController)
 
@@ -101,19 +100,6 @@ void AMyAIController::PostInitializeComponents()
 	UGameFrameworkComponentManager::AddGameFrameworkComponentReceiver(this);
 }
 
-//  Called when the game starts or when spawned
-void AMyAIController::BeginPlay()
-{
-	// Call to super
-	Super::BeginPlay();
-
-	// Setup timer handle to update AI brain (initialized being paused)
-	constexpr bool bInLoop = true;
-	FTimerManager& TimerManager = GetWorldTimerManager();
-	TimerManager.SetTimer(AIUpdateHandleInternal, this, &ThisClass::UpdateAI, UGameStateDataAsset::Get().GetTickInterval(), bInLoop, KINDA_SMALL_NUMBER);
-	TimerManager.PauseTimer(AIUpdateHandleInternal);
-}
-
 // Allows the controller to react on possessing the pawn
 void AMyAIController::OnPossess(APawn* InPawn)
 {
@@ -161,13 +147,16 @@ void AMyAIController::OnPossess(APawn* InPawn)
 	UMapComponent* MapComponent = UMapComponent::GetMapComponent(InOwner);
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
+
+	// Subscribe to movement completion to trigger AI updates
+	UBmrMoverComponent* MoverComponent = InOwner->GetMoverComponent();
+	checkf(MoverComponent, TEXT("ERROR: [%i] %hs:\n'MoverComponent' is null!"), __LINE__, __FUNCTION__);
+	MoverComponent->OnPostSimulationTick.AddUniqueDynamic(this, &ThisClass::OnOwnerMovementCompleted);
 }
 
 // Allows the controller to react on unpossessing the pawn
 void AMyAIController::OnUnPossess()
 {
-	Super::OnUnPossess();
-
 #if WITH_EDITOR // [IsEditorNotPieWorld]
 	if (UUtilsLibrary::IsEditorNotPieWorld())
 	{
@@ -176,6 +165,19 @@ void AMyAIController::OnUnPossess()
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 	SetAI(false);
+
+	if (const APlayerCharacter* InOwner = GetPawn<APlayerCharacter>())
+	{
+		UMapComponent* MapComponent = UMapComponent::GetMapComponent(InOwner);
+		checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+		MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
+
+		UBmrMoverComponent* MoverComponent = InOwner->GetMoverComponent();
+		checkf(MoverComponent, TEXT("ERROR: [%i] %hs:\n'MoverComponent' is null!"), __LINE__, __FUNCTION__);
+		MoverComponent->OnPostSimulationTick.AddUniqueDynamic(this, &ThisClass::OnOwnerMovementCompleted);
+	}
+
+	Super::OnUnPossess();
 }
 
 // Stops running to target
@@ -198,6 +200,15 @@ void AMyAIController::UpdateAI()
 	{
 		return;
 	}
+
+	// Throttle AI updates to match desired tick rate
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	const float TimeSinceLastUpdate = CurrentTime - LastAIUpdateTimeInternal;
+	if (TimeSinceLastUpdate < UGameStateDataAsset::Get().GetTickInterval())
+	{
+		return;
+	}
+	LastAIUpdateTimeInternal = CurrentTime;
 
 	const UAIDataAsset& AIDataAsset = UAIDataAsset::Get();
 
@@ -443,17 +454,6 @@ void AMyAIController::SetAI(bool bShouldEnable)
 	{
 		MoverComponent->SetBlockMovement(!bShouldEnable);
 	}
-
-	// Handle the Ai updating timer
-	FTimerManager& TimerManager = GetWorldTimerManager();
-	if (bShouldEnable)
-	{
-		TimerManager.UnPauseTimer(AIUpdateHandleInternal);
-	}
-	else
-	{
-		TimerManager.PauseTimer(AIUpdateHandleInternal);
-	}
 }
 
 /*********************************************************************************************
@@ -486,4 +486,10 @@ void AMyAIController::OnGameStateChanged_Implementation(ECurrentGameState Curren
 void AMyAIController::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
 	SetAI(false);
+}
+
+// Called when owner's movement is completed for the time step
+void AMyAIController::OnOwnerMovementCompleted_Implementation(const FMoverTimeStep& TimeStep)
+{
+	UpdateAI();
 }

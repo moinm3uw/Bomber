@@ -50,9 +50,9 @@ protected:
 	 *		Protected properties
 	 * --------------------------------------------------- */
 
-	/** Timer to update AI. */
+	/** Last time AI was updated, used to control update frequency, once per UGameStateDataAsset::TickInternal. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Update Handle"))
-	FTimerHandle AIUpdateHandleInternal;
+	float LastAIUpdateTimeInternal = 0.f;
 
 	/** Cell position of current path segment's end */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Move To"))
@@ -67,11 +67,8 @@ protected:
 	 *		Protected functions
 	 * --------------------------------------------------- */
 
-	/** This is called only in the gameplay before calling begin play. */
+	/** This is called only in the gameplay before calling nplan play. */
 	virtual void PostInitializeComponents() override;
-
-	/** Called when the game starts or when spawned */
-	virtual void BeginPlay() override;
 
 	/** Allows the controller to react on possessing the pawn to enable AI. */
 	virtual void OnPossess(APawn* InPawn) override;
@@ -101,4 +98,8 @@ protected:
 	/** Called when this level actor is destroyed on the Generated Map. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPostRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
+
+	/** Called when owner's movement is completed for the time step. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnOwnerMovementCompleted(const struct FMoverTimeStep& TimeStep);
 };
