@@ -46,7 +46,8 @@ APlayerCharacter::APlayerCharacter()
 	// Do not rotate player by camera
 	bUseControllerRotationYaw = false;
 
-	RootComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CollisionCylinder"));
+	CapsuleComponentInternal = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CollisionCylinder"));
+	RootComponent = CapsuleComponentInternal;
 
 	// Initialize MapComponent
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
@@ -584,9 +585,6 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin /* = false
 // Spawns bomb on character position
 void APlayerCharacter::SpawnBomb()
 {
-	// Bomb is spawned on the current location, so make sure it's synced
-	UpdateLocation();
-
 	// Activate bomb ability
 	FGameplayEventData EventData;
 	EventData.Instigator = this;

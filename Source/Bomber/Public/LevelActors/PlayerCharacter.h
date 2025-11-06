@@ -38,6 +38,10 @@ public:
 	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
 
 protected:
+	/** Is the root component for this actor, used for collision. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Capsule Component"))
+	TObjectPtr<class UCapsuleComponent> CapsuleComponentInternal = nullptr;
+
 	/** The MapComponent manages this actor on the Generated Map */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Map Component"))
 	TObjectPtr<class UMapComponent> MapComponentInternal = nullptr;
