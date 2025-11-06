@@ -12,7 +12,6 @@
 #include "Structures/BmrGameplayTags.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
 
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
@@ -53,9 +52,15 @@ ABombActor::ABombActor()
  ********************************************************************************************* */
 
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
-void ABombActor::InitBomb(APawn* OptionalInstigator /* = nullptr*/)
+void ABombActor::InitBomb(APawn* InInstigator)
 {
-	SetInstigator(OptionalInstigator);
+	if (!ensureMsgf(InInstigator, TEXT("ASSERT: [%i] %hs:\n'InInstigator' is null!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	SetInstigator(InInstigator);
+	LastInstigatorInternal = InInstigator;
 
 	UpdateExplosionCells();
 
@@ -133,18 +138,11 @@ void ABombActor::DetonateBomb()
 {
 	if (!HasAuthority()
 	    || IsHidden()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame)
+	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame
+	    || !ensureMsgf(!LocalExplosionCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'LocalExplosionCellsInternal' is empty!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
-
-	if (!ensureMsgf(!LocalExplosionCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'LocalExplosionCellsInternal' is empty!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	// Make sure cells are up-to-date
-	UpdateExplosionCells();
 
 	PlayExplosionsCue();
 
@@ -184,21 +182,14 @@ void ABombActor::UpdateExplosionCells()
 {
 	const int32 FireRadius = GetFireRadius();
 	if (FireRadius <= 0
-	    || !MapComponentInternal
-	    || MapComponentInternal->GetCell().IsInvalidCell())
+	    || !MapComponentInternal || MapComponentInternal->GetCell().IsInvalidCell()
+	    || !LocalExplosionCellsInternal.IsEmpty())
 	{
-		// On client some data might be not replicated yet
+		// On client some data might be not replicated yet or explosions already calculated
 		return;
 	}
 
 	const FCells NewExplosionCells = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadius);
-
-	const bool bIsAlreadySetByDefault = !LocalExplosionCellsInternal.IsEmpty() && FireRadius <= 1 && NewExplosionCells.Num() == LocalExplosionCellsInternal.Num();
-	if (bIsAlreadySetByDefault)
-	{
-		return;
-	}
-
 	LocalExplosionCellsInternal = NewExplosionCells;
 
 	TryDisplayExplosionCells();
@@ -301,13 +292,12 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 // Returns the Ability System Component from the Instigator or local player if none
 UAbilitySystemComponent* ABombActor::GetInstigatorAbilityComponent() const
 {
-	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetInstigator());
-	if (!ASC)
+	const APawn* InInstigator = GetInstigator();
+	if (!InInstigator)
 	{
-		// Instigator is optional for some type of bombs like environmental ones, so try to get local player ASC
-		ASC = UMyBlueprintFunctionLibrary::GetLocalAbilitySystemComponent();
+		InInstigator = LastInstigatorInternal;
 	}
-	return ASC;
+	return UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InInstigator);
 }
 
 // Returns the Ability System Component from the Instigator or local player if none, will crash if can't be obtained
@@ -336,12 +326,7 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 
-	if (!GetInstigator())
-	{
-		// This is likely environmental bomb or not fully replicated one
-		// Init bomb by default, if it's spawned from player, it will be reinitialized again
-		InitBomb();
-	}
+	UpdateExplosionCells();
 
 	// Listen when this bomb is destroyed on the Generated Map by itself or by other actors
 	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
@@ -369,7 +354,6 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 	else
 	{
 		// On client, play explosions cue locally
-		UpdateExplosionCells();
 		PlayExplosionsCue();
 	}
 }
@@ -384,6 +368,7 @@ void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 	ClearActiveDurationEffectHandle();
 
 	SetInstigator(nullptr);
+	LastInstigatorInternal = nullptr;
 
 	LocalExplosionCellsInternal = FCell::EmptyCells;
 }

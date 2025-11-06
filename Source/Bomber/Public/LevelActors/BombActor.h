@@ -38,9 +38,9 @@ protected:
 public:
 	/** Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.).
 	 * Can be called on both server and clients.
-	 * @param OptionalInstigator - player which placed the bomb, can be accessed as GetInstigator(), is used to track the destroy causer, e.g: scoreboard. */
+	 * @param InInstigator - player which placed the bomb, can be accessed as GetInstigator(), is used to track the destroy causer, e.g: scoreboard. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void InitBomb(APawn* OptionalInstigator = nullptr);
+	void InitBomb(APawn* InInstigator);
 
 	/** If set, the bomb will detonate when this effect is removed.
 	 * Otherwise, the bomb must be manually detonated by destroying the level actor on generated map. */
@@ -71,6 +71,11 @@ protected:
 	/** Is applied at bomb ability activation, detonates the bomb when removed. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Applied Duration Effect"))
 	FActiveGameplayEffectHandle AppliedDurationEffectInternal;
+
+	/** Is used as fallback instigator if replicated GetInstigator() is null,
+	 * e.g: on clients if instigator removal replication happened earlier than bomb's detonation. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Last Instigator"))
+	TObjectPtr<APawn> LastInstigatorInternal = nullptr;
 
 	/** Is server-only, immediately detonates the bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
