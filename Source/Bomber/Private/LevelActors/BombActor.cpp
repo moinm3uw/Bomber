@@ -358,6 +358,9 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 // Is used to self-detonate the bomb when it is removed from the level
 void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
+
 	if (HasAuthority())
 	{
 		// On server, bomb is removed from Generated Map, detonate it
@@ -375,7 +378,6 @@ void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponen
 void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
 	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
 	MapComponentInternal->OnPostRemovedFromLevel.RemoveAll(this);
 	MapComponentInternal->OnCellChanged.RemoveAll(this);
 
