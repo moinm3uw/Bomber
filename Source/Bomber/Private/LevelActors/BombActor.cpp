@@ -345,6 +345,7 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 
 	// Listen when this bomb is destroyed on the Generated Map by itself or by other actors
 	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
+	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 
 #if WITH_EDITOR //[IsEditorNotPieWorld]
 	if (FEditorUtilsLibrary::IsEditorNotPieWorld()) // [IsEditorNotPieWorld]
