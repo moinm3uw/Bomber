@@ -124,11 +124,6 @@ void AMyAIController::OnPossess(APawn* InPawn)
 	}
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-
-	const bool bMatchStarted = AMyGameStateBase::GetCurrentGameState() == ECGS::InGame;
-	SetAI(bMatchStarted);
-
 	if (GetPlayerState<AMyPlayerState>() == nullptr)
 	{
 		// Spawn Player State for AI to replicate game-relevant info like scores, teams etc
@@ -141,6 +136,8 @@ void AMyAIController::OnPossess(APawn* InPawn)
 		NewPlayerState->SetDefaultPlayerName();
 	}
 
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
+
 	// Notify host about bot possession
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*InOwner);
 
@@ -152,6 +149,9 @@ void AMyAIController::OnPossess(APawn* InPawn)
 	UBmrMoverComponent* MoverComponent = InOwner->GetMoverComponent();
 	checkf(MoverComponent, TEXT("ERROR: [%i] %hs:\n'MoverComponent' is null!"), __LINE__, __FUNCTION__);
 	MoverComponent->OnPostSimulationTick.AddUniqueDynamic(this, &ThisClass::OnOwnerMovementCompleted);
+
+	const bool bMatchStarted = AMyGameStateBase::GetCurrentGameState() == ECGS::InGame;
+	SetAI(bMatchStarted);
 }
 
 // Allows the controller to react on unpossessing the pawn
@@ -463,23 +463,8 @@ void AMyAIController::SetAI(bool bShouldEnable)
 // Listen game states to enable or disable AI
 void AMyAIController::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
-	switch (CurrentGameState)
-	{
-		case ECurrentGameState::Menu:
-		case ECurrentGameState::GameStarting:
-		case ECurrentGameState::EndGame:
-		{
-			SetAI(false);
-			break;
-		}
-		case ECurrentGameState::InGame:
-		{
-			SetAI(true);
-			break;
-		}
-		default:
-			break;
-	}
+	const bool bMatchStarted = CurrentGameState == ECurrentGameState::InGame;
+	SetAI(bMatchStarted);
 }
 
 // Called when this level actor is destroyed on the Generated Map
