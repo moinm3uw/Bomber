@@ -123,11 +123,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void TryPossessController(EPlayerType PlayerType);
 
-	/** Takes the player current vector location and updates it on the level as a cell.
-	 * @TODO JanSeliv MA065Fyy - Implement `Update Cell on Tick` for Map Component replacing this function. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void UpdateLocation();
-
 protected:
 	/** The character's AI controller */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "My AI Controller"))

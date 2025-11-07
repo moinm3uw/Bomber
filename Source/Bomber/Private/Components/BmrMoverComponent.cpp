@@ -8,6 +8,7 @@
 #include "Components/MapComponent.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Structures/BmrGameplayTags.h"
 #include "Structures/BmrMoverSyncState.h"
@@ -204,9 +205,20 @@ void UBmrMoverComponent::OnPostMove_Implementation(const FMoverTimeStep& TimeSte
 	FBmrMoverSyncState& BmrSyncStateRef = SyncState.SyncStateCollection.FindOrAddMutableDataByType<FBmrMoverSyncState>();
 	BmrSyncStateRef.SkatePowerupAttribute = CachedSkatePowerupAttributeInternal;
 
-	if (APlayerCharacter* PlayerCharacter = GetOwner<APlayerCharacter>())
+	// Update player location on the Generated Map
+	const APawn* InOwnerPawn = GetOwner<APawn>();
+	UMapComponent* MapComponent = UMapComponent::GetMapComponent(InOwnerPawn);
+	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
+	if (InOwnerPawn->HasAuthority())
 	{
-		PlayerCharacter->UpdateLocation();
+		// On server, update a player location on the Generated Map
+		AGeneratedMap::Get().SetNearestCell(UMapComponent::GetMapComponent(InOwnerPawn));
+	}
+	else if (InOwnerPawn->IsLocallyControlled())
+	{
+		// On local client, directly set a player location for responsiveness while server replicates it
+		const FCell SnappedCell = UCellsUtilsLibrary::SnapActorOnLevel(InOwnerPawn);
+		MapComponent->SetCell(SnappedCell);
 	}
 }
 

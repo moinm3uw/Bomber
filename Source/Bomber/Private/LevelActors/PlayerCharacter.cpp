@@ -452,23 +452,6 @@ void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 	ControllerToPossess->Possess(this);
 }
 
-// Takes the player current vector location and updates it on the level as a cell
-void APlayerCharacter::UpdateLocation()
-{
-	if (HasAuthority())
-	{
-		// On server, update a player location on the Generated Map
-		AGeneratedMap::Get().SetNearestCell(MapComponentInternal);
-	}
-	else if (IsLocallyControlled())
-	{
-		// On local client, directly set a player location for responsiveness while server replicates it
-		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		const FCell SnappedCell = UCellsUtilsLibrary::SnapActorOnLevel(this);
-		MapComponentInternal->SetCell(SnappedCell);
-	}
-}
-
 /*********************************************************************************************
  * Movement
  ********************************************************************************************* */
