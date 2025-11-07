@@ -60,7 +60,9 @@ void ABombActor::InitBomb(APawn* InInstigator)
 	}
 
 	SetInstigator(InInstigator);
-	LastInstigatorInternal = InInstigator;
+
+	AbilitySystemComponentInternal = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InInstigator);
+	ensureMsgf(AbilitySystemComponentInternal, TEXT("ASSERT: [%i] %hs:\n'AbilitySystemComponentInternal' failed to cache, '%s' instigator does not have Ability System Component, bomb will not explode properly!"), __LINE__, __FUNCTION__, *GetNameSafe(InInstigator));
 
 	UpdateExplosionCells();
 
@@ -289,23 +291,11 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Returns the Ability System Component from the Instigator or local player if none
-UAbilitySystemComponent* ABombActor::GetInstigatorAbilityComponent() const
-{
-	const APawn* InInstigator = GetInstigator();
-	if (!InInstigator)
-	{
-		InInstigator = LastInstigatorInternal;
-	}
-	return UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InInstigator);
-}
-
 // Returns the Ability System Component from the Instigator or local player if none, will crash if can't be obtained
 UAbilitySystemComponent& ABombActor::GetInstigatorAbilityComponentChecked() const
 {
-	UAbilitySystemComponent* ASC = GetInstigatorAbilityComponent();
-	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'ASC' is null!"), __LINE__, __FUNCTION__);
-	return *ASC;
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	return *AbilitySystemComponentInternal;
 }
 
 // Is overridden to init bomb on clients when instigator is replicated
@@ -368,7 +358,7 @@ void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 	ClearActiveDurationEffectHandle();
 
 	SetInstigator(nullptr);
-	LastInstigatorInternal = nullptr;
+	AbilitySystemComponentInternal = nullptr;
 
 	LocalExplosionCellsInternal = FCell::EmptyCells;
 }

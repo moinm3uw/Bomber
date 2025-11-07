@@ -72,10 +72,9 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Applied Duration Effect"))
 	FActiveGameplayEffectHandle AppliedDurationEffectInternal;
 
-	/** Is used as fallback instigator if replicated GetInstigator() is null,
-	 * e.g: on clients if instigator removal replication happened earlier than bomb's detonation. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Last Instigator"))
-	TObjectPtr<APawn> LastInstigatorInternal = nullptr;
+	/** Instigator's Ability System Component, who placed this bomb, cached on InitBomb(). */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponentInternal = nullptr;
 
 	/** Is server-only, immediately detonates the bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
@@ -109,8 +108,10 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Returns the Ability System Component from the Instigator or local player if none. */
-	UAbilitySystemComponent* GetInstigatorAbilityComponent() const;
+	/** Returns the Ability System Component from the Instigator, who placed the bomb.
+	 * This getter does not override UAbilitySystemInterface, since the bomb itself does not own abilities. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE UAbilitySystemComponent* GetInstigatorAbilityComponent() const { return AbilitySystemComponentInternal; }
 	UAbilitySystemComponent& GetInstigatorAbilityComponentChecked() const;
 
 	/** Is overridden to init bomb on clients when instigator is replicated. */
