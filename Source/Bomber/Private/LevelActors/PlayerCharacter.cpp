@@ -49,19 +49,11 @@ APlayerCharacter::APlayerCharacter()
 	CapsuleComponentInternal = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CollisionCylinder"));
 	RootComponent = CapsuleComponentInternal;
 
-	// Initialize MapComponent
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
 
 	// Initialize skeletal mesh
 	MeshComponentInternal = CreateDefaultSubobject<UMySkeletalMeshComponent>(TEXT("MeshComponent"));
 	MeshComponentInternal->SetupAttachment(RootComponent);
-	static const FVector MeshRelativeLocation(0, 0, -90.f);
-	MeshComponentInternal->SetRelativeLocation_Direct(MeshRelativeLocation);
-	static const FRotator MeshRelativeRotation(0, -90.f, 0);
-	MeshComponentInternal->SetRelativeRotation_Direct(MeshRelativeRotation);
-	MeshComponentInternal->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	// Enable all lighting channels, so it's clearly visible in the dark
-	MeshComponentInternal->SetLightingChannels(/*bChannel0*/ true, /*bChannel1*/ true, /*bChannel2*/ true);
 	MapComponentInternal->SetMeshComponent(MeshComponentInternal);
 
 	// Initialize 3D widget component for the player name
@@ -71,21 +63,6 @@ APlayerCharacter::APlayerCharacter()
 	// Initialize Mover Component: most setup is done in Details Panel as it is full of instanced properties
 	MoverComponentInternal = CreateDefaultSubobject<UBmrMoverComponent>(TEXT("MoverComponent"));
 	SetReplicatingMovement(false); // Mover requires to disable to handle on its own
-
-	// @TODO JanSeliv zxo17R0K - Add capsules collision support in level actor data assets
-	UCapsuleComponent* RootCapsuleComponent = CastChecked<UCapsuleComponent>(RootComponent);
-	RootCapsuleComponent->InitCapsuleSize(34.0f, 88.0f);
-	// Setup collision to allow overlap players with each other, but block all other actors
-	RootCapsuleComponent->CanCharacterStepUpOn = ECB_Yes;
-	RootCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName); // Pawn+Custom profile (both required)
-	RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName); // Pawn+Custom profile (both required)
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player0, ECR_Overlap);
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player1, ECR_Overlap);
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player2, ECR_Overlap);
-	RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
 }
 
 // Returns the Player Tag associated with player
