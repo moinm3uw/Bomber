@@ -188,6 +188,13 @@ void AMyAIController::Reset()
 
 	// Reset target location
 	AIMoveToInternal = FCell::InvalidCell;
+
+	const APlayerCharacter* InOwner = GetPawn<APlayerCharacter>();
+	UBmrMoverComponent* MoverComponent = InOwner ? InOwner->GetMoverComponent() : nullptr;
+	if (MoverComponent)
+	{
+		MoverComponent->RequestMoveByIntent(FVector::ZeroVector);
+	}
 }
 
 // The main AI logic
@@ -209,6 +216,14 @@ void AMyAIController::UpdateAI()
 		return;
 	}
 	LastAIUpdateTimeInternal = CurrentTime;
+
+	// Stop movement if arrived at destination
+	if (AIMoveToInternal.IsValid()
+	    && MapComponent->GetCell() == AIMoveToInternal)
+	{
+		Reset();
+		// Fall through to choose new destination
+	}
 
 	const UAIDataAsset& AIDataAsset = UAIDataAsset::Get();
 
