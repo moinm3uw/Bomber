@@ -55,7 +55,7 @@ void AMyAIController::MoveToCell(const FCell& DestinationCell)
 		AIMoveToInternal = bHasArrived ? FCell::InvalidCell : DestinationCell;
 
 		// AI is moving directly in desired direction without navmesh usage (instead of MoveToLocation with navmesh)
-		const FVector Direction = bHasArrived ? FVector::ZeroVector : (DestinationCell.Location - CurrentCell.Location).GetSafeNormal2D();
+		const FVector Direction = bHasArrived ? FVector::ZeroVector : (DestinationCell.Location - InOwner->GetActorLocation()).GetSafeNormal2D();
 		MoverComponent->RequestMoveByIntent(Direction);
 	}
 
