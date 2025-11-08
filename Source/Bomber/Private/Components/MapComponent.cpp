@@ -379,6 +379,8 @@ bool UMapComponent::OnAdded_Implementation()
 
 	TRACE_CPUPROFILER_EVENT_SCOPE(UMapComponent::OnAdded);
 
+	Activate();
+
 	// Set the default mesh (if any custom or replicated is not set yet), any system can override it later
 	if (!GetMesh())
 	{
@@ -420,6 +422,9 @@ void UMapComponent::OnPreRemoved_Implementation(UObject* DestroyCauser)
 	{
 		OnPreRemovedFromLevel.Broadcast(this, DestroyCauser);
 	}
+
+	// Mark this component as unregistered (while OnPostRemoved means it is fully removed)
+	Deactivate();
 }
 
 // Is called directly from Generated Map to broadcast OnPostRemovedFromLevel delegate and performs own logic

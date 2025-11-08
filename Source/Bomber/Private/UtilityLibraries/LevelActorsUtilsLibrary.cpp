@@ -32,6 +32,7 @@ void ULevelActorsUtilsLibrary::GetLevelActors(FMapComponents& OutBitmaskedCompon
 	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
 	{
 		if (MapComponentIt
+		    && MapComponentIt->IsActive()
 		    && EnumHasAnyFlags(MapComponentIt->GetActorType(), TO_ENUM(EActorType, ActorsTypesBitmask)))
 		{
 			OutBitmaskedComponents.Add(MapComponentIt);
