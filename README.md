@@ -107,6 +107,8 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 ## 📅 Changelog
 #### `XXXX-XX-XX:`
 - Updated to **Unreal Engine 5.6**.
+- Updated progression visualization to display player bombs instead of stars by [Maksim Shashkov](https://www.artstation.com/maksimshashkov) and [Valeriy Rotermel](https://github.com/h4rdmol)
+> ![BombStars](https://github.com/user-attachments/assets/152730fa-677d-43cc-a5f8-5cbbeeff32dc)
 - Moved level generation to background thread, reducing main thread time from 60ms to 13ms
 - Optimized level generation with a single-pass algorithm for large level support, reducing 40x40 map creation time from >1000ms to under 1ms.
  ---
