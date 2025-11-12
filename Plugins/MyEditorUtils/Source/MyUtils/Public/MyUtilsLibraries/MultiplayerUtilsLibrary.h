@@ -49,21 +49,28 @@ public:
 };
 
 /**
- * Overrides the replication condition of an inherited property, including private ones.
+ * Overrides the replication parameters of an inherited property, including private ones.
  *
- * Useful when reusing actors like APlayerState, where certain engine properties are marked
- * as COND_InitialOnly and do not replicate again after initial connection. This macro allows
- * changing their replication condition (e.g., to COND_None) so they replicate normally.
+ * Useful for actors where certain engine properties have specific replication
+ * parameters that need to be changed. This macro allows overriding their FDoRepLifetimeParams
+ * (e.g., Condition, RepNotifyCondition, bIsPushBased, etc.) to customize replication behavior.
  *
- * Example: Enable APlayerState::bIsABot replication, which is originally COND_InitialOnly:
- *     DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
+ * Example 1: Enable APlayerState::bIsABot replication, which is originally COND_InitialOnly:
+ *     FDoRepLifetimeParams Params;
+ *     Params.Condition = COND_None;
+ *     DOREPLIFETIME_OVERRIDE(Super, bIsABot, Params);
  *
- * @param SuperClass     The class where the property is originally declared (e.g., APlayerState).
+ * Example 2: Override AActor::Instigator to always trigger RepNotify:
+ *     FDoRepLifetimeParams Params;
+ *     Params.RepNotifyCondition = REPNOTIFY_Always;
+ *     DOREPLIFETIME_OVERRIDE(AActor, Instigator, Params);
+ *
+ * @param SuperClass     The class where the property is originally declared (e.g., AActor).
  * @param PropertyName   The name of the property to override.
- * @param NewCondition   The new replication condition to apply (e.g., COND_None).
+ * @param Params         The FDoRepLifetimeParams to apply.
  */
-#define DOREPLIFETIME_OVERRIDE_CONDITION(SuperClass, PropertyName, NewCondition)                                                               \
-	{                                                                                                                                          \
-		static const FName PropertyName##_PrivateName = TEXT(#PropertyName);                                                                   \
-		ResetReplicatedLifetimeProperty(StaticClass(), SuperClass::StaticClass(), PropertyName##_PrivateName, NewCondition, OutLifetimeProps); \
+#define DOREPLIFETIME_OVERRIDE(SuperClass, PropertyName, Params)                                                                         \
+	{                                                                                                                                    \
+		static const FName PropertyName##_PrivateName = TEXT(#PropertyName);                                                             \
+		ResetReplicatedLifetimeProperty(StaticClass(), SuperClass::StaticClass(), PropertyName##_PrivateName, Params, OutLifetimeProps); \
 	}

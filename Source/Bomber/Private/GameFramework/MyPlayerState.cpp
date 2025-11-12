@@ -634,11 +634,11 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, bIsCharacterDeadInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, OpponentsKilledNumInternal, Params);
 
-	// Override APlayerState's COND_InitialOnly properties to allow updates on reused instances without requiring respawn
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, PlayerId, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsInactive, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, UniqueId, COND_None);
+	// Override APlayerState's COND_InitialOnly properties with default params to allow updates on reused instances without requiring respawn
+	DOREPLIFETIME_OVERRIDE(Super, PlayerId, Params);
+	DOREPLIFETIME_OVERRIDE(Super, bIsABot, Params);
+	DOREPLIFETIME_OVERRIDE(Super, bIsInactive, Params);
+	DOREPLIFETIME_OVERRIDE(Super, UniqueId, Params);
 }
 
 // This is called only in the gameplay before calling begin play
