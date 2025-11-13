@@ -18,20 +18,6 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrBombPlaceAbility)
 
-// Returns the cell from the event data, or avatar cell if event data is invalid
-FCell UBmrBombPlaceAbility::GetSpawnCellFromEventData(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayEventData* TriggerEventData)
-{
-	const int32 CellIndex = TriggerEventData ? TriggerEventData->EventMagnitude : INDEX_NONE;
-	FCell SpawnCell = UCellsUtilsLibrary::GetCellByIndexOnLevel(CellIndex);
-	if (!SpawnCell.IsValid())
-	{
-		// If cell index is invalid, spawn bomb on the avatar cell
-		const AActor* AvatarActor = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
-		SpawnCell = UCellsUtilsLibrary::SnapActorOnLevel(AvatarActor);
-	}
-	return SpawnCell;
-}
-
 // Is overridden to prevent event-based activation if we bomb cannot be placed at the specified cell
 bool UBmrBombPlaceAbility::ShouldAbilityRespondToEvent(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayEventData* TriggerEventData) const
 {
@@ -40,8 +26,9 @@ bool UBmrBombPlaceAbility::ShouldAbilityRespondToEvent(const FGameplayAbilityAct
 		return false;
 	}
 
-	const FCell SpawnCell = GetSpawnCellFromEventData(ActorInfo, TriggerEventData);
-	if (UCellsUtilsLibrary::IsCellHasAnyMatchingActor(SpawnCell, TO_FLAG(~EAT::Player)))
+	const FCell SpawnCell = TriggerEventData ? UCellsUtilsLibrary::GetCellByIndexOnLevel(TriggerEventData->EventMagnitude) : FCell::InvalidCell;
+	if (!ensureMsgf(SpawnCell.IsValid(), TEXT("ASSERT: [%i] %hs:\n'SpawnCell' is not passed to event magnitude, can not spawn bomb!"), __LINE__, __FUNCTION__)
+	    || UCellsUtilsLibrary::IsCellHasAnyMatchingActor(SpawnCell, TO_FLAG(~EAT::Player)))
 	{
 		// Cell is occupied by other level actors (except players), cannot place bomb here
 		return false;
@@ -59,10 +46,16 @@ void UBmrBombPlaceAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 	CommitAbility(Handle, ActorInfo, ActivationInfo);
 
-	const FActiveGameplayEffectHandle AppliedDurationEffect = ApplyDurationalEffect(UBombDataAsset::Get().GetDurationGameplayEffect(), *ActorInfo, ActivationInfo);
+	const FCell SpawnCell = UCellsUtilsLibrary::GetCellByIndexOnLevel(TriggerEventData->EventMagnitude);
+
+	// Start bomb timer, providing own cell location in context
+	const UAbilitySystemComponent* ASC = ActorInfo ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
+	FGameplayEffectContextHandle EffectContext = ASC ? ASC->MakeEffectContext() : FGameplayEffectContextHandle();
+	EffectContext.AddOrigin(SpawnCell);
+	ApplyDurationalEffect(UBombDataAsset::Get().GetDurationGameplayEffect(), EffectContext, *ActorInfo, ActivationInfo);
 
 	const TWeakObjectPtr InInstigator = const_cast<AActor*>(TriggerEventData->Instigator.Get());
-	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), InInstigator, AppliedDurationEffect](const UMapComponent& MapComponent)
+	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), InInstigator](const UMapComponent& MapComponent)
 	{
 		UBmrBombPlaceAbility* This = WeakThis.Get();
 		if (!This)
@@ -72,13 +65,11 @@ void UBmrBombPlaceAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 
 		ABombActor* BombActor = CastChecked<ABombActor>(MapComponent.GetOwner());
 		BombActor->InitBomb(Cast<APawn>(InInstigator.Get()));
-		BombActor->SetActiveDurationEffectHandle(AppliedDurationEffect);
 
 		This->K2_EndAbility();
 	};
 
 	// Spawn bomb
-	const FCell SpawnCell = GetSpawnCellFromEventData(ActorInfo, TriggerEventData);
 	AGeneratedMap::Get().SpawnActorByType(EAT::Bomb, SpawnCell, OnBombSpawned);
 }
 
@@ -90,12 +81,12 @@ void UBmrBombPlaceAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, co
 	if (const UGameplayEffect* CostGE = GetCostGameplayEffect())
 	{
 		check(ActorInfo);
-		ApplyDurationalEffect(CostGE->GetClass(), *ActorInfo, ActivationInfo);
+		ApplyDurationalEffect(CostGE->GetClass(), FGameplayEffectContextHandle(), *ActorInfo, ActivationInfo);
 	}
 }
 
 // Applies given gameplay effect with bomb duration
-FActiveGameplayEffectHandle UBmrBombPlaceAbility::ApplyDurationalEffect(const TSubclassOf<UGameplayEffect> GameplayEffect, const FGameplayAbilityActorInfo& ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo)
+FActiveGameplayEffectHandle UBmrBombPlaceAbility::ApplyDurationalEffect(const TSubclassOf<UGameplayEffect> GameplayEffect, const FGameplayEffectContextHandle& EffectContext, const FGameplayAbilityActorInfo& ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo)
 {
 	UAbilitySystemComponent* ASC = ActorInfo.AbilitySystemComponent.Get();
 	if (!ASC || !ASC->HasAuthorityOrPredictionKey(&ActivationInfo)
@@ -104,7 +95,7 @@ FActiveGameplayEffectHandle UBmrBombPlaceAbility::ApplyDurationalEffect(const TS
 		return FActiveGameplayEffectHandle();
 	}
 
-	const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect, /*Level*/ 1.f, FGameplayEffectContextHandle());
+	const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect, /*Level*/ 1.f, EffectContext);
 	FGameplayEffectSpec* DurationSpec = SpecHandle.Data.Get();
 	if (!ensureMsgf(DurationSpec, TEXT("ASSERT: [%i] %hs:\n'DurationSpec' is not valid!"), __LINE__, __FUNCTION__))
 	{

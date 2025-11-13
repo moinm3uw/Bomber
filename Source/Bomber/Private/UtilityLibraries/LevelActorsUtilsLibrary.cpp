@@ -62,7 +62,7 @@ void ULevelActorsUtilsLibrary::GetLevelActorsOnCells(FMapComponents& OutMapCompo
 
 	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
 	{
-		const FCell& CellIt = MapComponentIt ? MapComponentIt->GetCell() : FCell::InvalidCell;
+		const FCell& CellIt = MapComponentIt && MapComponentIt->IsActive() ? MapComponentIt->GetCell() : FCell::InvalidCell;
 		if (CellIt.IsValid()
 		    && InCells.Contains(CellIt))
 		{

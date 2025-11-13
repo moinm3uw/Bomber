@@ -7,15 +7,16 @@
 // Bomber
 #include "Structures/Cell.h"
 
-// UE
-#include "ActiveGameplayEffectHandle.h"
-
 #include "BombActor.generated.h"
 
-enum class ELevelType : uint8;
-
 /**
- * Bombs are put by the character to destroy the level actors, trigger other bombs.
+ * Is part of the UBmrBombPlaceAbility and is responsible mainly for registration and visuals:
+ * - Contains the Map Component to register own location on the Generated Map, so it can be seen by other systems (like AI, other bombs, etc.).
+ * - Applies mesh and material based on the instigator (player who placed the bomb).
+ * - Applies collisions to block other players.
+ *
+ * It does NOT handle detonation timer, damage application, explosion VFXs/SFXs, etc. - all that is handled by ability, gameplay effects and cues.
+ *
  * @see Access its data with UBombDataAsset (Content/Bomber/DataAssets/DA_Bomb).
  */
 UCLASS()
@@ -42,18 +43,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void InitBomb(APawn* InInstigator);
 
-	/** If set, the bomb will detonate when this effect is removed.
-	 * Otherwise, the bomb must be manually detonated by destroying the level actor on generated map. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetActiveDurationEffectHandle(const FActiveGameplayEffectHandle& InHandle);
-
-	/** Clears the active duration effect handle as part of cleanup process. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void ClearActiveDurationEffectHandle();
-
 	/** Returns cells are going to explode by this bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	const FORCEINLINE TSet<FCell>& GetExplosionCells() const { return LocalExplosionCellsInternal; }
+	const FORCEINLINE TSet<FCell>& GetExplosionCells() const { return ExplosionCellsInternal; }
 
 	/** Returns explosion radius from instigator, or -1 if can not be obtained. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -64,35 +56,19 @@ public:
 	void TryDisplayExplosionCells();
 
 protected:
-	/** Is not replicated, is calculated locally on the server and clients from the FireRadiusInternal. */
+	/** Is not replicated, is calculated locally on the server-only from the Fire Radius attribute of the instigator,which placed the bomb.
+	 * Is not used for detonation logic, but only for AI perception and debug visuals. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Explosion Cells"))
-	TSet<FCell> LocalExplosionCellsInternal = FCell::EmptyCells;
-
-	/** Is applied at bomb ability activation, detonates the bomb when removed. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Applied Duration Effect"))
-	FActiveGameplayEffectHandle AppliedDurationEffectInternal;
-
-	/** Instigator's Ability System Component, who placed this bomb, cached on InitBomb(). */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponentInternal = nullptr;
-
-	/** Is server-only, immediately detonates the bomb. */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
-	void DetonateBomb();
+	TSet<FCell> ExplosionCellsInternal = FCell::EmptyCells;
 
 	/** Calculates the explosion cells based on current fire radius. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
 	void UpdateExplosionCells();
 
 	/*********************************************************************************************
 	 * Visuals: VFXs, SFXs, Mesh, Materials
 	 ********************************************************************************************* */
 public:
-	/** Spawns VFXs and SFXs, is allowed to call both on server and clients.
-	 * Immediate visual feedback executed locally when bomb detonates while damage itself is server-authority only. */
-	UFUNCTION(Blueprintable, Category = "C++")
-	void PlayExplosionsCue();
-
 	/** Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void ApplyMesh();
@@ -108,12 +84,6 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Returns the Ability System Component from the Instigator, who placed the bomb.
-	 * This getter does not override UAbilitySystemInterface, since the bomb itself does not own abilities. */
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
-	FORCEINLINE UAbilitySystemComponent* GetInstigatorAbilityComponent() const { return AbilitySystemComponentInternal; }
-	UAbilitySystemComponent& GetInstigatorAbilityComponentChecked() const;
-
 	/** Is overridden to init bomb on clients when instigator is replicated. */
 	virtual void OnRep_Instigator() override;
 
@@ -125,10 +95,6 @@ protected:
 	 * Is used by Level Actors instead of the BeginPlay(). */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnAddedToLevel(UMapComponent* MapComponent);
-
-	/** Is used to self-detonate the bomb when it is removed from the level. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPreRemovedFromLevel(UMapComponent* MapComponent, UObject* DestroyCauser);
 
 	/** Is used for cleaning up the bomb's data after it was removed from the level. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))

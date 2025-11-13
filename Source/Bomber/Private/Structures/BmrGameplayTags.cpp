@@ -29,6 +29,7 @@ namespace BmrGameplayTags
 
 	namespace SetByCaller
 	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bomb_Damage, "SetByCaller.Bomb.Damage", "SetByCaller tag to set bomb damage amount, is set in Explosion gameplay effect and captured in damage execution");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Bomb_Duration, "SetByCaller.Bomb.Duration", "SetByCaller tag to set bomb duration in seconds, modifies original duration to compensate for network latency on server side");
 	} // namespace SetByCaller
 

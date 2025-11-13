@@ -19,7 +19,6 @@
 #endif
 
 // UE
-#include "AbilitySystemGlobals.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerState.h"
@@ -61,9 +60,6 @@ void ABombActor::InitBomb(APawn* InInstigator)
 
 	SetInstigator(InInstigator);
 
-	AbilitySystemComponentInternal = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InInstigator);
-	ensureMsgf(AbilitySystemComponentInternal, TEXT("ASSERT: [%i] %hs:\n'AbilitySystemComponentInternal' failed to cache, '%s' instigator does not have Ability System Component, bomb will not explode properly!"), __LINE__, __FUNCTION__, *GetNameSafe(InInstigator));
-
 	UpdateExplosionCells();
 
 	InitCollisionResponseToAllPlayers();
@@ -71,48 +67,6 @@ void ABombActor::InitBomb(APawn* InInstigator)
 	ApplyMesh();
 
 	ApplyMaterial();
-}
-
-// If set, the bomb will detonate when this effect is removed
-void ABombActor::SetActiveDurationEffectHandle(const FActiveGameplayEffectHandle& InHandle)
-{
-	if (!HasAuthority()
-	    || !ensureMsgf(InHandle.IsValid(), TEXT("ASSERT: [%i] %hs:\n'InHandle' is not valid!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetInstigatorAbilityComponentChecked().OnGameplayEffectRemoved_InfoDelegate(InHandle);
-	if (!ensureMsgf(OnEffectRemoved, TEXT("ASSERT: [%i] %hs:\n'OnEffectRemoved' is not found, can not listen its removal!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	OnEffectRemoved->AddWeakLambda(this, [this](const FGameplayEffectRemovalInfo& RemovalInfo)
-	{
-		AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, this);
-	});
-
-	AppliedDurationEffectInternal = InHandle;
-}
-
-// Clears the active duration effect handle as part of cleanup process
-void ABombActor::ClearActiveDurationEffectHandle()
-{
-	if (!HasAuthority()
-	    || !AppliedDurationEffectInternal.IsValid())
-	{
-		// Is already cleared
-		return;
-	}
-
-	FOnActiveGameplayEffectRemoved_Info* OnEffectRemoved = GetInstigatorAbilityComponentChecked().OnGameplayEffectRemoved_InfoDelegate(AppliedDurationEffectInternal);
-	if (OnEffectRemoved)
-	{
-		OnEffectRemoved->RemoveAll(this);
-	}
-
-	AppliedDurationEffectInternal.Invalidate();
 }
 
 // Returns explosion radius from instigator, or -1 if can not be obtained
@@ -131,68 +85,27 @@ void ABombActor::TryDisplayExplosionCells()
 	Params.TextColor = FLinearColor::Yellow;
 	Params.TextSize += 50.f;
 	Params.TextHeight += 1.f;
-	UCellsUtilsLibrary::DisplayCells(this, LocalExplosionCellsInternal, Params);
+	UCellsUtilsLibrary::DisplayCells(this, ExplosionCellsInternal, Params);
 #endif // !UE_BUILD_SHIPPING
-}
-
-// Destroy bomb and burst explosion cells, calls multicast event
-void ABombActor::DetonateBomb()
-{
-	if (!HasAuthority()
-	    || IsHidden()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame
-	    || !ensureMsgf(!LocalExplosionCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'LocalExplosionCellsInternal' is empty!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	PlayExplosionsCue();
-
-	FMapComponents TargetMapComponents;
-	ULevelActorsUtilsLibrary::GetLevelActorsOnCells(/*out*/ TargetMapComponents, LocalExplosionCellsInternal);
-
-	for (UMapComponent* TargetMapComponent : TargetMapComponents)
-	{
-		const AActor* TargetActor = TargetMapComponent ? TargetMapComponent->GetOwner() : nullptr;
-		if (!TargetActor
-		    || TargetActor == this)
-		{
-			continue;
-		}
-
-		UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
-		if (!TargetASC)
-		{
-			AGeneratedMap::Get().DestroyLevelActor(TargetMapComponent, this);
-			continue;
-		}
-
-		// Actor has ASC: apply damage through GAS
-		UAbilitySystemComponent& InstigatorASC = GetInstigatorAbilityComponentChecked();
-		FGameplayEffectContextHandle EffectContext = InstigatorASC.MakeEffectContext();
-		EffectContext.AddInstigator(GetInstigator(), this);
-		TSubclassOf<UGameplayEffect> ExplosionDamageEffect = UBombDataAsset::Get().GetExplosionDamageEffect();
-		if (ensureMsgf(ExplosionDamageEffect, TEXT("ASSERT: [%i] %hs:\n'ExplosionDamageEffect' is not set!"), __LINE__, __FUNCTION__))
-		{
-			InstigatorASC.ApplyGameplayEffectToTarget(ExplosionDamageEffect.GetDefaultObject(), TargetASC, /*Level*/ 1.f, EffectContext);
-		}
-	}
 }
 
 // Calculates the explosion cells based on current fire radius
 void ABombActor::UpdateExplosionCells()
 {
-	const int32 FireRadius = GetFireRadius();
-	if (FireRadius <= 0
-	    || !MapComponentInternal || MapComponentInternal->GetCell().IsInvalidCell()
-	    || !LocalExplosionCellsInternal.IsEmpty())
+	if (!HasAuthority()
+	    || !ExplosionCellsInternal.IsEmpty())
 	{
-		// On client some data might be not replicated yet or explosions already calculated
+		// Already calculated
 		return;
 	}
 
-	const FCells NewExplosionCells = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadius);
-	LocalExplosionCellsInternal = NewExplosionCells;
+	const int32 FireRadius = GetFireRadius();
+	if (!ensureMsgf(FireRadius > 0, TEXT("ASSERT: [%i] %hs:\n'FireRadius' is less than 1!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	ExplosionCellsInternal = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadius);
 
 	TryDisplayExplosionCells();
 }
@@ -200,21 +113,6 @@ void ABombActor::UpdateExplosionCells()
 /*********************************************************************************************
  * Cue Visuals: VFXs, SFXs, Materials
  ********************************************************************************************* */
-
-// Spawns VFXs and SFXs, is allowed to call both on server and clients
-void ABombActor::PlayExplosionsCue()
-{
-	if (!(TO_FLAG(AMyGameStateBase::GetCurrentGameState()) & TO_FLAG(ECGS::InGame | ECGS::EndGame))
-	    || !ensureMsgf(!LocalExplosionCellsInternal.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'LocalExplosionCellsInternal' is empty!"), __LINE__, __FUNCTION__))
-	{
-		// Play cue only during the match (InGame or EndGame states) and if explosion cells are valid
-		return;
-	}
-
-	FGameplayCueParameters Parameters;
-	Parameters.Instigator = this;
-	GetInstigatorAbilityComponentChecked().InvokeGameplayCueEvent(BmrGameplayTags::GameplayCue::Bomb_Explosion, EGameplayCueEvent::Executed, Parameters);
-}
 
 // Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator
 void ABombActor::ApplyMesh()
@@ -291,13 +189,6 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Returns the Ability System Component from the Instigator or local player if none, will crash if can't be obtained
-UAbilitySystemComponent& ABombActor::GetInstigatorAbilityComponentChecked() const
-{
-	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	return *AbilitySystemComponentInternal;
-}
-
 // Is overridden to init bomb on clients when instigator is replicated
 void ABombActor::OnRep_Instigator()
 {
@@ -316,10 +207,7 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
 
-	UpdateExplosionCells();
-
 	// Listen when this bomb is destroyed on the Generated Map by itself or by other actors
-	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
 
 #if WITH_EDITOR //[IsEditorNotPieWorld]
@@ -330,24 +218,6 @@ void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 #endif // WITH_EDITOR [IsEditorNotPieWorld]
 }
 
-// Is used to self-detonate the bomb when it is removed from the level
-void ABombActor::OnPreRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
-{
-	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnPreRemovedFromLevel.RemoveAll(this);
-
-	if (HasAuthority())
-	{
-		// On server, bomb is removed from Generated Map, detonate it
-		DetonateBomb();
-	}
-	else
-	{
-		// On client, play explosions cue locally
-		PlayExplosionsCue();
-	}
-}
-
 // Is used for cleaning up the bomb's data after it was removed from the level
 void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser)
 {
@@ -355,12 +225,9 @@ void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 	MapComponentInternal->OnPostRemovedFromLevel.RemoveAll(this);
 	MapComponentInternal->OnCellChanged.RemoveAll(this);
 
-	ClearActiveDurationEffectHandle();
-
 	SetInstigator(nullptr);
-	AbilitySystemComponentInternal = nullptr;
 
-	LocalExplosionCellsInternal = FCell::EmptyCells;
+	ExplosionCellsInternal = FCell::EmptyCells;
 }
 
 // Is called when character leaves the bomb to update collision response

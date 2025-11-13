@@ -17,10 +17,6 @@ class BOMBER_API UBmrBombPlaceAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 
-public:
-	/** Returns the cell from the event data, or avatar cell if event data is invalid. */
-	static struct FCell GetSpawnCellFromEventData(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayEventData* TriggerEventData);
-
 protected:
 	/** Is overridden to prevent event-based activation if we bomb cannot be placed at the specified cell. */
 	virtual bool ShouldAbilityRespondToEvent(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayEventData* TriggerEventData) const override;
@@ -33,5 +29,5 @@ protected:
 
 	/** Applies given gameplay effect with bomb duration. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	static FActiveGameplayEffectHandle ApplyDurationalEffect(TSubclassOf<UGameplayEffect> GameplayEffect, const FGameplayAbilityActorInfo& ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo);
+	static FActiveGameplayEffectHandle ApplyDurationalEffect(TSubclassOf<UGameplayEffect> GameplayEffect, const FGameplayEffectContextHandle& EffectContext, const FGameplayAbilityActorInfo& ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo);
 };

@@ -245,19 +245,9 @@ void APlayerCharacter::OnPreRemovedFromLevel_Implementation(UMapComponent* MapCo
 	}
 
 	// In the KillerPlayerState, mark this player as killed by DestroyCauser
-	AMyPlayerState* KillerPlayerState = [DestroyCauser]
+	if (AMyPlayerState* CauserPlayerState = Cast<AMyPlayerState>(DestroyCauser))
 	{
-		const APawn* Causer = Cast<APawn>(DestroyCauser);
-		if (!Causer)
-		{
-			const AActor* CauserActor = Cast<AActor>(DestroyCauser);
-			Causer = CauserActor ? CauserActor->GetInstigator() : nullptr;
-		}
-		return Causer ? Causer->GetPlayerState<AMyPlayerState>() : nullptr;
-	}();
-	if (KillerPlayerState)
-	{
-		KillerPlayerState->SetOpponentKilled(this);
+		CauserPlayerState->SetOpponentKilled(this);
 	}
 }
 
