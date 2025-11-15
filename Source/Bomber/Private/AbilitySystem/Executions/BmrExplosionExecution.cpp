@@ -10,6 +10,7 @@
 #include "DataAssets/BombDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GeneratedMap.h"
+#include "LevelActors/BombActor.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 
@@ -63,13 +64,6 @@ void UBmrExplosionExecution::Execute_Implementation(const FGameplayEffectCustomE
 		return;
 	}
 
-	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(SourceASC);
-	const int32 FireRadius = PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : INDEX_NONE;
-	if (!ensureMsgf(FireRadius > 0, TEXT("ASSERT: [%i] %hs:\n'FireRadius' is less than 1!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
 	// Capture outcoming damage from source
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
@@ -79,10 +73,14 @@ void UBmrExplosionExecution::Execute_Implementation(const FGameplayEffectCustomE
 	float OutcomingDamage = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(ExplosionStatics().OutcomingDamageDef, EvaluateParameters, OutcomingDamage);
 	const float DamageDone = FMath::Max(OutcomingDamage, 0.f);
-	if (DamageDone <= 0.f)
+	if (!ensureMsgf(DamageDone > 0.f, TEXT("ASSERT: [%i] %hs:\n'OutcomingDamage' is zero or negative, no damage to apply!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
+
+	constexpr int32 DefaultFireRadius = 1;
+	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(SourceASC);
+	const int32 FireRadius = PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : DefaultFireRadius;
 
 	// Apply damage to all explosion cells
 	FMapComponents TargetMapComponents;
@@ -97,18 +95,13 @@ void UBmrExplosionExecution::Execute_Implementation(const FGameplayEffectCustomE
 		}
 
 		// Remove bomb effects from chained bombs: this way their effects interrupt immediately, causing this execution and chain reaction
-		const FCell& TargetCellIt = TargetMapComponent->GetCell();
-		const bool bIsChainedBomb = TargetCellIt != OriginCell && TargetMapComponent->GetActorType() == EAT::Bomb;
+		const ABombActor* BombActor = Cast<ABombActor>(TargetActor);
+		UAbilitySystemComponent* BombInstigatorASC = BombActor ? BombActor->GetInstigatorAbilitySystemComponent() : nullptr;
+		const bool bIsChainedBomb = BombInstigatorASC && TargetMapComponent->GetCell() != OriginCell;
 		if (bIsChainedBomb)
 		{
-			UAbilitySystemComponent* BombInstigatorASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor->GetInstigator());
-			if (!BombInstigatorASC)
-			{
-				continue;
-			}
-
 			FGameplayEffectQuery Query;
-			Query.CustomMatchDelegate.BindLambda([&TargetCellIt](const FActiveGameplayEffect& ActiveEffect)
+			Query.CustomMatchDelegate.BindLambda([&TargetCellIt = TargetMapComponent->GetCell()](const FActiveGameplayEffect& ActiveEffect)
 			{
 				return ActiveEffect.Spec.GetContext().GetOrigin() == TargetCellIt.Location; // The same cell in context
 			});

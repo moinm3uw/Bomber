@@ -213,10 +213,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	EActorType GetActorType() const;
 
-	/** Returns level type associated with actor, e.g: Fori character -> Third (Forest) actor type. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	ELevelType GetLevelType() const;
-
 protected:
 	/** Represents the archetype of the owner, is set automatically on spawn.
 	 * Is not Transient since it's set and saved in editor before the game starts. */

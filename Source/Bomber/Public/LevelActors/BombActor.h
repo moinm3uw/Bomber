@@ -28,10 +28,18 @@ public:
 	/** Sets default values for this actor's properties */
 	ABombActor();
 
+	/** Returns the Ability System Component of the instigator who placed this bomb, is used to get attributes like fire radius. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE class UAbilitySystemComponent* GetInstigatorAbilitySystemComponent() const { return InstigatorAbilitySystemComponent; }
+
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Map Component"))
 	TObjectPtr<class UMapComponent> MapComponentInternal = nullptr;
+
+	/** Ability System Component of the instigator who placed this bomb, is used to get attributes like fire radius. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, ReplicatedUsing = "OnRep_InstigatorAbilitySystemComponent", AdvancedDisplay, Category = "C++")
+	TObjectPtr<UAbilitySystemComponent> InstigatorAbilitySystemComponent = nullptr;
 
 	/*********************************************************************************************
 	 * Detonation
@@ -39,9 +47,9 @@ protected:
 public:
 	/** Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.).
 	 * Can be called on both server and clients.
-	 * @param InInstigator - player which placed the bomb, can be accessed as GetInstigator(), is used to track the destroy causer, e.g: scoreboard. */
+	 * @param InASC - Ability System Component of the instigator who placed this bomb, is used to get attributes like fire radius. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void InitBomb(APawn* InInstigator);
+	void InitBomb(UAbilitySystemComponent* InASC);
 
 	/** Returns cells are going to explode by this bomb. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
@@ -84,8 +92,12 @@ protected:
 	/** Called when an instance of this class is placed (in editor) or spawned */
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	/** Is overridden to init bomb on clients when instigator is replicated. */
-	virtual void OnRep_Instigator() override;
+	/** Returns properties that are replicated for the lifetime of the actor channel. */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** Called on client to init bomb on clients when instigator's ASC is replicated. */
+	UFUNCTION()
+	void OnRep_InstigatorAbilitySystemComponent();
 
 	/*********************************************************************************************
 	 * Events

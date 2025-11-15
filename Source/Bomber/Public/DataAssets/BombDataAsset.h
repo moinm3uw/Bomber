@@ -58,6 +58,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class UMaterialInterface* GetBombMaterial(int32 Index) const { return BombMaterialsInternal.IsValidIndex(Index) ? BombMaterialsInternal[Index] : nullptr; }
 
+	/** Returns associated bomb row by associated instigator actor (e.g: Fori character -> Third (Forest) row).
+	 * @param InInstigator - the actor who placed the bomb, used to determine the level type.
+	 * @return The bomb row corresponding to the instigator's type, or nullptr if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const UBombRow* GetBombRow(const AActor* InInstigator) const;
+
 protected:
 	/** The lifetime of a bomb. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration", ShowOnlyInnerProperties))

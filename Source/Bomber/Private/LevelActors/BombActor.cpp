@@ -22,6 +22,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BombActor)
 
@@ -51,18 +52,17 @@ ABombActor::ABombActor()
  ********************************************************************************************* */
 
 // Initiates the explosion: starts countdown and initializes the data (fire radius, explosion cells, etc.)
-void ABombActor::InitBomb(APawn* InInstigator)
+void ABombActor::InitBomb(UAbilitySystemComponent* InASC)
 {
-	if (!ensureMsgf(InInstigator, TEXT("ASSERT: [%i] %hs:\n'InInstigator' is null!"), __LINE__, __FUNCTION__))
+	if (!ensureMsgf(InASC, TEXT("ASSERT: [%i] %hs:\n'InstigatorAbilitySystemComponent' is null, can not init the bomb!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
-	SetInstigator(InInstigator);
+	InstigatorAbilitySystemComponent = InASC;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, InstigatorAbilitySystemComponent, this);
 
 	UpdateExplosionCells();
-
-	InitCollisionResponseToAllPlayers();
 
 	ApplyMesh();
 
@@ -72,8 +72,9 @@ void ABombActor::InitBomb(APawn* InInstigator)
 // Returns explosion radius from instigator, or -1 if can not be obtained
 int32 ABombActor::GetFireRadius() const
 {
-	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(GetInstigator());
-	return PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : INDEX_NONE;
+	constexpr int32 DefaultFireRadius = 1;
+	const UBmrPowerupsAttributeSet* PowerupsAttributeSet = UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(InstigatorAbilitySystemComponent);
+	return PowerupsAttributeSet ? PowerupsAttributeSet->GetPowerup_Fire() : DefaultFireRadius;
 }
 
 // Show current explosion cells if the bomb type is allowed to be displayed, is not available in shipping build
@@ -99,13 +100,7 @@ void ABombActor::UpdateExplosionCells()
 		return;
 	}
 
-	const int32 FireRadius = GetFireRadius();
-	if (!ensureMsgf(FireRadius > 0, TEXT("ASSERT: [%i] %hs:\n'FireRadius' is less than 1!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
-
-	ExplosionCellsInternal = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, FireRadius);
+	ExplosionCellsInternal = UCellsUtilsLibrary::GetCellsAround(MapComponentInternal->GetCell(), EPathType::Explosion, GetFireRadius());
 
 	TryDisplayExplosionCells();
 }
@@ -117,15 +112,8 @@ void ABombActor::UpdateExplosionCells()
 // Updates current mesh for this bomb actor, based on instigator type, or randomly if no instigator
 void ABombActor::ApplyMesh()
 {
-	// If it has instigator with map component, then associate its mesh with bomb mesh, e.g when each character has own bomb
-	// Otherwise just apply random mesh from data asset
-	const UMapComponent* InstigatorMapComponent = UMapComponent::GetMapComponent(GetInstigator());
-	const ELevelType FinalMeshType = InstigatorMapComponent
-	                                     ? InstigatorMapComponent->GetLevelType()
-	                                     : TO_ENUM(ELevelType, ELT_FIRST_FLAG << FMath::RandRange(0, FMath::FloorLog2(ELT_LAST_FLAG)));
-
-	const ULevelActorRow* BombRow = UBombDataAsset::Get().GetRowByLevelType(FinalMeshType);
-	if (!ensureMsgf(BombRow, TEXT("ASSERT: [%i] %hs:\n'BombRow' is not valid, can not apply mesh!"), __LINE__, __FUNCTION__))
+	const ULevelActorRow* BombRow = InstigatorAbilitySystemComponent ? UBombDataAsset::Get().GetBombRow(InstigatorAbilitySystemComponent->GetAvatarActor()) : nullptr;
+	if (!ensureMsgf(BombRow, TEXT("ASSERT: [%i] %hs:\n'BombRow' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
@@ -140,23 +128,9 @@ void ABombActor::ApplyMaterial()
 	TObjectPtr<UMaterialInterface> NewBombMaterial = nullptr;
 
 	// If bot character, override material with the player type
-	const APawn* OwnerCharacter = GetInstigator<APawn>();
-	const APlayerState* OwnerPlayerState = OwnerCharacter ? OwnerCharacter->GetPlayerState<APlayerState>() : nullptr;
-	if (OwnerPlayerState
-	    && OwnerCharacter->IsBotControlled())
-	{
-		// If bot character, set material for its default bomb with the same mesh
-		const int32 PlayerIndex = OwnerPlayerState->GetPlayerId();
-		const UBombDataAsset& BombDataAsset = UBombDataAsset::Get();
-		const int32 BombMaterialsNum = BombDataAsset.GetBombMaterialsNum();
-		if (PlayerIndex != INDEX_NONE // Is not debug character
-		    && BombMaterialsNum) // As least one bomb material
-		{
-			const int32 MaterialIndex = FMath::Abs(PlayerIndex) % BombMaterialsNum;
-			NewBombMaterial = BombDataAsset.GetBombMaterial(MaterialIndex);
-		}
-	}
-	else
+	const APawn* OwnedPawn = InstigatorAbilitySystemComponent ? Cast<APawn>(InstigatorAbilitySystemComponent->GetAvatarActor()) : nullptr;
+	const APlayerState* OwnerPlayerState = OwnedPawn ? OwnedPawn->GetPlayerState<APlayerState>() : nullptr;
+	if (OwnerPlayerState && OwnedPawn->IsPlayerControlled())
 	{
 		// Set material by bomb type (default)
 		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
@@ -165,6 +139,13 @@ void ABombActor::ApplyMaterial()
 		{
 			NewBombMaterial = BombMesh->GetMaterial(0);
 		}
+	}
+	else if (const int32 BombMaterialsNum = UBombDataAsset::Get().GetBombMaterialsNum())
+	{
+		// If bot character, set material for its default bomb with the same mesh
+		const int32 PlayerIndex = OwnerPlayerState ? OwnerPlayerState->GetPlayerId() : FMath::RandRange(0, BombMaterialsNum - 1);
+		const int32 MaterialIndex = FMath::Abs(PlayerIndex) % BombMaterialsNum;
+		NewBombMaterial = UBombDataAsset::Get().GetBombMaterial(MaterialIndex);
 	}
 
 	// Apply material
@@ -189,12 +170,23 @@ void ABombActor::OnConstruction(const FTransform& Transform)
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
-// Is overridden to init bomb on clients when instigator is replicated
-void ABombActor::OnRep_Instigator()
+// Returns properties that are replicated for the lifetime of the actor channel
+void ABombActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (APawn* InInstigator = GetInstigator())
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, InstigatorAbilitySystemComponent, Params);
+}
+
+// Called on client to init bomb on clients when instigator's ASC is replicated
+void ABombActor::OnRep_InstigatorAbilitySystemComponent()
+{
+	if (InstigatorAbilitySystemComponent)
 	{
-		InitBomb(InInstigator);
+		InitBomb(InstigatorAbilitySystemComponent);
 	}
 }
 
@@ -206,9 +198,9 @@ void ABombActor::OnRep_Instigator()
 void ABombActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 {
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
-
-	// Listen when this bomb is destroyed on the Generated Map by itself or by other actors
 	MapComponent->OnPostRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPostRemovedFromLevel);
+
+	InitCollisionResponseToAllPlayers();
 
 #if WITH_EDITOR //[IsEditorNotPieWorld]
 	if (FEditorUtilsLibrary::IsEditorNotPieWorld()) // [IsEditorNotPieWorld]
@@ -225,7 +217,8 @@ void ABombActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 	MapComponentInternal->OnPostRemovedFromLevel.RemoveAll(this);
 	MapComponentInternal->OnCellChanged.RemoveAll(this);
 
-	SetInstigator(nullptr);
+	InstigatorAbilitySystemComponent = nullptr;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, InstigatorAbilitySystemComponent, this);
 
 	ExplosionCellsInternal = FCell::EmptyCells;
 }

@@ -9,9 +9,11 @@
 #include "Structures/GeneratedMapSettings.h"
 #include "Structures/MapComponentsContainer.h"
 
+// UE
+#include "AbilitySystemInterface.h"
+
 #include "GeneratedMap.generated.h"
 
-enum class ECurrentGameState : uint8;
 enum class EActorType : uint8;
 
 class UMapComponent;
@@ -21,7 +23,8 @@ class UMapComponent;
  * @see Access its data with UGeneratedMapDataAsset (Content/Bomber/DataAssets/DA_Levels).
  */
 UCLASS()
-class BOMBER_API AGeneratedMap final : public AActor
+class BOMBER_API AGeneratedMap final : public AActor,
+                                       public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -182,6 +185,26 @@ public:
 	 * Transform scale-Y is number of rows. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "ActorTransform"))
 	static FTransform ActorTransformToGridTransform(const FTransform& ActorTransform);
+
+	/*********************************************************************************************
+	 * Gameplay Ability System (GAS)
+	 ********************************************************************************************* */
+public:
+	/** Returns ability system component that is used to manage environmental abilities.
+	 * In blueprints, can be obtained via regular Get Ability System Component call from ability interface. */
+	virtual FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+
+protected:
+	/** Ability System Component that is used to manage abilities (like place bomb) and attributes (like powerups) for owned player. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+
+	/** Attribute set for damage (e.g: environmental explosions) and health (e.g: damaging the level).
+	 * For read access, can be obtained with UBmrHealthAttributeSet::GetHealthAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrHealthAttributeSet> HealthSetInternal = nullptr;
 
 protected:
 	/* ---------------------------------------------------

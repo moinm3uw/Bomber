@@ -3,6 +3,7 @@
 #include "GeneratedMap.h"
 
 // Bomber
+#include "AbilitySystem/Attributes/BmrHealthAttributeSet.h"
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
@@ -22,6 +23,7 @@
 #endif
 
 // UE
+#include "AbilitySystemComponent.h"
 #include "Components/GameFrameworkComponentManager.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
@@ -71,6 +73,12 @@ AGeneratedMap::AGeneratedMap()
 	// Default camera class
 	CameraComponentInternal = CreateDefaultSubobject<UMyCameraComponent>(TEXT("Camera Component"));
 	CameraComponentInternal->SetupAttachment(RootComponent);
+
+	// Create ASC on Generated Map for environmental abilities and level-related mods (e.g., environmental explosions)
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+	HealthSetInternal = CreateDefaultSubobject<UBmrHealthAttributeSet>(TEXT("HealthAttributeSet"));
 }
 
 // Returns the generated map
@@ -616,6 +624,13 @@ FTransform AGeneratedMap::ActorTransformToGridTransform(const FTransform& ActorT
 	return MoveTemp(NewTransform);
 }
 
+// Returns ability system component that is used to manage environmental abilities, crash if nullptr
+UAbilitySystemComponent& AGeneratedMap::GetAbilitySystemComponentChecked() const
+{
+	checkf(AbilitySystemComponent, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponent' is null!"), __LINE__, __FUNCTION__);
+	return *AbilitySystemComponent;
+}
+
 /* ---------------------------------------------------
  *		Generated Map protected functions
  * --------------------------------------------------- */
@@ -701,6 +716,8 @@ void AGeneratedMap::PostInitializeComponents()
 	// Update the gameplay GeneratedMap reference in the singleton library
 	UGeneratedMapSubsystem::Get().SetGeneratedMap(this);
 
+	GetAbilitySystemComponentChecked().InitAbilityActorInfo(this, this);
+
 	OnConstructionGeneratedMap(GetActorTransform());
 
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
@@ -759,6 +776,7 @@ void AGeneratedMap::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MapComponentsInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, GenerateLevelActorsTokenInternal, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, AbilitySystemComponent, Params);
 }
 
 // Spawns and fills the Grid Array values by level actors

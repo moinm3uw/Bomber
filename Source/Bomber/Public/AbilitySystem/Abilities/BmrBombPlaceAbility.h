@@ -8,9 +8,8 @@
 
 /**
  * Handles placing a bomb on the map for both player and AI characters.
- * Ability is triggered by the TAG_EVENT_BOMB_PLACED event, where:
- * - EventData.Instigator: the actor placing the bomb.
- * - EventData.EventMagnitude: cell index to place the bomb at (if <=0, bomb is placed at avatar cell).
+ * Ability is triggered by the BmrGameplayTags::Event::Bomb_Place event, where:
+ * - EventData.EventMagnitude: cell index to place the bomb at.
  */
 UCLASS()
 class BOMBER_API UBmrBombPlaceAbility : public UGameplayAbility

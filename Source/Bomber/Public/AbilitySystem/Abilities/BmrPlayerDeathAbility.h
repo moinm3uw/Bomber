@@ -8,7 +8,7 @@
 
 /**
  * Handles player death state and cleanup when health reaches zero.
- * Ability is triggered by the BmrGameplayTags::Event::Player_Dead event, where:
+ * Ability is triggered by the BmrGameplayTags::Event::Player_Death event, where:
  * - EventData.Instigator: the actor that caused the death (bomb, environment, etc.).
  */
 UCLASS()

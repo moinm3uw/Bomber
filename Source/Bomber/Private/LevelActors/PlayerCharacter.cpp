@@ -535,9 +535,10 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin /* = false
 // Spawns bomb on character position
 void APlayerCharacter::SpawnBomb()
 {
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+
 	// Activate bomb ability
 	FGameplayEventData EventData;
-	EventData.Instigator = this;
 	EventData.EventMagnitude = UCellsUtilsLibrary::GetIndexByCellLevel(MapComponentInternal->GetCell());
 	GetAbilitySystemComponentChecked().HandleGameplayEvent(BmrGameplayTags::Event::Bomb_Placed, &EventData);
 }

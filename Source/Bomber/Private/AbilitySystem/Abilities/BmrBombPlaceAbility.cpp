@@ -13,7 +13,6 @@
 // UE
 #include "AbilitySystemComponent.h"
 #include "DataAssets/BombDataAsset.h"
-#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrBombPlaceAbility)
@@ -49,27 +48,22 @@ void UBmrBombPlaceAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 	const FCell SpawnCell = UCellsUtilsLibrary::GetCellByIndexOnLevel(TriggerEventData->EventMagnitude);
 
 	// Start bomb timer, providing own cell location in context
-	const UAbilitySystemComponent* ASC = ActorInfo ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 	FGameplayEffectContextHandle EffectContext = ASC ? ASC->MakeEffectContext() : FGameplayEffectContextHandle();
 	EffectContext.AddOrigin(SpawnCell);
 	ApplyDurationalEffect(UBombDataAsset::Get().GetDurationGameplayEffect(), EffectContext, *ActorInfo, ActivationInfo);
 
-	const TWeakObjectPtr InInstigator = const_cast<AActor*>(TriggerEventData->Instigator.Get());
-	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), InInstigator](const UMapComponent& MapComponent)
-	{
-		UBmrBombPlaceAbility* This = WeakThis.Get();
-		if (!This)
-		{
-			return;
-		}
-
-		ABombActor* BombActor = CastChecked<ABombActor>(MapComponent.GetOwner());
-		BombActor->InitBomb(Cast<APawn>(InInstigator.Get()));
-
-		This->K2_EndAbility();
-	};
-
 	// Spawn bomb
+	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this), WeakASK = TWeakObjectPtr(ASC)](const UMapComponent& MapComponent)
+	{
+		if (UBmrBombPlaceAbility* This = WeakThis.Get())
+		{
+			ABombActor* BombActor = CastChecked<ABombActor>(MapComponent.GetOwner());
+			BombActor->InitBomb(WeakASK.Get());
+
+			This->K2_EndAbility();
+		}
+	};
 	AGeneratedMap::Get().SpawnActorByType(EAT::Bomb, SpawnCell, OnBombSpawned);
 }
 
