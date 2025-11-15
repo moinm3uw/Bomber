@@ -126,8 +126,7 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 		return;
 	}
 
-	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel);
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 

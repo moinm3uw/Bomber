@@ -44,7 +44,8 @@ public:
 	/** Called when this level actor is reconstructed or added on the Generated Map, on both server and clients.
 	 * Is used by Level Actors instead of the BeginPlay(), but also called in editor preview before game even started.
 	 * In Editor on construction: AActor::RerunConstructionScripts() -> AActor::OnConstruction() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded()
-	 * In build: AGeneratedMap::SpawnActorByType() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded() */
+	 * In build: AGeneratedMap::SpawnActorByType() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded()
+	 * In code, BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel) can be used to bind to this event,e*/
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnAddedToLevel OnAddedToLevel;
 
@@ -272,3 +273,16 @@ protected:
 	virtual bool Modify(bool bAlwaysMarkDirty = true) override;
 #endif
 };
+
+/** Helper macro to bind and call the function when the map component is added to level */
+#define BIND_ON_ADDED_TO_LEVEL(Obj, Function)                                  \
+	{                                                                          \
+		if (UMapComponent* MapComponent = UMapComponent::GetMapComponent(Obj)) \
+		{                                                                      \
+			MapComponent->OnAddedToLevel.AddUniqueDynamic(Obj, &Function);     \
+			if (MapComponent->GetCell().IsValid())                             \
+			{                                                                  \
+				Obj->Function(MapComponent);                                   \
+			}                                                                  \
+		}                                                                      \
+	}
