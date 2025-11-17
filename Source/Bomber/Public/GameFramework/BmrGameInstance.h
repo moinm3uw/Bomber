@@ -14,37 +14,36 @@ class BOMBER_API UBmrGameInstance : public UAdvancedFriendsGameInstance
 {
 	GENERATED_BODY()
 
+	UBmrGameInstance(const FObjectInitializer& ObjectInitializer);
+
 	/*********************************************************************************************
 	 * Overrides and Events
 	 ********************************************************************************************* */
 protected:
-	/** Is called when the game instance is created. */
-	virtual void Init() override;
+	/** Is overridden to listen when first local player is added. */
+	virtual int32 AddLocalPlayer(ULocalPlayer* NewPlayer, FPlatformUserId UserId) override;
 
-	/** Is used to initialize the game instance post world initialization. */
-	void OnBeginPlay(UWorld* World, struct FWorldInitializationValues WorldInitializationValues);
-
-	/** Called on begin play of the Main Level. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnMainLevelOpened();
-
-	/** Called when the local player character is spawned, possessed, and replicated. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnLocalCharacterReady(class APlayerCharacter* PlayerCharacter, int32 CharacterID);
+	/** Is called when first local player has had a new outer. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnPlayerControllerReady(class APlayerController* PlayerController);
 
 	/*********************************************************************************************
 	 * Online Sessions
+	 * Flow: TryCreateSession → Open?listen → MainLevel
 	 ********************************************************************************************* */
 public:
 	/** Attempts to create a session. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void TryCreateSession();
+	void TryCreateSession(class APlayerController* PlayerController);
 
 	/** Attempts to join a session. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void TryJoinSession(const struct FBlueprintSessionResult& SessionToJoin);
 
 protected:
+	/** Called when server session is created successfully, e.g: when main level is opened. */
+	void OnCreateSessionComplete(FName Name, bool bArg) const;
+
 	/** Session callback when a user accepts an invitation. */
 	virtual void OnSessionInviteAcceptedMaster(const bool bWasSuccessful, int32 LocalPlayer, TSharedPtr<const FUniqueNetId> PersonInviting, const FOnlineSessionSearchResult& SessionToJoin) override;
 

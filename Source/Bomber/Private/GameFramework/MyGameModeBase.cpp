@@ -22,6 +22,8 @@ AMyGameModeBase::AMyGameModeBase()
 
 	// Spawn and possess pawn by ourselves manually
 	DefaultPawnClass = nullptr;
+
+	bUseSeamlessTravel = true;
 }
 
 // Returns player controller by specified index

@@ -3,14 +3,15 @@
 #include "GameFramework/BmrGameInstance.h"
 
 // Bomber
-#include "AdvancedSteamFriendsLibrary.h"
-#include "Controllers/MyPlayerController.h"
-#include "CreateSessionCallbackProxyAdvanced.h"
 #include "DataAssets/GameStateDataAsset.h"
-#include "LevelActors/PlayerCharacter.h"
-#include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
+
+// Steam
+#include "AdvancedSteamFriendsLibrary.h"
+#include "CreateSessionCallbackProxyAdvanced.h"
+
+// UE
+#include "Kismet/GameplayStatics.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrGameInstance)
 
@@ -18,35 +19,41 @@
  * Overrides and Events
  ********************************************************************************************* */
 
-// Is called when the game instance is created
-void UBmrGameInstance::Init()
+UBmrGameInstance::UBmrGameInstance(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
-	Super::Init();
-
-	FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &ThisClass::OnBeginPlay);
+	bAutoJoinOnAcceptedUserInviteReceived = false;
 }
 
-// Is used to initialize the game instance post world initialization
-void UBmrGameInstance::OnBeginPlay(UWorld* World, struct FWorldInitializationValues WorldInitializationValues)
+// Is overridden to listen when first local player is added
+int32 UBmrGameInstance::AddLocalPlayer(ULocalPlayer* NewPlayer, FPlatformUserId UserId)
 {
-	const FString MainLevelName = UGameStateDataAsset::Get().GetMainLevel().GetAssetName();
-	const FString CurrentLevelName = GetNameSafe(World);
-	if (CurrentLevelName.Contains(MainLevelName))
+	const int32 PlayerIdx = Super::AddLocalPlayer(NewPlayer, UserId);
+
+	if (PlayerIdx == 0)
 	{
-		OnMainLevelOpened();
+		checkf(NewPlayer, TEXT("ERROR: [%i] %hs:\n'NewPlayer' is null!"), __LINE__, __FUNCTION__);
+		NewPlayer->OnPlayerControllerChanged().AddUObject(this, &ThisClass::OnPlayerControllerReady);
 	}
+
+	return PlayerIdx;
 }
 
-// Called on begin play of the Main Level
-void UBmrGameInstance::OnMainLevelOpened_Implementation()
+// Is called when first local player has had a new outer
+void UBmrGameInstance::OnPlayerControllerReady(APlayerController* PlayerController)
 {
-	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
-}
+	if (!PlayerController)
+	{
+		// Might be null on unpossessing and cleanups, ignore
+		return;
+	}
 
-// Called when the local player character is spawned, possessed, and replicated
-void UBmrGameInstance::OnLocalCharacterReady_Implementation(class APlayerCharacter* PlayerCharacter, int32 CharacterID)
-{
-	TryCreateSession();
+	TryCreateSession(PlayerController);
+
+	// Unbind from event, as it's designed to be called only for the first time
+	ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+	checkf(LocalPlayer, TEXT("ASSERT: [%i] %hs:\n'LocalPlayer' is null!"), __LINE__, __FUNCTION__);
+	LocalPlayer->OnPlayerControllerChanged().RemoveAll(this);
 }
 
 /*********************************************************************************************
@@ -54,16 +61,10 @@ void UBmrGameInstance::OnLocalCharacterReady_Implementation(class APlayerCharact
  ********************************************************************************************* */
 
 // Attempts to create a session
-void UBmrGameInstance::TryCreateSession()
+void UBmrGameInstance::TryCreateSession(APlayerController* PlayerController)
 {
-	if (!UAdvancedSteamFriendsLibrary::IsSteamAvailable())
-	{
-		// Is disabled in the editor or not available
-		return;
-	}
-
-	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
-	if (!ensureMsgf(MyPC, TEXT("ASSERT: [%i] %hs:\n'MyPC' is null, failed to create session!"), __LINE__, __FUNCTION__))
+	if (!UAdvancedSteamFriendsLibrary::IsSteamAvailable()
+	    || !ensureMsgf(PlayerController, TEXT("ASSERT: [%i] %hs:\n'PlayerController' is null, failed to create session!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
@@ -79,13 +80,15 @@ void UBmrGameInstance::TryCreateSession()
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Created session!"));
 
-	UCreateSessionCallbackProxyAdvanced::CreateAdvancedDefaultSession(this, MyPC).Activate();
+	SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete));
+
+	UCreateSessionCallbackProxyAdvanced::CreateAdvancedDefaultSession(this, PlayerController).Activate();
 }
 
 void UBmrGameInstance::TryJoinSession(const FBlueprintSessionResult& SessionToJoin)
 {
-	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
-	if (!ensureMsgf(MyPC, TEXT("ASSERT: [%i] %hs:\n'MyPC' is null, failed to create session!"), __LINE__, __FUNCTION__))
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!ensureMsgf(PlayerController, TEXT("ASSERT: [%i] %hs:\n'PlayerController' is null, failed to create session!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
@@ -118,8 +121,24 @@ void UBmrGameInstance::TryJoinSession(const FBlueprintSessionResult& SessionToJo
 	SessionInterface->DestroySession(NAME_GameSession);
 
 	// Unpossess the camera and hide widgets, so the player can see the loading screen
-	MyPC->SetViewTargetWithBlend(nullptr);
-	UWidgetsSubsystem::Get(MyPC).SetAllWidgetsVisibility(false);
+	PlayerController->SetViewTargetWithBlend(nullptr);
+
+	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem(PlayerController))
+	{
+		WidgetsSubsystem->SetAllWidgetsVisibility(false);
+	}
+}
+
+// Called when server session is created successfully, e.g: when main level is opened
+void UBmrGameInstance::OnCreateSessionComplete(FName Name, bool bArg) const
+{
+	const UGameStateDataAsset& GameStateDataAsset = UGameStateDataAsset::Get();
+	const FString CurrentLevelName = GetNameSafe(GetWorld());
+	if (CurrentLevelName.Contains(GameStateDataAsset.GetStartupLevel().GetAssetName()))
+	{
+		static const FString Options = TEXT("Listen");
+		UGameplayStatics::OpenLevelBySoftObjectPtr(this, GameStateDataAsset.GetMainLevel(), /*bAbsolute=*/true, Options);
+	}
 }
 
 // Session callback when a user accepts an invitation
