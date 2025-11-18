@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/SoundsSubsystem.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "DataAssets/SoundsDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
@@ -9,13 +10,16 @@
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/AudioComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/Level.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
-//---
+#include "UObject/Package.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SoundsSubsystem)
 
 /*********************************************************************************************
@@ -133,6 +137,27 @@ void USoundsSubsystem::DestroyAllSoundComponents()
 		}
 	}
 	SoundComponentsInternal.Empty();
+
+#if WITH_EDITOR
+	// Clean up all potentially leaked editor sounds (such as UScrubbedSound), firstly leaked in UE5.6.0
+	const UWorld* World = GetWorld();
+	const ULevel* Level = World ? World->GetCurrentLevel() : nullptr;
+	if (Level)
+	{
+		TArray<UObject*> FoundObjects;
+		GetObjectsWithOuter(Level, FoundObjects, false, RF_NoFlags, EInternalObjectFlags::None);
+		for (UObject* ObjectIt : FoundObjects)
+		{
+			if (IsValid(ObjectIt)
+			    && ObjectIt->IsA<USoundBase>()
+			    && ObjectIt->HasAnyFlags(RF_Transient))
+			{
+				ObjectIt->ConditionalBeginDestroy();
+				ObjectIt->Rename(nullptr, GetTransientPackage(), REN_ForceNoResetLoaders | REN_DoNotDirty | REN_DontCreateRedirectors | REN_NonTransactional);
+			}
+		}
+	}
+#endif
 }
 
 /*********************************************************************************************
@@ -211,36 +236,6 @@ void USoundsSubsystem::StopInGameMusic()
 	}
 }
 
-// Play the blast sound of the bomb
-void USoundsSubsystem::PlayExplosionSFX()
-{
-	if (!CanPlaySounds()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame)
-	{
-		return;
-	}
-
-	if (USoundBase* ExplosionSFX = USoundsDataAsset::Get().GetExplosionSFX())
-	{
-		UGameplayStatics::PlaySound2D(GetWorld(), ExplosionSFX);
-	}
-}
-
-// Play the sound of the picked power-up
-void USoundsSubsystem::PlayItemPickUpSFX()
-{
-	if (!CanPlaySounds()
-	    || AMyGameStateBase::GetCurrentGameState() != ECGS::InGame)
-	{
-		return;
-	}
-
-	if (USoundBase* ItemPickUpSFX = USoundsDataAsset::Get().GetItemPickUpSFX())
-	{
-		UGameplayStatics::PlaySound2D(GetWorld(), ItemPickUpSFX);
-	}
-}
-
 /** Play the sound that is played right before the match ends. */
 void USoundsSubsystem::PlayEndGameCountdownSFX()
 {
@@ -259,7 +254,7 @@ void USoundsSubsystem::StopEndGameCountdownSFX()
 	StopSingleSound2D(USoundsDataAsset::Get().GetEndGameCountdownSFX());
 }
 
-// Play the sound that is played before the match starts. 
+// Play the sound that is played before the match starts
 void USoundsSubsystem::PlayStartGameCountdownSFX()
 {
 	if (!CanPlaySounds()

@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
+// Bomber
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "GameFramework/Actor.h"
-//---
+
 #if WITH_EDITOR
 #include "MyUnrealEdEngine.h"
 #endif
-//---
+
+// UE
+#include "GameFramework/Actor.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LevelActorDataAsset)
 
 #if WITH_EDITOR // [IsEditorNotPieWorld]
@@ -68,7 +70,7 @@ void ULevelActorDataAsset::PostEditChangeProperty(FPropertyChangedEvent& Propert
 		}
 	}
 }
-#endif	//WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 // Return first found row by specified level types
 void ULevelActorDataAsset::GetRowsByLevelType(TArray<ULevelActorRow*>& OutRows, int32 LevelsTypesBitmask) const
@@ -76,7 +78,7 @@ void ULevelActorDataAsset::GetRowsByLevelType(TArray<ULevelActorRow*>& OutRows, 
 	for (ULevelActorRow* RowIt : RowsInternal)
 	{
 		if (RowIt
-		    && RowIt->Mesh //is not empty
+		    && RowIt->Mesh // is not empty
 		    && EnumHasAnyFlags(RowIt->LevelType, TO_ENUM(ELevelType, LevelsTypesBitmask)))
 		{
 			OutRows.Emplace(RowIt);
@@ -97,4 +99,22 @@ const ULevelActorRow* ULevelActorDataAsset::GetRowByPredicate(const TFunctionRef
 		}
 	}
 	return nullptr;
+}
+
+// Return first found row by specified level types
+const ULevelActorRow* ULevelActorDataAsset::GetRowByLevelType(ELevelType LevelType) const
+{
+	return GetRowByPredicate([LevelType](const ULevelActorRow& RowIt)
+	{
+		return RowIt.LevelType == LevelType || RowIt.LevelType == ELT::Max;
+	});
+}
+
+// Return first found row by specified mesh
+const ULevelActorRow* ULevelActorDataAsset::GetRowByMesh(const class UStreamableRenderAsset* Mesh) const
+{
+	return GetRowByPredicate([Mesh](const ULevelActorRow& RowIt)
+	{
+		return RowIt.Mesh == Mesh;
+	});
 }

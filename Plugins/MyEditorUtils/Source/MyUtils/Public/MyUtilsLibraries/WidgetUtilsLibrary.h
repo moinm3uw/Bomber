@@ -29,7 +29,7 @@ public:
 	static UUserWidget* FindWidgetOfClass(UObject* WorldContextObject, TSubclassOf<UUserWidget> ParentWidgetClass);
 
 	/** Returns the slate widget from UMG widget.
-	* As an example, it returns SCheckbox slate widget from UCheckBox widget. */
+	 * As an example, it returns SCheckbox slate widget from UCheckBox widget. */
 	template <typename T>
 	static FORCEINLINE TSharedPtr<T> GetSlateWidget(const UWidget* ForWidget) { return ForWidget ? StaticCastSharedPtr<T>(ForWidget->GetCachedWidget()) : nullptr; }
 

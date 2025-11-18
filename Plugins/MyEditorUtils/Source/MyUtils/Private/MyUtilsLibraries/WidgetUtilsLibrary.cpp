@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/WidgetUtilsLibrary.h"
-//---
+
+// MyUtils
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
+
+// UE
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
 
@@ -27,7 +29,7 @@ UUserWidget* FWidgetUtilsLibrary::GetParentWidgetOfClass(const UUserWidget* InWi
 		}
 
 		if (!It->IsA<UWidgetTree>()
-			&& !It->IsA<UUserWidget>())
+		    && !It->IsA<UUserWidget>())
 		{
 			// No sense to iterate non-widget outers
 			break;
@@ -65,7 +67,7 @@ UUserWidget* FWidgetUtilsLibrary::GetChildWidgetOfClass(const UUserWidget* Paren
 UUserWidget* FWidgetUtilsLibrary::FindWidgetOfClass(UObject* WorldContextObject, TSubclassOf<UUserWidget> ParentWidgetClass)
 {
 	TArray<UUserWidget*> FoundWidgets;
-	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(WorldContextObject, /*out*/FoundWidgets, ParentWidgetClass);
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(WorldContextObject, /*out*/ FoundWidgets, ParentWidgetClass);
 	return !FoundWidgets.IsEmpty() ? FoundWidgets[0] : nullptr;
 }
 
@@ -94,19 +96,22 @@ void FWidgetUtilsLibrary::DestroyWidget(UUserWidget& ParentWidget)
 	// Hide widget to let last chance react on visibility change
 	ParentWidget.SetVisibility(ESlateVisibility::Collapsed);
 
-	// Remove the child widget from the viewport
-	ParentWidget.RemoveFromParent();
+	// Remove the child widget from the viewport (no parent means is not even in the viewport)
+	if (ParentWidget.GetParent())
+	{
+		ParentWidget.RemoveFromParent();
+	}
 
 	// RemoveFromParent() does not completely destroy widget, so schedule the child widget for destruction
 	ParentWidget.ConditionalBeginDestroy();
 }
 
 // Is alternative to Engine's CreateWidget with build-in add to viewport functionality
-UUserWidget* FWidgetUtilsLibrary::CreateWidgetByClass(TSubclassOf<UUserWidget> WidgetClass, bool bAddToViewport/*= true*/, int32 ZOrder/* = 0*/, const UObject* OptionalWorldContext/* = nullptr*/)
+UUserWidget* FWidgetUtilsLibrary::CreateWidgetByClass(TSubclassOf<UUserWidget> WidgetClass, bool bAddToViewport /*= true*/, int32 ZOrder /* = 0*/, const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	UWorld* World = UUtilsLibrary::GetPlayWorld(OptionalWorldContext);
 	if (!ensureMsgf(World, TEXT("ASSERT: [%i] %hs:\n'World' is not valid!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(WidgetClass, TEXT("ASSERT: [%i] %hs:\n'WidgetClass' is not valid!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(WidgetClass, TEXT("ASSERT: [%i] %hs:\n'WidgetClass' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return nullptr;
 	}

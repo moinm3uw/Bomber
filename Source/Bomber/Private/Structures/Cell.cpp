@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Structures/Cell.h"
-//---
+
+// Bomber
 #include "Engine/NetSerialization.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(Cell)
 
 const FCell FCell::InvalidCell = FCell(0.f, 0.f, -1.f);
@@ -23,7 +24,9 @@ FCell::FCell(const FVector& Vector)
 }
 
 FCell::FCell(const FVector_NetQuantize& Vector)
-	: FCell(FVector(Vector)) {}
+    : FCell(FVector(Vector))
+{
+}
 
 // Floats to cell constructor
 FCell::FCell(float X, float Y, float Z)
@@ -140,40 +143,75 @@ FCells FCell::MakeCellGridByTransform(const FTransform& OriginTransform)
 FCell FCell::GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCells& InGrid)
 {
 	const int32 MaxWidth = FMath::FloorToInt32(GetCellArrayWidth(InGrid));
-	const int32 CellIndex = CellPosition.Y/*Row*/ * MaxWidth/*ColumnsNum*/ + CellPosition.X/*Column*/;
-	const FCellsArr& GridArray = InGrid.Array();
-	return GridArray.IsValidIndex(CellIndex) ? GridArray[CellIndex] : InvalidCell;
+	return GetCellByPositionOnGrid(CellPosition, InGrid.Array(), MaxWidth);
+}
+
+// More optimized version of GetCellByPositionOnGrid which requires the Grid Width to be passed
+FCell FCell::GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCellsArr& InGrid, int32 GridWidth)
+{
+	const int32 CellIndex = CellPosition.Y /*Row*/ * GridWidth /*ColumnsNum*/ + CellPosition.X /*Column*/;
+	return InGrid.IsValidIndex(CellIndex) ? InGrid[CellIndex] : InvalidCell;
 }
 
 // Takes the cell and returns its column (X) and row (Y) position on given grid if exists, -1 otherwise
 FIntPoint FCell::GetPositionByCellOnGrid(const FCell& InCell, const FCells& InGrid)
 {
 	const int32 MaxWidth = GetCellArrayWidth(InGrid);
-	const int32 CellIdx = InGrid.Array().IndexOfByPredicate([&InCell](const FCell& CellIt) { return CellIt == InCell; });
-	const bool bFound = CellIdx != INDEX_NONE && MaxWidth > 0;
-	return FIntPoint(
-		bFound ? CellIdx % MaxWidth : INDEX_NONE,  // Column
-		bFound ? CellIdx / MaxWidth : INDEX_NONE); // Row
+	return GetPositionByCellOnGrid(InCell, InGrid.Array(), MaxWidth);
+}
+
+// More optimized version of GetPositionByCellOnGrid which requires the Grid Size to be passed
+FIntPoint FCell::GetPositionByCellOnGrid(const FCell& InCell, const FCellsArr& InGrid, int32 GridWidth)
+{
+	if (GridWidth <= 0)
+	{
+		return FIntPoint(-1, -1);
+	}
+
+	const int32 Index = InGrid.Find(InCell);
+	if (Index == INDEX_NONE)
+	{
+		return FIntPoint(-1, -1);
+	}
+
+	const int32 PositionY = Index / GridWidth;
+	const int32 PositionX = Index % GridWidth;
+
+	return FIntPoint(PositionX, PositionY);
+}
+
+// Returns a map of cells to their positions on the grid
+TMap<FCell, FIntPoint> FCell::GetPositionsByCellsOnGrid(const FCellsArr& InGrid, int32 GridWidth)
+{
+	TMap<FCell, FIntPoint> AllCellPositions;
+	for (const FCell& It : InGrid)
+	{
+		const FIntPoint Position = GetPositionByCellOnGrid(It, InGrid, GridWidth);
+		if (Position.X >= 0 && Position.Y >= 0)
+		{
+			AllCellPositions.Emplace(It, Position);
+		}
+	}
+
+	return AllCellPositions;
 }
 
 // Returns the center column (X) and row (Y) position on given grid
 FIntPoint FCell::GetCenterCellPositionOnGrid(const FCells& InGrid)
 {
 	return FIntPoint(
-		FMath::FloorToInt32(GetCellArrayWidth(InGrid) / 2.f),
-		FMath::FloorToInt32(GetCellArrayLength(InGrid) / 2.f));
+	    FMath::FloorToInt32(GetCellArrayWidth(InGrid) / 2.f),
+	    FMath::FloorToInt32(GetCellArrayLength(InGrid) / 2.f));
 }
 
 // Returns 4 corner cells on given cells grid
 FCells FCell::GetCornerCellsOnGrid(const FCells& InGrid)
 {
-	return FCells
-	{
-		GetCellByCornerOnGrid(EGridCorner::TopLeft, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::TopRight, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::BottomLeft, InGrid),
-		GetCellByCornerOnGrid(EGridCorner::BottomRight, InGrid)
-	};
+	return FCells{
+	    GetCellByCornerOnGrid(EGridCorner::TopLeft, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::TopRight, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::BottomLeft, InGrid),
+	    GetCellByCornerOnGrid(EGridCorner::BottomRight, InGrid)};
 }
 
 // Returns specified corner cell in given grid
@@ -217,10 +255,10 @@ FCell FCell::ScaleCellToNewGrid(const FCell& OriginalCell, const FCells& NewCorn
 
 	// Use bilinear interpolation to find the new cell
 	TArray<float> Weights = {
-		(1 - OriginalCell.X()) * (1 - OriginalCell.Y()),
-		OriginalCell.X() * (1 - OriginalCell.Y()),
-		(1 - OriginalCell.X()) * OriginalCell.Y(),
-		OriginalCell.X() * OriginalCell.Y(),
+	    (1 - OriginalCell.X()) * (1 - OriginalCell.Y()),
+	    OriginalCell.X() * (1 - OriginalCell.Y()),
+	    (1 - OriginalCell.X()) * OriginalCell.Y(),
+	    OriginalCell.X() * OriginalCell.Y(),
 	};
 
 	const TArray<FCell> Corners = NewCornerCells.Array();
@@ -422,7 +460,7 @@ FCells FCell::FilterCellsByBounds(const FCells& ActiveCells, const FCells& Bound
 }
 
 // Returns true if Starting Cell is in the direction of any of the Target Cells within the given angle
-bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees/* = 40.f*/)
+bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees /* = 40.f*/)
 {
 	/**     .  .  .  T  .  .  .
 	 *             \ | /
@@ -465,6 +503,41 @@ bool FCell::CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell,
 	}
 
 	return false;
+}
+
+// Fisher-Yates shuffle algorithm to reorder the array elements
+void FCell::RandShuffle(FCellsArr& InOutArray)
+{
+	const int32 LastIndex = InOutArray.Num() - 1;
+	for (int32 Index = LastIndex; Index > 0; --Index)
+	{
+		const int32 RandomIndex = FMath::RandRange(0, Index);
+
+		// Swap the element at the current index with a randomly selected element
+		// from the unshuffled part of the array
+		InOutArray.Swap(Index, RandomIndex);
+	}
+}
+
+// Extracts the top-left quarter of the grid
+FCellsArr FCell::GetTopLeftQuarterOnGrid(const FCellsArr& InGrid, const FIntPoint& MapScale)
+{
+	FCellsArr QuarterCells;
+	static constexpr int32 HalfAxisScaleDivider = 2;
+	const FIntPoint QuarterScale(MapScale.X / HalfAxisScaleDivider + 1, MapScale.Y / HalfAxisScaleDivider + 1);
+
+	for (int32 IndexY = 0; IndexY < QuarterScale.Y; ++IndexY)
+	{
+		for (int32 IndexX = 0; IndexX < QuarterScale.X; ++IndexX)
+		{
+			const int32 CellIndex = IndexY * MapScale.X + IndexX;
+			if (InGrid.IsValidIndex(CellIndex))
+			{
+				QuarterCells.Add(InGrid[CellIndex]);
+			}
+		}
+	}
+	return QuarterCells;
 }
 
 /*********************************************************************************************

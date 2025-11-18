@@ -1,26 +1,30 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/NMMPlayerControllerComponent.h"
-//---
-#include "NMMUtils.h"
-#include "Components/MouseActivityComponent.h"
-#include "Components/MyCameraComponent.h"
+
+// NMM
 #include "Components/NMMSpotComponent.h"
-#include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
-#include "DataAssets/MyInputMappingContext.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "Subsystems/GlobalEventsSubsystem.h"
+#include "NMMUtils.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMCameraSubsystem.h"
 #include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Components/MouseActivityComponent.h"
+#include "Components/MyCameraComponent.h"
+#include "Controllers/MyPlayerController.h"
+#include "DataAssets/MyInputMappingContext.h"
+#include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/SaveUtilsLibrary.h"
+#include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-#include "MyUtilsLibraries/SaveUtilsLibrary.h"
-//---
+
+// UE
 #include "Components/AudioComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMPlayerControllerComponent)
 
 // Sets default values for this component's properties
@@ -47,12 +51,12 @@ AMyPlayerController& UNMMPlayerControllerComponent::GetPlayerControllerChecked()
  * Main methods
  ********************************************************************************************* */
 
-// Assigns existing Save Game Data to this component 
+// Assigns existing Save Game Data to this component
 void UNMMPlayerControllerComponent::SetSaveGameData(class USaveGame* NewSaveGameData)
 {
 	UNMMSaveGameData* InSaveGameData = Cast<UNMMSaveGameData>(NewSaveGameData);
 	if (!InSaveGameData
-		|| InSaveGameData == SaveGameDataInternal)
+	    || InSaveGameData == SaveGameDataInternal)
 	{
 		return;
 	}
@@ -86,17 +90,23 @@ void UNMMPlayerControllerComponent::SetCinematicMouseVisibilityEnabled(bool bEna
 // Enables or disables the input context according to new menu state
 void UNMMPlayerControllerComponent::SetManagedInputContextsEnabled(ENMMState NewState)
 {
+	if (UNMMUtils::GetMainMenuWidget() == nullptr)
+	{
+		// Widgets are not initialized yet, it will be handled later
+		return;
+	}
+
 	AMyPlayerController& PC = GetPlayerControllerChecked();
 
 	// Remove all previous input contexts managed by Controller
 	TArray<const UMyInputMappingContext*> OutInputContexts;
-	UNMMDataAsset::Get().GetAllInputContexts(/*out*/OutInputContexts);
+	UNMMDataAsset::Get().GetAllInputContexts(/*out*/ OutInputContexts);
 	PC.RemoveInputContexts(OutInputContexts);
 
 	// Add Menu context as auto managed by Game State, so it will be enabled everytime the game is in the Menu state
 	const UMyInputMappingContext* InputContext = UNMMDataAsset::Get().GetInputContext(NewState);
 	if (InputContext
-		&& InputContext->GetChosenGameStatesBitmask() > 0)
+	    && InputContext->GetChosenGameStatesBitmask() > 0)
 	{
 		PC.SetupInputContexts({InputContext});
 	}
@@ -111,10 +121,7 @@ void UNMMPlayerControllerComponent::TrySetMenuState()
 		return;
 	}
 
-	if (UNMMSpotsSubsystem::Get().IsActiveMenuSpotReady())
-	{
-		GetPlayerControllerChecked().SetMenuState();
-	}
+	GetPlayerControllerChecked().SetMenuState();
 }
 
 /*********************************************************************************************
@@ -156,8 +163,6 @@ void UNMMPlayerControllerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BIND_ON_LOCAL_CHARACTER_READY(this, ThisClass::OnLocalCharacterReady);
-
 	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 
 	// Listen to set Menu game state once active spot is ready
@@ -193,14 +198,14 @@ void UNMMPlayerControllerComponent::OnUnregister()
 	if (const UNMMDataAsset* DataAsset = UNMMUtils::GetDataAsset(this))
 	{
 		TArray<const UMyInputMappingContext*> MenuInputContexts;
-		DataAsset->GetAllInputContexts(/*out*/MenuInputContexts);
+		DataAsset->GetAllInputContexts(/*out*/ MenuInputContexts);
 		GetPlayerControllerChecked().RemoveInputContexts(MenuInputContexts);
 
 		// Cleanup all sounds
 		if (USoundsSubsystem* SoundSubsystem = USoundsSubsystem::GetSoundsSubsystem())
 		{
 			TArray<class USoundBase*> AllMainMenuMusic;
-			UNMMDataAsset::Get().GetAllMainMenuMusic(/*out*/AllMainMenuMusic);
+			UNMMDataAsset::Get().GetAllMainMenuMusic(/*out*/ AllMainMenuMusic);
 			for (USoundBase* MainMenuMusic : AllMainMenuMusic)
 			{
 				SoundSubsystem->DestroySingleSound2D(MainMenuMusic);
@@ -222,26 +227,19 @@ void UNMMPlayerControllerComponent::OnUnregister()
  * Events
  ********************************************************************************************* */
 
-// Called when the local player character is spawned, possessed, and replicated
-void UNMMPlayerControllerComponent::OnLocalCharacterReady_Implementation(class APlayerCharacter* PlayerCharacter, int32 CharacterID)
-{
-	// Set the Menu state OnLocalCharacterReady to guarantee that game enters the Menu state only when the character is initialized 
-	TrySetMenuState();
-}
-
 // Listen to react when entered the Menu state
 void UNMMPlayerControllerComponent::OnGameStateChanged(ECurrentGameState CurrentGameState)
 {
 	switch (CurrentGameState)
 	{
-	case ECGS::Menu: // Entered the Main Menu
-		PlayMainMenuMusic();
-		break;
-	case ECGS::GameStarting: // Left the Main Menu
-		StopMainMenuMusic();
-		break;
-	default:
-		break;
+		case ECGS::Menu: // Entered the Main Menu
+			PlayMainMenuMusic();
+			break;
+		case ECGS::GameStarting: // Left the Main Menu
+			StopMainMenuMusic();
+			break;
+		default:
+			break;
 	}
 }
 
@@ -252,12 +250,12 @@ void UNMMPlayerControllerComponent::OnNewMainMenuStateChanged_Implementation(ENM
 
 	switch (NewState)
 	{
-	case ENMMState::Cinematic:
-		MyPC.SetIgnoreMoveInput(true);
-		StopMainMenuMusic();
-		break;
-	default:
-		break;
+		case ENMMState::Cinematic:
+			MyPC.SetIgnoreMoveInput(true);
+			StopMainMenuMusic();
+			break;
+		default:
+			break;
 	}
 
 	// Update input contexts

@@ -1,25 +1,34 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyPlayerState.h"
-//---
+
+// Bomber
+#include "AbilitySystem/Attributes/BmrHealthAttributeSet.h"
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "AdvancedIdentityLibrary.h"
 #include "AdvancedSteamFriendsLibrary.h"
-#include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "Controllers/MyPlayerController.h"
+#include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyGameUserSettings.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "Engine/World.h"
+#include "GameplayAbilitiesModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
-//---
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerState)
 
 AMyPlayerState::AMyPlayerState()
@@ -27,6 +36,14 @@ AMyPlayerState::AMyPlayerState()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+
+	// Create ASC on player state, so even if different character is possessed (like from mod), it will still have the same attributes and abilities
+	AbilitySystemComponentInternal = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponentInternal->SetIsReplicated(true);
+	AbilitySystemComponentInternal->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+
+	PowerupsSetInternal = CreateDefaultSubobject<UBmrPowerupsAttributeSet>(TEXT("PowerupsAttributeSet"));
+	HealthSetInternal = CreateDefaultSubobject<UBmrHealthAttributeSet>(TEXT("HealthAttributeSet"));
 
 	// Reset default value to -1 to avoid conflicts with first player of 0 ID
 	SetPlayerId(INDEX_NONE);
@@ -42,7 +59,7 @@ bool AMyPlayerState::IsPlayerStateLocallyControlled() const
 // Returns owner human or bot character
 APlayerCharacter* AMyPlayerState::GetPlayerCharacter() const
 {
-	return Cast<APlayerCharacter>(GetPawn());
+	return GetPawn<APlayerCharacter>();
 }
 
 // Returns always valid owner (human or bot), or crash if nullptr
@@ -51,6 +68,33 @@ APlayerCharacter& AMyPlayerState::GetPlayerCharacterChecked() const
 	APlayerCharacter* PlayerCharacter = GetPlayerCharacter();
 	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
 	return *PlayerCharacter;
+}
+
+// Returns ability system component that is used to manage abilities and attributes for owned player, crash if nullptr
+UAbilitySystemComponent& AMyPlayerState::GetAbilitySystemComponentChecked() const
+{
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+	return *AbilitySystemComponentInternal;
+}
+
+// Initializes all attributes with default values
+void AMyPlayerState::ApplyDefaultAttributes()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	checkf(AbilitySystemComponentInternal, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponentInternal' is null!"), __LINE__, __FUNCTION__);
+
+	// Initialize all attributes with default values
+	const UAbilitySystemGlobals* AbilityGlobals = IGameplayAbilitiesModule::Get().GetAbilitySystemGlobals();
+	const FAttributeSetInitter* AttributeSetInitter = AbilityGlobals ? AbilityGlobals->GetAttributeSetInitter() : nullptr;
+	if (ensureMsgf(AttributeSetInitter, TEXT("ASSERT: [%i] %hs:\n'AttributeSetInitter' is null!"), __LINE__, __FUNCTION__))
+	{
+		static const FName GroupName = TEXT("Default");
+		AttributeSetInitter->InitAttributeSetDefaults(AbilitySystemComponentInternal, GroupName, /*Level*/ 1, /*bInitialInit*/ true);
+	}
 }
 
 /*********************************************************************************************
@@ -67,7 +111,7 @@ void AMyPlayerState::UpdateEndGameState()
 
 	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
 	const ECurrentGameState CurrentGameState = MyGameState ? MyGameState->GetCurrentGameState() : ECGS::None;
-	if (CurrentGameState == ECGS::None                  // is not valid game state, nullptr or not fully initialized
+	if (CurrentGameState == ECGS::None // is not valid game state, nullptr or not fully initialized
 	    || EndGameStateInternal != EEndGameState::None) // end state was set already for current game
 	{
 		return;
@@ -133,7 +177,7 @@ void AMyPlayerState::ApplyEndGameState()
 	// Try to end the game globally for all players
 	if (EndGameStateInternal != EEndGameState::None)
 	{
-		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1       // no characters to play with
+		if (UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Any) <= 1 // no characters to play with
 		    || UMyBlueprintFunctionLibrary::GetAlivePlayersNum(EPlayerType::Human) == 0) // all human players are dead
 		{
 			AMyGameStateBase::Get().SetGameState(ECGS::EndGame);
@@ -212,7 +256,7 @@ void AMyPlayerState::SetDefaultPlayerName()
 			if (UAdvancedSteamFriendsLibrary::IsOverlayEnabled())
 			{
 				FString OnlinePlayerName = TEXT("");
-				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/OnlinePlayerName);
+				UAdvancedIdentityLibrary::GetPlayerNickname(this, GetUniqueId(), /*out*/ OnlinePlayerName);
 				if (!OnlinePlayerName.IsEmpty())
 				{
 					NewName = OnlinePlayerName;
@@ -307,7 +351,11 @@ void AMyPlayerState::ApplyIsCharacterDead()
 {
 	if (HasAuthority())
 	{
-		AGeneratedMap::Get().OnPostDestroyedLevelActors.AddUniqueDynamic(this, &ThisClass::OnPostCharacterDead);
+		// @TODO JanSeliv 5oWCcakc - Implement the player state manager to avoid using timer here
+		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			OnPostCharacterDead();
+		}));
 	}
 
 	if (OnCharacterDeadChanged.IsBound())
@@ -317,12 +365,10 @@ void AMyPlayerState::ApplyIsCharacterDead()
 }
 
 // Is called at the end of frame when this character received dead status
-void AMyPlayerState::OnPostCharacterDead_Implementation(const FCells& Cells)
+void AMyPlayerState::OnPostCharacterDead_Implementation()
 {
 	if (bIsCharacterDeadInternal)
 	{
-		AGeneratedMap::Get().OnPostDestroyedLevelActors.RemoveAll(this);
-
 		UpdateEndGameState();
 	}
 }
@@ -413,6 +459,10 @@ void AMyPlayerState::OnRep_IsABot()
 // Applies and broadcasts IsABot status
 void AMyPlayerState::ApplyIsABot()
 {
+	// Depending on player type, set different replication mode for ASC: bots dont need to replicate all effects, so use Minimal mode
+	const EGameplayEffectReplicationMode ReplicationMode = IsABot() ? EGameplayEffectReplicationMode::Minimal : EGameplayEffectReplicationMode::Mixed;
+	GetAbilitySystemComponentChecked().SetReplicationMode(ReplicationMode);
+
 	if (OnPlayerTypeChanged.IsBound())
 	{
 		OnPlayerTypeChanged.Broadcast(GetPlayerType());
@@ -490,6 +540,12 @@ void AMyPlayerState::ApplyPlayerId()
 	}
 }
 
+// Is called on server and clients when new owned pawn is possessed or changed
+void AMyPlayerState::OnPawnChanged_Implementation(APawn* NewPawn)
+{
+	GetAbilitySystemComponentChecked().InitAbilityActorInfo(this, NewPawn);
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
@@ -502,6 +558,10 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 		// Apply bot ID here while Human ID is called from Game Session
 		SetDefaultBotId();
 	}
+
+	GetAbilitySystemComponentChecked().InitAbilityActorInfo(this, GetPawn());
+
+	ApplyIsABot();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnPlayerStateInit(*this);
 
@@ -524,9 +584,14 @@ void AMyPlayerState::OnPlayerStateInit_Implementation()
 // Listen game states to notify server about ending game for controlled player
 void AMyPlayerState::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	switch (CurrentGameState)
 	{
-		case ECGS::Menu:         // Fallthrough
+		case ECGS::Menu: // Fallthrough
 		case ECGS::GameStarting: // Fallthrough
 		case ECGS::InGame:
 		{
@@ -564,15 +629,35 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, AbilitySystemComponentInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, EndGameStateInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, bIsCharacterDeadInternal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, OpponentsKilledNumInternal, Params);
 
-	// Override APlayerState's COND_InitialOnly properties to allow updates on reused instances without requiring respawn
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, PlayerId, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsABot, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, bIsInactive, COND_None);
-	DOREPLIFETIME_OVERRIDE_CONDITION(Super, UniqueId, COND_None);
+	// Override APlayerState's COND_InitialOnly properties with default params to allow updates on reused instances without requiring respawn
+	DOREPLIFETIME_OVERRIDE(Super, PlayerId, Params);
+	DOREPLIFETIME_OVERRIDE(Super, bIsABot, Params);
+	DOREPLIFETIME_OVERRIDE(Super, bIsInactive, Params);
+	DOREPLIFETIME_OVERRIDE(Super, UniqueId, Params);
+}
+
+// This is called only in the gameplay before calling begin play
+void AMyPlayerState::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (HasAuthority())
+	{
+		ApplyDefaultAttributes();
+
+		const UPlayerDataAsset& PlayerDataAsset = UPlayerDataAsset::Get();
+		const int32 StartupAbilitiesNum = PlayerDataAsset.GetStartupAbilitiesNum();
+		for (int32 Idx = 0; Idx < StartupAbilitiesNum; ++Idx)
+		{
+			const FGameplayAbilitySpec AbilitySpec = PlayerDataAsset.GetStartupAbility(Idx);
+			GetAbilitySystemComponentChecked().GiveAbility(AbilitySpec);
+		}
+	}
 }
 
 // Called when the game starts
@@ -580,10 +665,7 @@ void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	{
-		BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-	}
+	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
 }
 
 // Is overridden to prevent the player state from being destroyed to be able to reuse it by bots

@@ -3,16 +3,17 @@
 #pragma once
 
 #include "AIController.h"
-//---
+
+// Bomber
 #include "Structures/Cell.h"
-//---
+
 #include "MyAIController.generated.h"
 
 enum class ECurrentGameState : uint8;
 
 /**
  * Characters controlled by bots.
-* @see Access its data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
+ * @see Access its data with UAIDataAsset (Content/Bomber/DataAssets/DA_AI).
  */
 UCLASS()
 class BOMBER_API AMyAIController final : public AAIController
@@ -21,8 +22,8 @@ class BOMBER_API AMyAIController final : public AAIController
 
 public:
 	/* ---------------------------------------------------
-	*		Public functions
-	* --------------------------------------------------- */
+	 *		Public functions
+	 * --------------------------------------------------- */
 
 	/** Sets default values for this character's properties */
 	AMyAIController();
@@ -40,53 +41,40 @@ public:
 	FORCEINLINE bool CanAISpawnBomb() const { return bCanSpawnBombs; }
 
 	/** Enable or disable spawning bombs for this bot (might be useful for some game modes)
-	 * Main logic still will be running unless move input is ignored as well. */
+	 * Main logic still will be running unless move input is disabled as well. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DisplayName = "Set AI Can Spawn Bomb"))
 	void SetAICanSpawnBomb(bool bCanSpawn) { bCanSpawnBombs = bCanSpawn; }
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
-	/** Timer to update AI. */
+	/** Last time AI was updated, used to control update frequency, once per UGameStateDataAsset::TickInternal. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Update Handle"))
-	FTimerHandle AIUpdateHandleInternal;
+	float LastAIUpdateTimeInternal = 0.f;
 
 	/** Cell position of current path segment's end */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, ShowOnlyInnerProperties, DisplayName = "AI Move To"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "AI Move To"))
 	FCell AIMoveToInternal = FCell::InvalidCell;
 
-	/** Controlled character */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Owner Character"))
-	TObjectPtr<class APlayerCharacter> OwnerInternal = nullptr;
-
 	/** If disabled, AI will not be able to put any bombs. Might be useful for some game modes.
-	 * Main logic still will be running unless move input is ignored as well. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "NAME"))
+	 * Main logic still will be running unless move input is disabled as well. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Can Spawn Bombs"))
 	bool bCanSpawnBombs = true;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
-	/** Called when an instance of this class is placed (in editor) or spawned */
-	virtual void OnConstruction(const FTransform& Transform) override;
-
-	/** This is called only in the gameplay before calling begin play. */
+	/** This is called only in the gameplay before calling nplan play. */
 	virtual void PostInitializeComponents() override;
-
-	/** Called when the game starts or when spawned */
-	virtual void BeginPlay() override;
 
 	/** Allows the controller to react on possessing the pawn to enable AI. */
 	virtual void OnPossess(APawn* InPawn) override;
 
 	/** Allows the controller to react on unpossessing the pawn to disable AI. */
 	virtual void OnUnPossess() override;
-
-	/** Locks or unlocks movement input. */
-	virtual void SetIgnoreMoveInput(bool bShouldIgnore) override;
 
 	/** Stops running to target. */
 	virtual void Reset() override;
@@ -110,4 +98,8 @@ protected:
 	/** Called when this level actor is destroyed on the Generated Map. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnPostRemovedFromLevel(class UMapComponent* MapComponent, UObject* DestroyCauser);
+
+	/** Called when owner's movement is completed for the time step. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void OnOwnerMovementCompleted(const struct FMoverTimeStep& TimeStep);
 };

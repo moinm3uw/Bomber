@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/ItemDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemDataAsset)
 
 // Default constructor
@@ -20,7 +21,7 @@ const UItemDataAsset& UItemDataAsset::Get()
 }
 
 // Return row by specified item type
-const UItemRow* UItemDataAsset::GetRowByItemType(EItemType ItemType, ELevelType LevelType) const
+const UItemRow* UItemDataAsset::GetRowByItemType(FBmrPowerupTag ItemType, ELevelType LevelType) const
 {
 	TArray<ULevelActorRow*> OutRows;
 	GetRowsByLevelType(OutRows, TO_FLAG(LevelType));

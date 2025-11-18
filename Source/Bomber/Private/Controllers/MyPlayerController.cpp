@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "Controllers/MyPlayerController.h"
-//---
+
+// Bomber
 #include "Bomber.h"
+#include "Components/BmrMoverComponent.h"
 #include "Components/MouseActivityComponent.h"
-#include "DataAssets/MyInputAction.h"
+#include "DataAssets/BmrInputAction.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "FunctionPickerData/FunctionPickerTemplate.h"
@@ -18,16 +20,18 @@
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
-#include "EnhancedInputComponent.h"
+
+// UE
 #include "Components/GameFrameworkComponentManager.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Framework/Application/NavigationConfig.h"
 #include "Framework/Application/SlateApplication.h"
-//---
+
 #if WITH_EDITOR
 #include "Editor.h"
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyPlayerController)
 
 // Sets default values for this controller's properties
@@ -101,13 +105,6 @@ void AMyPlayerController::ServerSetGameState_Implementation(ECurrentGameState Ne
  * Overrides
  ********************************************************************************************* */
 
-// Locks or unlocks movement input
-void AMyPlayerController::SetIgnoreMoveInput(bool bShouldIgnore)
-{
-	// Do not call super to avoid stacking, override it
-	IgnoreMoveInput = bShouldIgnore;
-}
-
 // This is called only in the gameplay before calling begin play
 void AMyPlayerController::PostInitializeComponents()
 {
@@ -139,7 +136,7 @@ void AMyPlayerController::BeginPlay()
 
 	// Adds given contexts to the list of auto managed and binds their input actions
 	TArray<const UMyInputMappingContext*> InputContexts;
-	UPlayerInputDataAsset::Get().GetAllInputContexts(/*out*/InputContexts);
+	UPlayerInputDataAsset::Get().GetAllInputContexts(/*out*/ InputContexts);
 	SetupInputContexts(InputContexts);
 
 #if WITH_EDITOR
@@ -164,9 +161,15 @@ void AMyPlayerController::InitInputSystem()
 		OnWidgetsInitialized();
 	}
 
+	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = UInputUtilsLibrary::GetEnhancedInputSubsystem(this);
+	if (ensureMsgf(InputSubsystem, TEXT("ASSERT: [%i] %hs:\n'InputSubsystem' is null!"), __LINE__, __FUNCTION__))
+	{
+		InputSubsystem->InitalizeUserSettings();
+	}
+
 	// Register gameplay mappings, so they can be remapped
 	TArray<const UMyInputMappingContext*> GameplayInputContexts;
-	UPlayerInputDataAsset::Get().GetAllGameplayInputContexts(/*out*/GameplayInputContexts);
+	UPlayerInputDataAsset::Get().GetAllGameplayInputContexts(/*out*/ GameplayInputContexts);
 	for (const UMyInputMappingContext* InputContextIt : GameplayInputContexts)
 	{
 		constexpr bool bRegisterMappings = true;
@@ -177,14 +180,24 @@ void AMyPlayerController::InitInputSystem()
 // Is overriden to notify when this controller possesses new player character
 void AMyPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
+	if (HasAuthority())
+	{
+		Super::OnPossess(InPawn);
+	}
 
 	SetControlRotation(FRotator::ZeroRotator);
 
-	// Try to rebind inputs for possessed pawn on server
-	ApplyAllInputContexts();
+	// Try to rebind inputs for possessed pawn
+	if (IsLocalController())
+	{
+		ApplyAllInputContexts();
+	}
 
-	// Notify host about pawn change
+	if (AMyPlayerState* InPlayerState = GetPlayerState<AMyPlayerState>())
+	{
+		InPlayerState->OnPawnChanged(InPawn);
+	}
+
 	if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(InPawn))
 	{
 		UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*PlayerCharacter);
@@ -196,14 +209,7 @@ void AMyPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
 
-	// Try to rebind inputs for possessed pawn on client
-	ApplyAllInputContexts();
-
-	// Notify client about pawn change
-	if (APlayerCharacter* PlayerCharacter = GetPawn<APlayerCharacter>())
-	{
-		UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterPossessed(*PlayerCharacter);
-	}
+	OnPossess(GetPawn());
 }
 
 // Is overridden to spawn player state or reuse existing one
@@ -240,6 +246,14 @@ void AMyPlayerController::PawnLeavingGame()
 	}
 }
 
+// Is overridden to perform cleanup of the controller when it is destroyed
+void AMyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UPlayerInputDataAsset::Get().EmptyGameplayInputContexts();
+}
+
 /*********************************************************************************************
  * Events
  ********************************************************************************************* */
@@ -260,32 +274,6 @@ void AMyPlayerController::OnWidgetsInitialized_Implementation()
 // Listen to toggle movement input
 void AMyPlayerController::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
 {
-	switch (CurrentGameState)
-	{
-		case ECurrentGameState::GameStarting:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::Menu:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::EndGame:
-		{
-			SetIgnoreMoveInput(true);
-			break;
-		}
-		case ECurrentGameState::InGame:
-		{
-			SetIgnoreMoveInput(false);
-			break;
-		}
-		default:
-			break;
-	}
-
 	ApplyAllInputContexts();
 }
 
@@ -401,7 +389,7 @@ void AMyPlayerController::SetUIInputIgnored()
 }
 
 // Takes all cached inputs contexts and turns them on or off according given game state
-void AMyPlayerController::SetAllInputContextsEnabled(bool bEnable, ECurrentGameState CurrentGameState, bool bInvertRest/* = false*/)
+void AMyPlayerController::SetAllInputContextsEnabled(bool bEnable, ECurrentGameState CurrentGameState, bool bInvertRest /* = false*/)
 {
 	for (const UMyInputMappingContext* InputContextIt : AllInputContextsInternal)
 	{
@@ -463,35 +451,44 @@ void AMyPlayerController::BindInputActionsInContext(const UMyInputMappingContext
 
 	// Obtains all input actions in given context that are not currently bound to the input component
 	TArray<UInputAction*> InputActions;
-	UInputUtilsLibrary::GetAllActionsInContext(this, InInputContext, EInputActionInContextState::NotBound, /*out*/InputActions);
+	UInputUtilsLibrary::GetAllActionsInContext(this, InInputContext, EInputActionInContextState::NotBound, /*out*/ InputActions);
 
 	// --- Bind input actions
 	for (const UInputAction* InputActionIt : InputActions)
 	{
-		const UMyInputAction* ActionIt = Cast<UMyInputAction>(InputActionIt);
-		const FName FunctionName = ActionIt ? ActionIt->GetFunctionToBind().FunctionName : NAME_None;
-		if (!ensureAlwaysMsgf(!FunctionName.IsNone(), TEXT("ASSERT: %s: 'FunctionName' is none, can not bind the action '%s'!"), *FString(__FUNCTION__), *GetNameSafe(ActionIt)))
+		const UBmrInputAction* ActionIt = Cast<UBmrInputAction>(InputActionIt);
+		if (!ActionIt)
 		{
 			continue;
 		}
 
-		const FFunctionPicker& StaticContext = ActionIt->GetStaticContext();
-		if (!ensureAlwaysMsgf(StaticContext.IsValid(), TEXT("ASSERT: [%i] %s:\n'StaticContext' is not valid: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+		for (int32 Index = 0; Index < ActionIt->GetInputActionBindingsNum(); ++Index)
 		{
-			continue;
-		}
+			const FBmrInputActionBinding CurrentBinding = ActionIt->GetInputActionBinding(Index);
+			const FName FunctionName = CurrentBinding.FunctionToBind.FunctionName;
+			if (!ensureAlwaysMsgf(!FunctionName.IsNone(), TEXT("ASSERT: %s: 'FunctionName' is none, can not bind the action '%s'!"), *FString(__FUNCTION__), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
 
-		UFunctionPickerTemplate::FOnGetterObject GetOwnerFunc;
-		GetOwnerFunc.BindUFunction(StaticContext.FunctionClass->GetDefaultObject(), StaticContext.FunctionName);
-		UObject* FoundContextObj = GetOwnerFunc.Execute(GetWorld());
-		if (!ensureAlwaysMsgf(FoundContextObj, TEXT("ASSERT: [%i] %s:\n'FoundContextObj' is not found, next function returns nullptr: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
-		{
-			continue;
-		}
+			const FFunctionPicker& StaticContext = CurrentBinding.StaticContext;
+			if (!ensureAlwaysMsgf(StaticContext.IsValid(), TEXT("ASSERT: [%i] %s:\n'StaticContext' is not valid: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
 
-		const ETriggerEvent TriggerEvent = ActionIt->GetTriggerEvent();
-		EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
-		UE_LOG(LogBomber, Log, TEXT("Input bound: [%s][%s] %s()->%s()"), *GetNameSafe(InInputContext), *GetNameSafe(InputActionIt), *StaticContext.ToDisplayString(), *FunctionName.ToString());
+			UFunctionPickerTemplate::FOnGetterObject GetOwnerFunc;
+			GetOwnerFunc.BindUFunction(StaticContext.FunctionClass->GetDefaultObject(), StaticContext.FunctionName);
+			UObject* FoundContextObj = GetOwnerFunc.Execute(GetWorld());
+			if (!ensureAlwaysMsgf(FoundContextObj, TEXT("ASSERT: [%i] %s:\n'FoundContextObj' is not found, next function returns nullptr: %s, can not bind the action '%s'!"), __LINE__, *FString(__FUNCTION__), *StaticContext.ToDisplayString(), *GetNameSafe(ActionIt)))
+			{
+				continue;
+			}
+
+			const ETriggerEvent TriggerEvent = CurrentBinding.TriggerEvent;
+			EnhancedInputComponent->BindAction(ActionIt, TriggerEvent, FoundContextObj, FunctionName);
+			UE_LOG(LogBomber, Log, TEXT("Input bound: [%s][%s] %s()->%s()"), *GetNameSafe(InInputContext), *GetNameSafe(InputActionIt), *StaticContext.ToDisplayString(), *FunctionName.ToString());
+		}
 	}
 }
 
@@ -552,7 +549,7 @@ void AMyPlayerController::GetPlayerViewPoint(FVector& OutLocation, FRotator& Out
 #if !UE_BUILD_SHIPPING
 	if (bIsDebugCameraEnabledInternal)
 	{
-		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D 
+		// Don't use our 2D-camera roll in debug camera to maintain proper rotation in 3D
 		OutRotation.Roll = 0.f;
 	}
 #endif // !UE_BUILD_SHIPPING

@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/SoundsDataAsset.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-//---
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SoundsDataAsset)
 
 // Returns the settings data asset

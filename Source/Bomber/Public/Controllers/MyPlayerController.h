@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/PlayerController.h"
-//---
+
 #include "MyPlayerController.generated.h"
 
 enum class ECurrentGameState : uint8;
@@ -61,11 +61,6 @@ protected:
 	/*********************************************************************************************
 	 * Overrides
 	 ********************************************************************************************* */
-public:
-	/** Locks or unlocks movement input, is declared in parent as UFUNCTION.
-	 * @param bShouldIgnore	If true, move input is ignored. If false, input is not ignored.*/
-	virtual void SetIgnoreMoveInput(bool bShouldIgnore) override;
-
 protected:
 	/** This is called only in the gameplay before calling begin play. */
 	virtual void PostInitializeComponents() override;
@@ -88,6 +83,9 @@ protected:
 
 	/** Is overridden to prevent destroyed possessed pawn, which is expected to be reused. */
 	virtual void PawnLeavingGame() override;
+
+	/** Is overridden to perform cleanup of the controller when it is destroyed. */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/*********************************************************************************************
 	 * Events

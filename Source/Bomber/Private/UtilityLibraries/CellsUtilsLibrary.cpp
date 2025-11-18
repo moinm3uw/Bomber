@@ -1,16 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UtilityLibraries/CellsUtilsLibrary.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-#include "GeneratedMap.h"
 #include "Components/MapComponent.h"
+#include "GameFramework/MyCheatManager.h"
+#include "GeneratedMap.h"
 #include "LevelActors/BombActor.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
-#include "GameFramework/MyCheatManager.h"
-//---
+
+// UE
 #include "Components/TextRenderComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CellsUtilsLibrary)
 
 // Default params to display cells
@@ -106,6 +108,33 @@ void UCellsUtilsLibrary::GetPositionByCellOnLevel(const FCell& InCell, int32& Ou
 	OutRowY = CellPosition.Y;
 }
 
+// Returns array index for cell in grid data structure, -1 if not found
+int32 UCellsUtilsLibrary::GetIndexByCellLevel(const FCell& InCell)
+{
+	if (!InCell.IsValid())
+	{
+		return INDEX_NONE;
+	}
+
+	const FCellsArr& AllGridCells = GetAllCellsOnLevelAsArray();
+	return AllGridCells.IndexOfByPredicate([&InCell](const FCell& CellIt)
+	{
+		return CellIt == InCell;
+	});
+}
+
+// Gets cell from array index in grid data structure
+FCell UCellsUtilsLibrary::GetCellByIndexOnLevel(int32 CellIndex)
+{
+	if (CellIndex < 0)
+	{
+		return FCell::InvalidCell;
+	}
+
+	const FCellsArr& AllGridCells = GetAllCellsOnLevelAsArray();
+	return AllGridCells.IsValidIndex(CellIndex) ? AllGridCells[CellIndex] : FCell::InvalidCell;
+}
+
 // Returns all grid cell location on the Generated Map
 const FCellsArr& UCellsUtilsLibrary::GetAllCellsOnLevelAsArray()
 {
@@ -118,7 +147,7 @@ FCell UCellsUtilsLibrary::GetCenterCellOnLevel()
 {
 	int32 CenterColumn = INDEX_NONE;
 	int32 CenterRow = INDEX_NONE;
-	GetCenterCellPositionOnLevel(/*out*/CenterRow, /*out*/CenterColumn);
+	GetCenterCellPositionOnLevel(/*out*/ CenterRow, /*out*/ CenterColumn);
 	return GetCellByPositionOnLevel(CenterColumn, CenterRow);
 }
 
@@ -135,7 +164,7 @@ FIntPoint UCellsUtilsLibrary::GetCenterCellPositionOnLevel()
 {
 	int32 OutColumnX;
 	int32 OutRowY;
-	GetCenterCellPositionOnLevel(/*out*/OutColumnX, /*out*/OutRowY);
+	GetCenterCellPositionOnLevel(/*out*/ OutColumnX, /*out*/ OutRowY);
 	return FIntPoint(OutColumnX, OutRowY);
 }
 
@@ -182,10 +211,10 @@ void UCellsUtilsLibrary::IntersectCellsByTypes(FCells& InOutCells, int32 ActorsT
 	{
 		// Find all empty grid cell locations where none of actors are present
 		const FCells AllEmptyCells = FCells(
-			AllGridCells.FilterByPredicate([&MapComponents = GeneratedMap->MapComponentsInternal](const FCell& CellIt)
-			{
-				return !MapComponents.Contains(CellIt);
-			}));
+		    AllGridCells.FilterByPredicate([&MapComponents = GeneratedMap->MapComponentsInternal](const FCell& CellIt)
+		{
+			return !MapComponents.Contains(CellIt);
+		}));
 
 		if (InOutCells.Num())
 		{
@@ -327,7 +356,10 @@ void UCellsUtilsLibrary::GetSideCells(FCells& OutCells, const FCell& Cell, EPath
 	}
 
 	// the index of the specified cell
-	const int32 C0 = AllGridCells.IndexOfByPredicate([&Cell](const FCell& InCell) { return InCell == Cell; });
+	const int32 C0 = AllGridCells.IndexOfByPredicate([&Cell](const FCell& InCell)
+	{
+		return InCell == Cell;
+	});
 	if (C0 == INDEX_NONE) // if index was found and cell is contained in the array
 	{
 		return;
@@ -358,7 +390,7 @@ void UCellsUtilsLibrary::GetSideCells(FCells& OutCells, const FCell& Cell, EPath
 	}
 
 	// ----- The specified cell adding -----
-	if (!bBreakOnExplosions                // can be dangerous cell
+	if (!bBreakOnExplosions // can be dangerous cell
 	    || !DangerousCells.Contains(Cell)) // is not dangerous cell
 	{
 		OutCells.Emplace(Cell);
@@ -387,7 +419,7 @@ void UCellsUtilsLibrary::GetSideCells(FCells& OutCells, const FCell& Cell, EPath
 				}
 				const int32 FoundIndex = C0 + Distance;
 				if (PositionC0 != (bIsY ? FoundIndex % MaxWidth : FoundIndex / MaxWidth) // PositionC0 != PositionX
-				    || !AllGridCells.IsValidIndex(FoundIndex))                           // is not in range
+				    || !AllGridCells.IsValidIndex(FoundIndex)) // is not in range
 				{
 					break; // to the next side
 				}
@@ -424,8 +456,8 @@ void UCellsUtilsLibrary::GetSideCells(FCells& OutCells, const FCell& Cell, EPath
 
 				OutCells.Emplace(FoundCell);
 			} // Cells iterating
-		}     // Each side iterating: -1(Left|Down) and 1(Right|Up)
-	}         // Each direction iterating: 0(X-raw) and 1(Y-column)
+		} // Each side iterating: -1(Left|Down) and 1(Right|Up)
+	} // Each direction iterating: 0(X-raw) and 1(Y-column)
 }
 
 FCells UCellsUtilsLibrary::GetCellsAround(const FCell& CenterCell, EPathType Pathfinder, int32 Radius)
@@ -505,7 +537,7 @@ FCell UCellsUtilsLibrary::RotateCellAroundLevelOrigin(const FCell& Cell, float A
 }
 
 // Gets actor location snapped to nearest cell on the level grid
-FCell UCellsUtilsLibrary::SnapActorOnLevel(AActor* Actor)
+FCell UCellsUtilsLibrary::SnapActorOnLevel(const AActor* Actor)
 {
 	return Actor ? SnapVectorOnLevel(Actor->GetActorLocation()) : FCell::InvalidCell;
 }
@@ -540,38 +572,69 @@ TSet<FCell> UCellsUtilsLibrary::GetAllExplosionCells()
 // Returns true if any player is able to reach all specified cells by any path
 bool UCellsUtilsLibrary::DoesPathExistToCellsOnLevel(const TSet<FCell>& CellsToFind, const TSet<FCell>& OptionalPathBreakers)
 {
+	// If there are no targets to find, the condition is trivially met.
+	if (CellsToFind.IsEmpty())
+	{
+		return true;
+	}
+
 	const FCellsArr& AllGridCells = GetAllCellsOnLevelAsArray();
 	if (AllGridCells.IsEmpty())
 	{
+		// Cannot find a path on a non-existent level.
 		return false;
 	}
 
-	FCells SideCells = OptionalPathBreakers;
+	TQueue<FCell> CellsToVisitQueue;
+	TSet<FCell> VisitedCells = OptionalPathBreakers;
+	TSet<FCell> FoundTargets;
 
-	// Contains all cells need to find their side cells
-	FCells CellsToIterate{AllGridCells[0]};
+	constexpr int32 RootCell = 0;
+	const FCell& StartCell = AllGridCells[RootCell];
 
-	FCells FoundCells = FCell::EmptyCells;
-	while (CellsToIterate.Num())
+	CellsToVisitQueue.Enqueue(StartCell);
+	VisitedCells.Add(StartCell);
+
+	// Check if the starting cell itself is one of the targets.
+	if (CellsToFind.Contains(StartCell))
 	{
-		// Cache all previous side cells
-		const FCells PrevSideCells = SideCells;
+		FoundTargets.Add(StartCell);
 
-		for (const FCell& CellIt : CellsToIterate)
-		{
-			constexpr int32 MaxInteger = TNumericLimits<int32>::Max();
-			constexpr bool bBreakInputCells = true;
-			GetSideCells(/*InOut*/SideCells, CellIt, EPathType::Explosion, MaxInteger, TO_FLAG(ECellDirection::All), bBreakInputCells);
-		}
-
-		// Extract newly found cells
-		CellsToIterate = SideCells.Difference(PrevSideCells);
-
-		const FCells NotFoundCells = CellsToFind.Difference(FoundCells);
-		FoundCells = CellsToIterate.Intersect(NotFoundCells).Union(FoundCells);
-		if (FoundCells.Includes(CellsToFind))
+		// Handle the edge case where the origin is the only target.
+		if (FoundTargets.Num() == CellsToFind.Num())
 		{
 			return true;
+		}
+	}
+
+	// --- BFS Main Loop ---
+	while (!CellsToVisitQueue.IsEmpty())
+	{
+		FCell CurrentCell;
+		CellsToVisitQueue.Dequeue(CurrentCell);
+
+		static constexpr int32 SearchRadius = 1;
+		const FCells Neighbors = GetCellsAround(CurrentCell, EPathType::Explosion, SearchRadius);
+
+		for (const FCell& Neighbor : Neighbors)
+		{
+			if (VisitedCells.Contains(Neighbor))
+			{
+				continue;
+			}
+
+			VisitedCells.Add(Neighbor);
+			CellsToVisitQueue.Enqueue(Neighbor);
+
+			if (CellsToFind.Contains(Neighbor))
+			{
+				FoundTargets.Add(Neighbor);
+
+				if (FoundTargets.Num() == CellsToFind.Num())
+				{
+					return true;
+				}
+			}
 		}
 	}
 
@@ -590,7 +653,7 @@ FCell UCellsUtilsLibrary::GetNearestCornerCellOnLevel(const FCell& CellToCheck)
  ********************************************************************************************* */
 
 // Remove all text renders of the Owner, is not available in shipping build
-void UCellsUtilsLibrary::ClearDisplayedCells(const UObject* Owner)
+void UCellsUtilsLibrary::ClearDisplayedCells(const UObject* Owner /* = nullptr*/)
 {
 #if !UE_BUILD_SHIPPING
 	const AActor* OwnerActor = Cast<AActor>(Owner);
@@ -598,9 +661,10 @@ void UCellsUtilsLibrary::ClearDisplayedCells(const UObject* Owner)
 	{
 		const UActorComponent* Component = Cast<UActorComponent>(Owner);
 		OwnerActor = Component ? Component->GetOwner() : nullptr;
-		if (!ensureMsgf(OwnerActor, TEXT("ASSERT: 'OwnerActor' is null, can't Display Cells")))
+		if (!OwnerActor)
 		{
-			return;
+			// Owner is not provided, fallback to the default Generated Map
+			OwnerActor = AGeneratedMap::GetGeneratedMap();
 		}
 	}
 
@@ -609,7 +673,7 @@ void UCellsUtilsLibrary::ClearDisplayedCells(const UObject* Owner)
 	for (int32 Index = TextRendersArray.Num() - 1; Index >= 0; --Index)
 	{
 		UTextRenderComponent* TextRenderIt = TextRendersArray.IsValidIndex(Index) ? Cast<UTextRenderComponent>(TextRendersArray[Index]) : nullptr;
-		if (IsValid(TextRenderIt)                       // is not pending kill
+		if (IsValid(TextRenderIt) // is not pending kill
 		    && TextRenderIt->HasAllFlags(RF_Transient)) // cell text renders have this flag
 		{
 			TextRenderIt->DestroyComponent();
@@ -622,8 +686,7 @@ void UCellsUtilsLibrary::ClearDisplayedCells(const UObject* Owner)
 void UCellsUtilsLibrary::DisplayCells(UObject* Owner, const FCells& Cells, const FDisplayCellsParams& Params)
 {
 #if !UE_BUILD_SHIPPING
-	if (!Cells.Num()
-	    || !Owner)
+	if (Cells.IsEmpty())
 	{
 		return;
 	}
@@ -633,9 +696,10 @@ void UCellsUtilsLibrary::DisplayCells(UObject* Owner, const FCells& Cells, const
 	{
 		const UActorComponent* Component = Cast<UActorComponent>(Owner);
 		OwnerActor = Component ? Component->GetOwner() : nullptr;
-		if (!ensureMsgf(OwnerActor, TEXT("ASSERT: 'OwnerActor' is null, can't Display Cells")))
+		if (!OwnerActor)
 		{
-			return;
+			// Owner is not provided, fallback to the default Generated Map
+			OwnerActor = AGeneratedMap::GetGeneratedMap();
 		}
 	}
 
@@ -666,7 +730,11 @@ void UCellsUtilsLibrary::DisplayCells(UObject* Owner, const FCells& Cells, const
 		constexpr int32 MaxCoordinateRenders = 2;
 		for (int32 Index = 0; Index < MaxCoordinateRenders; ++Index)
 		{
-			enum ERenderType { ERT_Coordinate, ERT_RenderString };
+			enum ERenderType
+			{
+				ERT_Coordinate,
+				ERT_RenderString
+			};
 			const ERenderType RenderType = Index == 0 ? ERT_Coordinate : ERT_RenderString;
 			const bool bShowRenderString = RenderType == ERT_RenderString && bHasAdditionalRenderString;
 			const bool bShowCoordinate = RenderType == ERT_Coordinate && (bHasCoordinatePosition || !bHasAdditionalRenderString);

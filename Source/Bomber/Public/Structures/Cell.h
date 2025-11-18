@@ -121,8 +121,17 @@ public:
 	/** Returns the cell by specified column (X) and row (Y) on given grid if exists, invalid cell otherwise. */
 	static FCell GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCells& InGrid);
 
+	/** More optimized version of GetCellByPositionOnGrid which requires the Grid Width to be passed. */
+	static FCell GetCellByPositionOnGrid(const FIntPoint& CellPosition, const FCellsArr& InGrid, int32 GridWidth);
+
 	/** Takes the cell and returns its column (X) and row (Y) position on given grid if exists, -1 otherwise. */
 	static FIntPoint GetPositionByCellOnGrid(const FCell& InCell, const FCells& InGrid);
+
+	/** More optimized version of GetPositionByCellOnGrid which requires the Grid Width to be passed. */
+	static FIntPoint GetPositionByCellOnGrid(const FCell& InCell, const FCellsArr& InGrid, int32 GridWidth);
+
+	/** Returns a map of cells to their positions on the grid. */
+	static TMap<FCell, FIntPoint> GetPositionsByCellsOnGrid(const FCellsArr& InGrid, int32 GridWidth);
 
 	/** Returns the center column (X) and row (Y) position on given grid.
 	 * E.g: for grid with 5 rows and 5 columns, the center cell will be (2,2). */
@@ -182,6 +191,12 @@ public:
 	 * @param AllVisibleCells All cells that can be seen from the starting cell, the grid or just part of it.
 	 * @param MaxAngleDegrees The maximum allowable angle (in degrees) for alignment, is recommended around 20 degrees. */
 	static bool CanCellSeeTarget(const FCell& StartingCell, const FCell& TargetCell, const FCells& AllVisibleCells, float MaxAngleDegrees = 40.f);
+
+	/** Fisher-Yates shuffle algorithm to reorder the array elements. */
+	static void RandShuffle(FCellsArr& InOutArray);
+
+	/** Extracts the top-left quarter of the grid. */
+	static FCellsArr GetTopLeftQuarterOnGrid(const FCellsArr& InGrid, const FIntPoint& MapScale);
 
 	/*********************************************************************************************
 	 * Distance

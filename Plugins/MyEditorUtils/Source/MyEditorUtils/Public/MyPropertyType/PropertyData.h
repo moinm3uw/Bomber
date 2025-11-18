@@ -2,6 +2,7 @@
 
 #pragma once
 
+// UE
 #include "Layout/Visibility.h"
 #include "Misc/Attribute.h"
 
@@ -50,9 +51,9 @@ struct MYEDITORUTILS_API FPropertyData
 	FName GetPropertyNameFromHandle() const;
 
 	/** Get property value by handle.
-	* It returns current value contained in property.
-	* Is cheaper to use cached one.
-	* @see FPropertyData::PropertyValue. */
+	 * It returns current value contained in property.
+	 * Is cheaper to use cached one.
+	 * @see FPropertyData::PropertyValue. */
 	FName GetPropertyValueFromHandle() const;
 
 	/** Get property ptr to the value by handle. */
@@ -70,12 +71,12 @@ struct MYEDITORUTILS_API FPropertyData
 	FName GetMetaDataValue(FName Key) const;
 
 	/** Returns true if specified key exist.
-	* @param Key The key of a meta to check. */
+	 * @param Key The key of a meta to check. */
 	bool IsMetaKeyExists(FName Key) const;
 
 	/** Set the meta value by specified key.
-	* @param Key The key of a meta.
-	* @param NewValue The value of a meta to set.
-	* @param bNotifyPostChange Set true to notify property about change. */
+	 * @param Key The key of a meta.
+	 * @param NewValue The value of a meta to set.
+	 * @param bNotifyPostChange Set true to notify property about change. */
 	void SetMetaDataValue(FName Key, FName NewValue, bool bNotifyPostChange = false);
 };

@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "GameFramework/MyGameModeBase.h"
-//---
+
+// Bomber
 #include "Controllers/MyPlayerController.h"
 #include "GameFramework/MyGameSession.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameModeBase)
 
 // Sets default values for this actor's properties
@@ -21,6 +22,8 @@ AMyGameModeBase::AMyGameModeBase()
 
 	// Spawn and possess pawn by ourselves manually
 	DefaultPawnClass = nullptr;
+
+	bUseSeamlessTravel = true;
 }
 
 // Returns player controller by specified index
@@ -63,8 +66,12 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	// When new player joins, return everyone to the menu: joining running match and spectating are not supported at this moment
-	AMyGameStateBase::Get().SetGameState(ECGS::Menu);
+	// When new player joins to running game (any state is set), return everyone to the menu: joining running match and spectating are not supported at this moment
+	if (AMyGameStateBase::GetCurrentGameState() != ECGS::None)
+	{
+		AMyGameStateBase::Get().SetGameState(ECGS::Menu);
+	}
+
 	if (APlayerState* PlayerState = MyPC->GetPlayerState<APlayerState>())
 	{
 		// Disabled to allow start the game in 'Simulate in Editor' (F6) and then press 'Possess or eject player' button
@@ -84,7 +91,7 @@ void AMyGameModeBase::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 }
 
-// Sets the name for a controller 
+// Sets the name for a controller
 void AMyGameModeBase::ChangeName(AController* Controller, const FString& NewName, bool bNameChange)
 {
 	// Super is not called since it's forbidden to change player name with this function

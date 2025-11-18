@@ -1,13 +1,15 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "Components/BmrPlayerNameWidgetComponent.h"
-//---
+
+// Bomber
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UI/Widgets/PlayerNameWidget.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPlayerNameWidgetComponent)
 
 // Sets default values for this component's properties
@@ -46,14 +48,21 @@ void UBmrPlayerNameWidgetComponent::Init(AMyPlayerState* PlayerState)
 		return;
 	}
 
+	UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
+	if (!WidgetsSubsystem)
+	{
+		// UI Subsystem is not initialized yet or called on remote clients
+		return;
+	}
+
 	AssociatedPlayerStateInternal = PlayerState;
 
-	const UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem();
-	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem ? WidgetsSubsystem->GetNicknameWidget(PlayerState->GetPlayerId()) : nullptr;
+	const int32 PlayerId = PlayerState->GetPlayerId();
+	UPlayerNameWidget* PlayerNameWidget = WidgetsSubsystem->GetWidgetByTag<UPlayerNameWidget>(BmrGameplayTags::UI::Widget_Nickname, PlayerId);
 	if (!PlayerNameWidget)
 	{
-		// Widget is not created yet, might be called before UI Subsystem is initialized
-		return;
+		// Widget is not created yet for specified player ID, request it now
+		PlayerNameWidget = &WidgetsSubsystem->CreateManageableWidgetByTagChecked<UPlayerNameWidget>(BmrGameplayTags::UI::Widget_Nickname);
 	}
 
 	// Configure widget content and association
@@ -86,8 +95,8 @@ void UBmrPlayerNameWidgetComponent::UpdateVisibility()
 	}
 
 	const bool bMakeVisible = AMyGameStateBase::GetCurrentGameState() != ECGS::Menu
-							  && AssociatedPlayerStateInternal
-							  && !AssociatedPlayerStateInternal->IsCharacterDead();
+	                          && AssociatedPlayerStateInternal
+	                          && !AssociatedPlayerStateInternal->IsCharacterDead();
 
 	const ESlateVisibility NewVisibility = bMakeVisible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed;
 	if (InWidget->GetVisibility() != NewVisibility)
@@ -105,7 +114,7 @@ void UBmrPlayerNameWidgetComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem()) // Is null on remote clients 
+	if (UWidgetsSubsystem* WidgetsSubsystem = UWidgetsSubsystem::GetWidgetsSubsystem()) // Is null on remote clients
 	{
 		WidgetsSubsystem->OnWidgetsInitialized.AddUniqueDynamic(this, &ThisClass::OnWidgetsInitialized);
 		if (WidgetsSubsystem->AreWidgetInitialized())

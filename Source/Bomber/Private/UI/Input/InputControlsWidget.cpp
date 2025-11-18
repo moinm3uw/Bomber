@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/Input/InputControlsWidget.h"
-//---
+
+// Bomber
 #include "DataAssets/MyInputMappingContext.h"
 #include "DataAssets/PlayerInputDataAsset.h"
-#include "UI/SettingsWidget.h"
 #include "UI/Input/InputCategoryWidget.h"
-//---
+#include "UI/SettingsWidget.h"
+
+// UE
 #include "Components/ScrollBox.h"
-#include "UserSettings/EnhancedInputUserSettings.h" // FPlayerKeyMapping
-//---
+#include "UserSettings/EnhancedInputUserSettings.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(InputControlsWidget)
 
 // Called after the underlying slate widget is constructed
@@ -38,7 +40,7 @@ void UInputControlsWidget::CreateAllInputCategories()
 	{
 		// Inside each input context, there could be different input categories
 		TArray<FInputCategoryData> InputCategoriesData;
-		FInputCategoryData::GetCategoriesDataFromMappings(*this, *InputContextIt, /*Out*/InputCategoriesData);
+		FInputCategoryData::GetCategoriesDataFromMappings(*this, *InputContextIt, /*Out*/ InputCategoriesData);
 
 		for (const FInputCategoryData& InputCategoryDataIt : InputCategoriesData)
 		{

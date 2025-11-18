@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-//---
+
+// Bomber
 #include "Structures/MouseVisibilitySettings.h"
-//---
+
 #include "MouseActivityComponent.generated.h"
 
 enum class ECurrentGameState : uint8;

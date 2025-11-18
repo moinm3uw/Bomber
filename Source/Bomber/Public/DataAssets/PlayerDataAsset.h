@@ -3,9 +3,10 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/PlayerTag.h"
-//---
+
 #include "PlayerDataAsset.generated.h"
 
 /**
@@ -25,7 +26,7 @@ struct BOMBER_API FAttachedMesh
 	FName Socket = NAME_None;
 
 	/** Prop animation is loop played all the time, starts playing on attaching to the owner. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ShowOnlyInnerProperties))
 	TObjectPtr<class UAnimSequence> MeshAnimation = nullptr;
 };
 
@@ -42,6 +43,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Row", meta = (ShowOnlyInnerProperties))
 	FPlayerTag PlayerTag = FPlayerTag::None;
 
+	/** Gameplay effect to apply on changing the character from one to another. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row")
+	TSubclassOf<class UGameplayEffect> ConfigGameplayEffect = nullptr;
+
 	/** All meshes that will be attached to the player. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
 	TArray<FAttachedMesh> PlayerProps;
@@ -53,6 +58,10 @@ public:
 	/** Dance animation that is used mostly in the menu instead of idle. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
 	TObjectPtr<class UAnimSequence> DanceAnimation = nullptr;
+
+	/** Death animation montage that is played on the character death. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Row", meta = (ShowOnlyInnerProperties))
+	TObjectPtr<class UAnimMontage> DeathMontage = nullptr;
 
 	/** Returns the num of skin textures in the array of diffuse maps specified a player material instance.
 	 * @return The num of skin textures or INDEX_NONE if not found. */
@@ -89,7 +98,7 @@ protected:
 #if WITH_EDITOR
 	/** Handle adding and changing material instance to prepare dynamic materials. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif	//WITH_EDITOR
+#endif // WITH_EDITOR
 };
 
 /**
@@ -127,13 +136,33 @@ public:
 	FORCEINLINE FName GetSkinArrayParameter() const { return SkinArrayParameterInternal; }
 
 	/** Returns the name of a material parameter with a diffuse index.
-	* @see UPlayerDataAsset::SkinSlotNameInternal. */
+	 * @see UPlayerDataAsset::SkinSlotNameInternal. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE FName GetSkinIndexParameter() const { return SkinIndexParameterInternal; }
 
 	/** Return first found row by specified player tag. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "PlayerTag"))
 	const UPlayerRow* GetRowByPlayerTag(const FPlayerTag& PlayerTag) const;
+
+	/** Returns the number of startup abilities that will be granted to the player at the start of the game.
+	 * @see ::StartupAbilitiesInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE int32 GetStartupAbilitiesNum() const { return StartupAbilitiesInternal.Num(); }
+
+	/** Returns the startup ability by index.
+	 * @see ::StartupAbilitiesInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayAbility> GetStartupAbility(int32 Index) const { return StartupAbilitiesInternal.IsValidIndex(Index) ? StartupAbilitiesInternal[Index] : nullptr; }
+
+	/** Returns the gameplay effect that gives immune to incoming damage when applied.
+	 * @see ::BlockIncomingDamageEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetBlockIncomingDamageEffect() const { return BlockIncomingDamageEffectInternal; }
+
+	/** Returns the gameplay effect that disables movement for the player character when applied.
+	 * @see ::BlockMovementEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetBlockMovementEffect() const { return BlockMovementEffectInternal; }
 
 protected:
 	/** All materials that are used by nameplate meshes. */
@@ -151,4 +180,20 @@ protected:
 	/** The name of a material parameter with a diffuse index. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Skin Index Parameter", ShowOnlyInnerProperties))
 	FName SkinIndexParameterInternal = TEXT("DiffuseIndex");
+
+	/** Contains all abilities to grant on the player at the start of the game. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Startup Abilities", ShowOnlyInnerProperties))
+	TArray<TSubclassOf<class UGameplayAbility>> StartupAbilitiesInternal;
+
+	/** When applied, gives immune to incoming damage.
+	 * Adds BmrGameplayTags::GameplayEffect::Block::IncomingDamage tag.
+	 * E.g: Is used by God cheat, might be useful for shield skill, or when player joins existing game in progress. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Block Incoming Damage Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> BlockIncomingDamageEffectInternal = nullptr;
+
+	/** When applied, disables movement for the player character.
+	 * Adds BmrGameplayTags::GameplayEffect::Block::Movement tag.
+	 * E.g: Is used when player is in a menu, during 3-2-1 timer, when died, in cinematics etc. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability System", meta = (BlueprintProtected, DisplayName = "Block Movement Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> BlockMovementEffectInternal = nullptr;
 };

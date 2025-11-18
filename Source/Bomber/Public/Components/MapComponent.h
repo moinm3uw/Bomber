@@ -3,10 +3,11 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-//---
+
+// Bomber
 #include "Structures/BmrMeshData.h"
 #include "Structures/Cell.h"
-//---
+
 #include "MapComponent.generated.h"
 
 enum class EActorType : uint8;
@@ -43,21 +44,23 @@ public:
 	/** Called when this level actor is reconstructed or added on the Generated Map, on both server and clients.
 	 * Is used by Level Actors instead of the BeginPlay(), but also called in editor preview before game even started.
 	 * In Editor on construction: AActor::RerunConstructionScripts() -> AActor::OnConstruction() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded()
-	 * In build: AGeneratedMap::SpawnActorByType() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded() */
+	 * In build: AGeneratedMap::SpawnActorByType() -> AGeneratedMap::AddToGrid() -> ThisClass::OnAdded()
+	 * In code, BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel) can be used to bind to this event,e*/
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnAddedToLevel OnAddedToLevel;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPreRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called right before owner actor going to remove from the Generated Map.
-	 * Is useful to listen for actor before it is exploded and its data being reset.
+	/** Called BEFORE unregistering, owner actor is still valid and located on the level.
+	 * Is useful when some logic relies on any data which will be lost after destroy.
 	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPreRemovedFromLevel OnPreRemovedFromLevel;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPostRemovedFromLevel, UMapComponent*, MapComponent, UObject*, DestroyCauser);
 
-	/** Called each time after owner actor was removed from Generated Map.
+	/** Called AFTER destroy has happened, owner actor is not valid and no longer part of the level.
+	 * Is useful to perform final cleanups, like removing references to the destroyed actor.
 	 * Replication: is called on both server and clients; DestroyCauser is always nullptr on clients. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnPostRemovedFromLevel OnPostRemovedFromLevel;
@@ -159,8 +162,8 @@ public:
 	void SetReplicatedMeshData(const FBmrMeshData& MeshData);
 
 protected:
-	/** Mesh of an owner. */
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
+	/** Cached mesh component of the owner actor: can be static or skeletal mesh component, is created on this component registration. */
+	UPROPERTY(BlueprintReadWrite, Transient, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Mesh Component"))
 	TObjectPtr<class UMeshComponent> MeshComponentInternal = nullptr;
 
 	/** Is optional to set, since clients are allowed to set mesh and material locally.
@@ -263,10 +266,23 @@ protected:
 	virtual bool IsEditorOnly() const override;
 
 	/**
-	* Destroy EditorOnly owner for the editor -game.
-	* Before we register our component, save it to our transaction buffer so if "undone" it will return to an unregistered state.
-	* This should prevent unwanted components hanging around when undoing a copy/paste or duplication action.
-	*/
+	 * Destroy EditorOnly owner for the editor -game.
+	 * Before we register our component, save it to our transaction buffer so if "undone" it will return to an unregistered state.
+	 * This should prevent unwanted components hanging around when undoing a copy/paste or duplication action.
+	 */
 	virtual bool Modify(bool bAlwaysMarkDirty = true) override;
 #endif
 };
+
+/** Helper macro to bind and call the function when the map component is added to level */
+#define BIND_ON_ADDED_TO_LEVEL(Obj, Function)                                  \
+	{                                                                          \
+		if (UMapComponent* MapComponent = UMapComponent::GetMapComponent(Obj)) \
+		{                                                                      \
+			MapComponent->OnAddedToLevel.AddUniqueDynamic(Obj, &Function);     \
+			if (MapComponent->GetCell().IsValid())                             \
+			{                                                                  \
+				Obj->Function(MapComponent);                                   \
+			}                                                                  \
+		}                                                                      \
+	}

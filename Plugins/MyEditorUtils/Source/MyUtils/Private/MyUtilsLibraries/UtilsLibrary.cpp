@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "UnrealClient.h"
+
+// UE
+#include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
-#include "Engine/Engine.h"
-//---
+#include "UnrealClient.h"
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif // WITH_EDITOR
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UtilsLibrary)
 
 // Returns the current play world
@@ -84,6 +85,22 @@ bool UUtilsLibrary::HasWorldBegunPlay()
 #endif
 }
 
+// Returns current viewport
+const FViewport* UUtilsLibrary::GetViewport()
+{
+	const FViewport* Viewport = IsViewportInitialized() ? GEngine->GameViewport->Viewport : nullptr;
+
+#if WITH_EDITOR
+	if (FEditorUtilsLibrary::IsEditor()
+	    && !Viewport)
+	{
+		Viewport = FEditorUtilsLibrary::GetEditorViewport();
+	}
+#endif
+
+	return Viewport;
+}
+
 // Returns true if viewport is initialized, is always true in PIE, but takes a while in builds
 bool UUtilsLibrary::IsViewportInitialized()
 {
@@ -94,7 +111,10 @@ bool UUtilsLibrary::IsViewportInitialized()
 		return false;
 	}
 
-	auto IsZeroViewportSize = [Viewport] { return Viewport->GetSizeXY() == FIntPoint::ZeroValue; };
+	auto IsZeroViewportSize = [Viewport]
+	{
+		return Viewport->GetSizeXY() == FIntPoint::ZeroValue;
+	};
 
 	if (IsZeroViewportSize())
 	{
@@ -109,16 +129,7 @@ bool UUtilsLibrary::IsViewportInitialized()
 // Returns the actual screen resolution
 FIntPoint UUtilsLibrary::GetViewportResolution()
 {
-	const FViewport* Viewport = IsViewportInitialized() ? GEngine->GameViewport->Viewport : nullptr;
-
-#if WITH_EDITOR
-	if (FEditorUtilsLibrary::IsEditor()
-		&& !Viewport)
-	{
-		Viewport = FEditorUtilsLibrary::GetEditorViewport();
-	}
-#endif
-
+	const FViewport* Viewport = GetViewport();
 	return Viewport ? Viewport->GetSizeXY() : FIntPoint::ZeroValue;
 }
 
@@ -128,4 +139,11 @@ TEnumAsByte<EAspectRatioAxisConstraint> UUtilsLibrary::GetViewportAspectRatioAxi
 	const APlayerController* PlayerController = GEngine ? GEngine->GetFirstLocalPlayerController(GWorld) : nullptr;
 	const ULocalPlayer* LocalPlayer = PlayerController ? PlayerController->GetLocalPlayer() : nullptr;
 	return LocalPlayer ? LocalPlayer->AspectRatioAxisConstraint : TEnumAsByte(AspectRatio_MAX);
+}
+
+// Returns true if the viewport is currently focused
+bool UUtilsLibrary::IsViewportFocused()
+{
+	const FViewport* Viewport = GetViewport();
+	return Viewport && (Viewport->HasFocus() || Viewport->HasMouseCapture());
 }

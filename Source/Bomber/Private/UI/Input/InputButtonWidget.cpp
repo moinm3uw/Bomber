@@ -1,17 +1,19 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "UI/Input/InputButtonWidget.h"
-//---
+
+// Bomber
 #include "Data/SettingsDataAsset.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UI/SettingsWidget.h"
-//---
+
+// UE
 #include "Components/InputKeySelector.h"
 #include "Components/TextBlock.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(InputButtonWidget)
 
 // Sets this button to let player remap input specified in mappable data

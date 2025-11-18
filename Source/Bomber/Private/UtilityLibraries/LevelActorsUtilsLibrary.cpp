@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
+#include "Bomber.h"
 #include "Components/MapComponent.h"
-//---
+#include "GeneratedMap.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LevelActorsUtilsLibrary)
 
 // Level Actors getter
@@ -30,6 +32,7 @@ void ULevelActorsUtilsLibrary::GetLevelActors(FMapComponents& OutBitmaskedCompon
 	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
 	{
 		if (MapComponentIt
+		    && MapComponentIt->IsActive()
 		    && EnumHasAnyFlags(MapComponentIt->GetActorType(), TO_ENUM(EActorType, ActorsTypesBitmask)))
 		{
 			OutBitmaskedComponents.Add(MapComponentIt);
@@ -59,7 +62,7 @@ void ULevelActorsUtilsLibrary::GetLevelActorsOnCells(FMapComponents& OutMapCompo
 
 	for (UMapComponent* MapComponentIt : GeneratedMap->MapComponentsInternal)
 	{
-		const FCell& CellIt = MapComponentIt ? MapComponentIt->GetCell() : FCell::InvalidCell;
+		const FCell& CellIt = MapComponentIt && MapComponentIt->IsActive() ? MapComponentIt->GetCell() : FCell::InvalidCell;
 		if (CellIt.IsValid()
 		    && InCells.Contains(CellIt))
 		{
@@ -77,7 +80,7 @@ int32 ULevelActorsUtilsLibrary::GetIndexByLevelActor(const UMapComponent* InMapC
 	}
 
 	// First try to get the index in Components array
-	// It's more reliable for actors, since it contained in the order of creation 
+	// It's more reliable for actors, since it contained in the order of creation
 	FMapComponents MapComponents;
 	int32 Index = 0;
 	const EActorType ActorType = InMapComponent->GetActorType();

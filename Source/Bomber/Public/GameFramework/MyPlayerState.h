@@ -3,9 +3,13 @@
 #pragma once
 
 #include "GameFramework/PlayerState.h"
-//---
-#include "Bomber.h"
-//---
+
+// Bomber
+#include "Bomber.h" // EEndGameState, EPlayerType
+
+// UE
+#include "AbilitySystemInterface.h"
+
 #include "MyPlayerState.generated.h"
 
 enum class EPlayerType : uint8;
@@ -13,10 +17,11 @@ enum class EPlayerType : uint8;
 /**
  * Holds Player's data like nickname.
  * It's replicated to all clients and persists between matches.
- * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused like character.
+ * Unlike APlayerState, this class is not respawned on player join and not destroyed on player leave, but is reused for both human and bot characters.
  */
 UCLASS(Config = "GameUserSettings", DefaultConfig)
-class BOMBER_API AMyPlayerState final : public APlayerState
+class BOMBER_API AMyPlayerState : public APlayerState,
+                                  public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -32,6 +37,35 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class APlayerCharacter* GetPlayerCharacter() const;
 	class APlayerCharacter& GetPlayerCharacterChecked() const;
+
+	/*********************************************************************************************
+	 * Gameplay Ability System (GAS)
+	 ********************************************************************************************* */
+public:
+	/** Returns ability system component that is used to manage abilities and attributes for owned player. */
+	virtual FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponentInternal; }
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+
+	/** Initializes all attributes with default values. */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
+	void ApplyDefaultAttributes();
+
+protected:
+	/** Ability System Component that is used to manage abilities (like place bomb) and attributes (like powerups) for owned player. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponentInternal = nullptr;
+
+	/** Attribute set for powerup-related attributes (items pick-up, character stats, etc.).
+	 * For read access, can be obtained with UBmrPowerupsAttributeSet::GetPowerupsAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrPowerupsAttributeSet> PowerupsSetInternal = nullptr;
+
+	/** Attribute set for health-related attributes (health, max health, damage).
+	 * For read access, can be obtained with UBmrHealthAttributeSet::GetHealthAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrHealthAttributeSet> HealthSetInternal = nullptr;
 
 	/*********************************************************************************************
 	 * End Game State
@@ -164,7 +198,7 @@ protected:
 
 	/** Is called at the end of frame when this character received dead status. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
-	void OnPostCharacterDead(const TSet<struct FCell>& Cells);
+	void OnPostCharacterDead();
 
 	/*********************************************************************************************
 	 * Killed Opponents Num
@@ -278,6 +312,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
 	void OnPlayerStateInit();
 
+	/** Is called on server and clients when new owned pawn is possessed or changed. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++")
+	void OnPawnChanged(class APawn* NewPawn);
+
 	/** Listens game states to notify server about ending game for controlled player. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
@@ -292,6 +330,9 @@ public:
 protected:
 	/** Returns properties that are replicated for the lifetime of the actor channel. */
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** This is called only in the gameplay before calling begin play. */
+	virtual void PostInitializeComponents() override;
 
 	/** Called when the game starts. */
 	virtual void BeginPlay() override;

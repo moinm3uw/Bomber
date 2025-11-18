@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "UtilsLibrary.generated.h"
 
 enum EAspectRatioAxisConstraint : int;
@@ -45,6 +45,9 @@ public:
 	 * Viewport
 	 ********************************************************************************************* */
 public:
+	/** Returns current viewport. */
+	static const class FViewport* GetViewport();
+
 	/** Returns true if viewport is initialized, is always true in PIE, but takes a while in builds. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static bool IsViewportInitialized();
@@ -57,4 +60,8 @@ public:
 	/** Returns 'MaintainYFOV' if Horizontal FOV is currently used while 'MaintainXFOV' for the Vertical one.*/
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static TEnumAsByte<EAspectRatioAxisConstraint> GetViewportAspectRatioAxisConstraint();
+
+	/** Returns true if the current viewport is focused. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static bool IsViewportFocused();
 };

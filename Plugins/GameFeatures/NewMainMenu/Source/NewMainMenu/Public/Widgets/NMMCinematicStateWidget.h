@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-//---
+
 #include "NMMCinematicStateWidget.generated.h"
 
 enum class ENMMState : uint8;

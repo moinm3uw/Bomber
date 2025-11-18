@@ -11,8 +11,8 @@ class FAttachedMeshCustomization final : public FMyPropertyTypeCustomization
 {
 public:
 	/* ---------------------------------------------------
-	*		Public functions
-	* --------------------------------------------------- */
+	 *		Public functions
+	 * --------------------------------------------------- */
 
 	/** The name of class to be customized. */
 	static const FName PropertyClassName;
@@ -33,7 +33,7 @@ public:
 	virtual void CustomizeHeader(TSharedRef<IPropertyHandle> PropertyHandle, FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& CustomizationUtils) override;
 
 	/**
- 	 * Called when the children of the property should be customized or extra rows added.
+	 * Called when the children of the property should be customized or extra rows added.
 	 * @param PropertyHandle Handle to the property being customized
 	 * @param ChildBuilder A builder for adding children
 	 * @param CustomizationUtils Utilities for customization
@@ -48,15 +48,15 @@ public:
 
 protected:
 	/* ---------------------------------------------------
-	*		Protected properties
-	* --------------------------------------------------- */
+	 *		Protected properties
+	 * --------------------------------------------------- */
 
 	/** A Skeletal mesh component that contains the parent character mesh. Is transient component. Used as a parameter to push the SSocketChooserPopup. */
 	TWeakObjectPtr<USkeletalMeshComponent> ParentMeshCompInternal = nullptr;
 
 	/* ---------------------------------------------------
-	*		Protected functions
-	* --------------------------------------------------- */
+	 *		Protected functions
+	 * --------------------------------------------------- */
 
 	/** Is called for each property on building its row. */
 	virtual void OnCustomizeChildren(IDetailChildrenBuilder& ChildBuilder, FPropertyData& PropertyData) override;

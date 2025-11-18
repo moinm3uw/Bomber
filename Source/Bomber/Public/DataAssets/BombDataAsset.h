@@ -3,7 +3,7 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
 #include "BombDataAsset.generated.h"
 
 /**
@@ -36,30 +36,46 @@ public:
 	static const UBombDataAsset& Get();
 
 	/** Get the bomb lifetime. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE float GetLifeSpan() const { return LifeSpanInternal; }
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE float GetDuration() const { return DurationInternal; }
 
-	/** Returns the duration of the bomb VFX. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE float GetVFXDuration() const { return VFXDurationInternal; }
+	/** Returns the durational gameplay effect applied while the bomb is active.
+	 * @see UBombDataAsset::DurationGameplayEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetDurationGameplayEffect() const { return DurationGameplayEffectInternal; }
+
+	/** Returns the explosion damage gameplay effect applied when the bomb detonates.
+	 * @see UBombDataAsset::ExplosionDamageEffectInternal */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	FORCEINLINE TSubclassOf<class UGameplayEffect> GetExplosionDamageEffect() const { return ExplosionDamageEffectInternal; }
 
 	/** Returns the amount of bomb materials. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	FORCEINLINE int32 GetBombMaterialsNum() const { return BombMaterialsInternal.Num(); }
 
 	/** Returns the bomb material by specified index.
 	 * @see UBombDataAsset::BombMaterialInternal */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	class UMaterialInterface* GetBombMaterial(int32 Index) const { return BombMaterialsInternal.IsValidIndex(Index) ? BombMaterialsInternal[Index] : nullptr; }
+
+	/** Returns associated bomb row by associated instigator actor (e.g: Fori character -> Third (Forest) row).
+	 * @param InInstigator - the actor who placed the bomb, used to determine the level type.
+	 * @return The bomb row corresponding to the instigator's type, or nullptr if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	const UBombRow* GetBombRow(const AActor* InInstigator) const;
 
 protected:
 	/** The lifetime of a bomb. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Life Span", ShowOnlyInnerProperties))
-	float LifeSpanInternal = 2.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration", ShowOnlyInnerProperties))
+	float DurationInternal = 2.f;
 
-	/** The duration of the bomb VFX. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "VFX Duration", ShowOnlyInnerProperties))
-	float VFXDurationInternal = 1.f;
+	/** Durational gameplay effect applied while the bomb is active. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Duration Gameplay Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> DurationGameplayEffectInternal = nullptr;
+
+	/** Explosion damage gameplay effect applied when the bomb detonates. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Explosion Damage Effect", ShowOnlyInnerProperties))
+	TSubclassOf<class UGameplayEffect> ExplosionDamageEffectInternal = nullptr;
 
 	/** All bomb materials. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BlueprintProtected, DisplayName = "Bomb Materials", ShowOnlyInnerProperties))

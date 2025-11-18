@@ -3,16 +3,19 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
-#include "Bomber.h"
+
+// Bomber
+#include "Bomber.h" // ELevelType, EActorType
+
+// UE
 #include "Engine/EngineTypes.h" // ECollisionResponse
-//---
+
 #include "LevelActorDataAsset.generated.h"
 
 /**
  * The base archetype of level actor rows. Is implemented in player, item rows, etc.
  */
-UCLASS(Blueprintable, BlueprintType, DefaultToInstanced, EditInlineNew, Const, CollapseCategories, AutoExpandCategories=("C++"))
+UCLASS(Blueprintable, BlueprintType, DefaultToInstanced, EditInlineNew, Const, CollapseCategories, AutoExpandCategories = ("C++"))
 class BOMBER_API ULevelActorRow : public UObject
 {
 	GENERATED_BODY()
@@ -34,13 +37,13 @@ protected:
 #if WITH_EDITOR
 	/** Called to handle row changes. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif //WITH_EDITOR
+#endif // WITH_EDITOR
 };
 
 /**
  * The base data asset for the Bomber's data.
  */
-UCLASS(Abstract, Blueprintable, BlueprintType, Const, AutoExpandCategories=("C++"))
+UCLASS(Abstract, Blueprintable, BlueprintType, Const, AutoExpandCategories = ("C++"))
 class BOMBER_API UBomberDataAsset : public UMyPrimaryDataAsset
 {
 	GENERATED_BODY()
@@ -49,7 +52,7 @@ protected:
 #if WITH_EDITOR
 	/** Called to notify on any data asset changes. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif //WITH_EDITOR
+#endif // WITH_EDITOR
 };
 
 /**
@@ -64,8 +67,8 @@ public:
 	/** Return rows by specified level types in the bitmask. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	void GetRowsByLevelType(
-		TArray<ULevelActorRow*>& OutRows,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ELevelType")) int32 LevelsTypesBitmask) const;
+	    TArray<ULevelActorRow*>& OutRows,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ELevelType")) int32 LevelsTypesBitmask) const;
 
 	/** Returns first found row by given predicate function. */
 	const ULevelActorRow* GetRowByPredicate(const TFunctionRef<bool(const ULevelActorRow&)>& Predicate) const;
@@ -75,14 +78,14 @@ public:
 
 	/** Return first found row by specified level types. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	const FORCEINLINE ULevelActorRow* GetRowByLevelType(ELevelType LevelType) const { return GetRowByPredicate([LevelType](const ULevelActorRow& RowIt) { return RowIt.LevelType == LevelType || RowIt.LevelType == ELT::Max; }); }
+	const ULevelActorRow* GetRowByLevelType(ELevelType LevelType) const;
 
 	template <typename T>
 	const FORCEINLINE T* GetRowByLevelType(ELevelType LevelType) const { return Cast<T>(GetRowByLevelType(LevelType)); }
 
 	/** Return first found row by specified mesh. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	const FORCEINLINE ULevelActorRow* GetRowByMesh(const class UStreamableRenderAsset* Mesh) const { return GetRowByPredicate([Mesh](const ULevelActorRow& RowIt) { return RowIt.Mesh == Mesh; }); }
+	const ULevelActorRow* GetRowByMesh(const class UStreamableRenderAsset* Mesh) const;
 
 	/** Returns row by index. */
 	UFUNCTION(BlueprintPure, Category = "C++")
@@ -160,5 +163,5 @@ protected:
 #if WITH_EDITOR
 	/** Handle adding new rows. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif	//WITH_EDITOR
+#endif // WITH_EDITOR
 };

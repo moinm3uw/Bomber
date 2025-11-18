@@ -1,17 +1,19 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/BoxActor.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-#include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "DataAssets/BoxDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "GeneratedMap.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Math/UnrealMathUtility.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BoxActor)
 
 // Sets default values.
@@ -64,8 +66,7 @@ void ABoxActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel);
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 

@@ -1,16 +1,19 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
-//---
+
+// MyUtils
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "GameFeaturesSubsystem.h"
+
+// UE
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CurveTable.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
-//---
+#include "GameFeaturesSubsystem.h"
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameplayUtilsLibrary)
 
 /*********************************************************************************************
@@ -47,7 +50,7 @@ void UGameplayUtilsLibrary::SetMesh(UMeshComponent* MeshComponent, UStreamableRe
 }
 
 // Returns the first child actor of the specified class
-AActor* UGameplayUtilsLibrary::GetAttachedActorByClass(const AActor* ParentActor, TSubclassOf<AActor> ChildActorClass, bool bIncludeDescendants/* = false*/)
+AActor* UGameplayUtilsLibrary::GetAttachedActorByClass(const AActor* ParentActor, TSubclassOf<AActor> ChildActorClass, bool bIncludeDescendants /* = false*/)
 {
 	if (!ensureMsgf(ParentActor, TEXT("ASSERT: [%i] %s:\n'!ParentActor' is not valid!"), __LINE__, *FString(__FUNCTION__)))
 	{
@@ -85,23 +88,23 @@ bool UGameplayUtilsLibrary::ApplyTransformFromCurveTable(AActor* InActor, const 
 {
 	/* Example data (can be imported as csv into your Curve Table):
 
-		Name,0,0.1,0.2,0.5
-		LocationX,0,0.0,0.0,0
-		LocationY,0,0.0,0.0,0
-		LocationZ,0,0.0,0.0,0
-		RotationPitch,0,0.0,0.0,0
-		RotationYaw,0,0.0,0.0,0
-		RotationRoll,0,0.0,0.0,0
-		ScaleX,1,0.9,0.7,0
-		ScaleY,1,0.9,0.7,0
-		ScaleZ,1,0.9,0.7,0
+	    Name,0,0.1,0.2,0.5
+	    LocationX,0,0.0,0.0,0
+	    LocationY,0,0.0,0.0,0
+	    LocationZ,0,0.0,0.0,0
+	    RotationPitch,0,0.0,0.0,0
+	    RotationYaw,0,0.0,0.0,0
+	    RotationRoll,0,0.0,0.0,0
+	    ScaleX,1,0.9,0.7,0
+	    ScaleY,1,0.9,0.7,0
+	    ScaleZ,1,0.9,0.7,0
 
 	Where ScaleZ will change from `1` (at 0 sec) to `0` (at 0.5 sec) */
 
 	if (!ensureMsgf(CurveTable, TEXT("ASSERT: [%i] %hs:\n'CurveTable' is not valid!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(InActor, TEXT("ASSERT: [%i] %hs:\n'InActor' is not valid!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(TotalSecondsSinceStart >= 0.f, TEXT("ASSERT: [%i] %hs:\n'TotalSecondsSinceStart' must be greater or equal to 0!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(CenterWorldTransform.IsValid(), TEXT("ASSERT: [%i] %hs:\n'CenterWorldTransform' is not valid, it should be initial transform of actor to apply animation on it!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(InActor, TEXT("ASSERT: [%i] %hs:\n'InActor' is not valid!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(TotalSecondsSinceStart >= 0.f, TEXT("ASSERT: [%i] %hs:\n'TotalSecondsSinceStart' must be greater or equal to 0!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(CenterWorldTransform.IsValid(), TEXT("ASSERT: [%i] %hs:\n'CenterWorldTransform' is not valid, it should be initial transform of actor to apply animation on it!"), __LINE__, __FUNCTION__))
 	{
 		return false;
 	}
@@ -202,7 +205,7 @@ void UGameplayUtilsLibrary::SetGameFeaturesEnabled(bool bEnable, const TArray<FN
 		GameFeaturesSubsystem.GetPluginURLByName(GameFeatureName.ToString(), /*out*/ GameFeatureURL);
 		if (!ensureMsgf(!GameFeatureURL.IsEmpty(), TEXT("ASSERT: [%i] %hs:\n'%s' game feature state can not be changed!"), __LINE__, __FUNCTION__, *GameFeatureName.ToString()))
 		{
-			continue;;
+			continue;
 		}
 
 		static const FGameFeaturePluginLoadComplete EmptyCallback{};
@@ -215,4 +218,39 @@ void UGameplayUtilsLibrary::SetGameFeaturesEnabled(bool bEnable, const TArray<FN
 			GameFeaturesSubsystem.UnloadGameFeaturePlugin(GameFeatureURL, EmptyCallback, UUtilsLibrary::IsEditor());
 		}
 	}
+}
+
+/*********************************************************************************************
+ * Global functions
+ ********************************************************************************************* */
+
+void AsyncTaskGameThread(const UObject* WorldContextObject, TFunction<void()> Function)
+{
+	const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull) : nullptr;
+	if (!ensureMsgf(World, TEXT("ASSERT: [%i] %hs:\n'World' is not valid!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(Function, TEXT("ASSERT: [%i] %hs:\n'Function' is not bound!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+#if WITH_EDITOR
+	if (UUtilsLibrary::IsEditor())
+	{
+		// In editor, redirect the callback to the correct world context to avoid issues with PIE multiplayer
+		AsyncTask(ENamedThreads::GameThread, [WeakWorld = TWeakObjectPtr(World), Function = MoveTemp(Function)]() mutable -> void
+		{
+			if (const UWorld* InWorld = WeakWorld.Get())
+			{
+				InWorld->GetTimerManager().SetTimerForNextTick([Function = MoveTemp(Function)]() mutable -> void
+				{
+					Function();
+				});
+			}
+		});
+		return;
+	}
+#endif
+
+	// Direct dispatch in non-editor builds
+	AsyncTask(ENamedThreads::GameThread, MoveTemp(Function));
 }

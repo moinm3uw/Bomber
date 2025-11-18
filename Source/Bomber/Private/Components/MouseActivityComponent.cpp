@@ -1,14 +1,17 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/MouseActivityComponent.h"
-//---
+
+// Bomber
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
+#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "GameFramework/PlayerController.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MouseActivityComponent)
 
 // Sets default values for this component's properties
@@ -125,6 +128,14 @@ void UMouseActivityComponent::SetMouseVisibility(bool bShouldShow)
 void UMouseActivityComponent::SetMouseFocusOnUI(bool bFocusOnUI)
 {
 	APlayerController& PC = GetPlayerControllerChecked();
+
+	if (UUtilsLibrary::IsPIE()
+	    && UMultiplayerUtilsLibrary::IsMultiplayerGame()
+	    && !UUtilsLibrary::IsViewportFocused())
+	{
+		// In editor multiplayer, do not change focus for non-focused instances, since it steals focus from the current window
+		return;
+	}
 
 	if (bFocusOnUI)
 	{

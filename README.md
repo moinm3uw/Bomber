@@ -1,5 +1,5 @@
 <a href="https://github.com/JanSeliv/Bomber/blob/main/LICENSE">![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)</a>
-<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.5-dea309?style=flat&logo=unrealengine)</a>
+<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.6-dea309?style=flat&logo=unrealengine)</a>
 
 <br/>
 <p align="center">
@@ -11,7 +11,9 @@
 <br/>
 <a href="https://store.steampowered.com/app/1873240/Bomberrage/">Steam</a>
 ·
-<a href="https://trello.com/b/1jbKvyeh/bomber-kanban">Kanban Board</a>
+<a href="https://trello.com/b/1jbKvyeh/bomber-kanban">Board</a>
+·
+<a href="https://bigjangames.website/bomberrage">Website</a>
 <br/>
 <br/>
 <img src="https://github.com/user-attachments/assets/835bfb02-76ee-4373-a00b-543a0bde7057" width="1440">
@@ -59,7 +61,7 @@ git submodule update --init --recursive
 
 ## 💻 Unreal Project Requirements
 
-- **Unreal Engine 5.5**
+- **Unreal Engine 5.6**
 - **Project Size:** ~30GB (build ~3GB)
 
 The project has been tested and launching the editor on the following platforms:
@@ -73,6 +75,8 @@ The project has been tested and launching the editor on the following platforms:
 
 This project could be useful for learners, demonstrating next features:
 
+- Gameplay Ability System (GAS)
+- Mover 2.0
 - Steam multiplayer support for 4 players (via Steam Friends)
 - Modern networking: the Push Model and Iris replication
 - Procedurally generated playfield
@@ -82,6 +86,7 @@ This project could be useful for learners, demonstrating next features:
 - Complex cinematics (Level Sequences)
 - World Partition
 - Model-View-ViewModel (MVVM) UI Pattern
+- Localization
 - Data-Driven Design (Data Assets, Data Tables, Data Registries, _see below_)
 
 Despite this project is fully written in C++, it's extremely **blueprint-friendly**:
@@ -105,6 +110,19 @@ Next [plugins](https://github.com/JanSeliv/Bomber/tree/master/Plugins) were deve
 Stay updated with the current progress and plans on the [Trello board](https://trello.com/b/1jbKvyeh/bomber-kanban).
 
 ## 📅 Changelog
+#### `2025-11-17:`
+- Updated to **Unreal Engine 5.6**.
+- Migrated the project to use **Gameplay Ability System (GAS)** for actions (bombs, damage, powerups) and **Mover 2.0** for movement, significantly improving the responsiveness in multiplayer for players with high ping.
+- Implemented **pick up toast** for powerups, which is especially useful during intense gameplay to track easily the number of power-ups:
+> ![PickupToast](https://github.com/user-attachments/assets/48dcb22d-91fd-4285-b695-0283db0f62c6)
+- Players now have proper **death anims** when eliminated, animation by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
+> ![DeathAnim](https://github.com/user-attachments/assets/4d94969d-c115-4e81-b8c2-285a636b7968)
+- Updated progression visualization to display player bombs instead of stars by [Maksim Shashkov](https://www.artstation.com/maksimshashkov) and [Valeriy Rotermel](https://github.com/moinm3uw)
+> ![BombStars](https://github.com/user-attachments/assets/152730fa-677d-43cc-a5f8-5cbbeeff32dc)
+- Optimized level generation with a single-pass algorithm for large level support, reducing 40x40 map creation time from >1000ms to under 1ms, allowing to build massive maps:
+> ![LargeMap](https://github.com/user-attachments/assets/b0f2ab54-00a1-416d-aefb-706b3f3538a3)
+- Moved level generation to background thread, reducing main thread time from 60ms to 13ms.
+ ---
 #### `2025-06-30:`
 - Updated to **Unreal Engine 5.5**.
 - Uploaded the game to the **Steam** for public testing: [store page](https://store.steampowered.com/app/1873240/Bomberrage/).
@@ -112,7 +130,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 - Added **Android** support (experimental, with some issues).
 - Improved performance with up to 300% gain → [results](https://docs.google.com/spreadsheets/d/10pPYJZAu-qeA9zKYOt6jn8ioxhOD58mFPgjdrATaN84/edit?usp=sharing).
 - Improved networking efficiency by up to 642% with **Push Model** and **Iris** replication → [results](https://trello.com/c/A3kK1Uqj).
-- Finished 4 skins for each character by [Kateryna Shchetinina](https://www.artstation.com/kateseliv), with skins unlock mechanic by [Valeriy Rotermel](https://github.com/h4rdmol):
+- Finished 4 skins for each character by [Kateryna Shchetinina](https://www.artstation.com/kateseliv), with skins unlock mechanic by [Valeriy Rotermel](https://github.com/moinm3uw):
 > ![NewSkins](https://github.com/user-attachments/assets/11decad0-fa4c-45ff-ba33-9a6e2d805773)
 - Added `Play Area Surrounder` mod on medium difficulty surrounding the play area with walls over time by [Anton Selivanov](https://github.com/antokior)
 > ![PlayAreaSurrounder](https://github.com/user-attachments/assets/1ff184f3-ba25-4315-8ca1-df87d213dfb4)
@@ -120,7 +138,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 > ![BombStorm](https://github.com/user-attachments/assets/a7bed05d-0e83-4cf4-aa17-b45744aea124)
 - New Bastet bomb by [Maksim Shashkov](https://www.artstation.com/maksimshashkov):
 > ![BastetBomb](https://github.com/user-attachments/assets/27bcf3fe-2ea0-429b-8689-07b3ac4a482b)
-- Progression System has been updated with new star mesh by [Kateryna Shchetinina](https://www.artstation.com/kateseliv) and implementation by [Valeriy Rotermel](https://github.com/h4rdmol):
+- Progression System has been updated with new star mesh by [Kateryna Shchetinina](https://www.artstation.com/kateseliv) and implementation by [Valeriy Rotermel](https://github.com/moinm3uw):
 > ![NewStars](https://github.com/user-attachments/assets/66160a94-d192-4bf7-8f99-cfa9854be7eb)
 - Implemented the Loading Screen on launching the game and joining a multiplayer session:
 > ![LoadingScreen](https://github.com/user-attachments/assets/084270ca-abc3-44c8-bd44-ae1ce26d1e25)
@@ -143,7 +161,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
 > ![Rails](https://github.com/JanSeliv/Bomber/assets/20540872/aa496ae1-a6bb-41d1-a578-566d1af48170)
 - Unique **Bomb VFX** for each character:
 > ![BombVFXs](https://github.com/JanSeliv/Bomber/assets/20540872/3163ade3-7f5f-40be-9c9e-69c0426b8a29)
-- Implemented **[Progression System](https://github.com/h4rdmol/ProgressionSystem)** by [Valeriy Rotermel](https://github.com/h4rdmol) that unlocks new playable characters as you progress in the game:
+- Implemented **[Progression System](https://github.com/moinm3uw/ProgressionSystem)** by [Valeriy Rotermel](https://github.com/moinm3uw) that unlocks new playable characters as you progress in the game:
 > ![ProgressionSystem](https://github.com/user-attachments/assets/742ad861-f077-44f8-a6ae-048665b8a77f)
 - New **Box and Wall meshes** for the Maya level by [Maksim Shashkov](https://www.artstation.com/maksimshashkov):
 > ![NewBoxAndWall](https://github.com/user-attachments/assets/01e72eb6-ca89-4392-957c-92aba9663cdc)
@@ -197,7 +215,7 @@ Stay updated with the current progress and plans on the [Trello board](https://t
  - Fori and Hugo characters got additional second skins by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/106404153-23ff2c00-6432-11eb-8cb1-d3a7bc33b51b.gif)
  ---
-#### `2025-10-25`:
+#### `2020-10-25`:
  - Updated to **Unreal Engine 4.25**.
  - Added the Hugo and Fori characters by [Kateryna Shchetinina](https://www.artstation.com/kateseliv):
  > ![](https://user-images.githubusercontent.com/20540872/97118032-125a0a00-1708-11eb-8256-4bec419b1d48.gif)
@@ -226,7 +244,7 @@ right side):
 - **Maksim Shashkov** - Level Design & Level Art - [Artstation](https://www.artstation.com/maksimshashkov)
 - **Kateryna Shchetinina** - Characters & Animations - [Artstation](https://www.artstation.com/kateseliv)
 - **Yevhenii Oksenchuk** - Game Design (Audio, UI, and Cinematics) - [Telegram](https://t.me/ComeThird)
-- **Valeriy Rotermel** - [Progression System](https://github.com/h4rdmol/ProgressionSystem) - [GitHub](https://github.com/h4rdmol)
+- **Valeriy Rotermel** - [Progression System](https://github.com/moinm3uw/ProgressionSystem) - [GitHub](https://github.com/moinm3uw)
 - **Anton Selivanov** - Foot Trails | Play Area Surrounder - [GitHub](https://github.com/antokior)
 
 Special thanks to the following companies for providing their licenses to support our open source development:

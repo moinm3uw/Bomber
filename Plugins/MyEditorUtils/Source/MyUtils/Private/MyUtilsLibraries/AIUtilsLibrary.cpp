@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/AIUtilsLibrary.h"
-//---
+
+// UE
 #include "AIController.h"
 #include "BrainComponent.h"
-#include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
-//---
+#include "NavigationSystem.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AIUtilsLibrary)
 
 // Finds and transform Navigation Mesh
@@ -35,15 +36,15 @@ void UAIUtilsLibrary::RebuildNavMesh(UObject* WorldContextObject, const FTransfo
 bool UAIUtilsLibrary::CanRebuildNavMesh(const UNavigationSystemV1* NavSys)
 {
 	if (!ensureMsgf(NavSys, TEXT("ASSERT: [%i] %s:\n'NavSys' is null!"), __LINE__, *FString(__FUNCTION__))
-		|| !ensureMsgf(!NavSys->IsNavigationSystemStatic(), TEXT("ASSERT: [%i] %s:\n'Navigation System' is configured as static!"), __LINE__, *FString(__FUNCTION__)))
+	    || !ensureMsgf(!NavSys->IsNavigationSystemStatic(), TEXT("ASSERT: [%i] %s:\n'Navigation System' is configured as static!"), __LINE__, *FString(__FUNCTION__)))
 	{
 		return false;
 	}
 
 	const ANavigationData* NavData = Cast<ANavigationData>(NavSys->GetMainNavData());
 	return ensureMsgf(NavData, TEXT("ASSERT: [%i] %s:\n'NavData' is null!"), __LINE__, *FString(__FUNCTION__))
-		&& ensureMsgf(NavData->GetRuntimeGenerationMode() == ERuntimeGenerationType::Dynamic, TEXT("ASSERT: [%i] %s:\n'RuntimeGeneration' has to be 'Dynamic' in the Project Settings!"), __LINE__, *FString(__FUNCTION__))
-		&& ensureMsgf(NavData->IsRegistered(), TEXT("ASSERT: [%i] %s:\n'NavData' is not registered!"), __LINE__, *FString(__FUNCTION__));
+	       && ensureMsgf(NavData->GetRuntimeGenerationMode() == ERuntimeGenerationType::Dynamic, TEXT("ASSERT: [%i] %s:\n'RuntimeGeneration' has to be 'Dynamic' in the Project Settings!"), __LINE__, *FString(__FUNCTION__))
+	       && ensureMsgf(NavData->IsRegistered(), TEXT("ASSERT: [%i] %s:\n'NavData' is not registered!"), __LINE__, *FString(__FUNCTION__));
 }
 
 // Returns true if the AI Controller is running any behavior tree

@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UtilityLibraries/MyViewModelUtilsLibrary.h"
-//---
+
+// Bomber
 #include "Bomber.h"
-//---
+
+// UE
 #include "Components/SlateWrapperTypes.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyViewModelUtilsLibrary)
 
 // Is used a lot by the UI View Models as 'Conversion Function' to show or hide own widget

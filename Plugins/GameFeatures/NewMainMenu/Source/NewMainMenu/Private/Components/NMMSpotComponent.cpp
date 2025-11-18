@@ -1,29 +1,33 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/NMMSpotComponent.h"
-//---
-#include "Bomber.h"
-#include "NMMUtils.h"
-#include "Components/MapComponent.h"
-#include "Controllers/MyPlayerController.h"
+
+// NMM
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
+#include "NMMUtils.h"
+#include "Subsystems/NMMBaseSubsystem.h"
+#include "Subsystems/NMMCameraSubsystem.h"
+#include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Bomber.h"
+#include "Components/MapComponent.h"
+#include "Controllers/MyPlayerController.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "MyDataTable/MyDataTable.h"
 #include "MyUtilsLibraries/CinematicUtils.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "Subsystems/NMMBaseSubsystem.h"
-#include "Subsystems/NMMCameraSubsystem.h"
-#include "Subsystems/NMMSpotsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
-#include "LevelSequencePlayer.h"
-#include "NativeGameplayTags.h"
+
+// UE
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
-//---
+#include "LevelSequencePlayer.h"
+#include "NativeGameplayTags.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMSpotComponent)
 
 // Skeletal mesh actor should own this tag, used to prevent initializing menu spots on other skeletal mesh actors, like from cinematics
@@ -48,9 +52,9 @@ bool UNMMSpotComponent::IsSpotAvailable() const
 {
 	const UMySkeletalMeshComponent* MeshComponent = GetMySkeletalMeshComponent();
 	return IsActive()
-		&& MeshComponent
-		&& MeshComponent->IsActive()
-		&& MeshComponent->IsVisible();
+	       && MeshComponent
+	       && MeshComponent->IsActive()
+	       && MeshComponent->IsVisible();
 }
 
 // Returns true if this spot current skin is unlocked and can be selected by player
@@ -103,7 +107,7 @@ ULevelSequence* UNMMSpotComponent::GetMasterSequence() const
 void UNMMSpotComponent::StopMasterSequence()
 {
 	if (MasterPlayerInternal
-		&& MasterPlayerInternal->IsPlaying())
+	    && MasterPlayerInternal->IsPlaying())
 	{
 		SetCinematicByState(ENMMState::None);
 	}
@@ -162,8 +166,8 @@ void UNMMSpotComponent::BeginPlay()
 
 	const UWorld* World = GetWorld();
 	if (!World
-		|| World->bIsTearingDown
-		|| World->IsNetMode(NM_DedicatedServer))
+	    || World->bIsTearingDown
+	    || World->IsNetMode(NM_DedicatedServer))
 	{
 		// Don't process spot if world is restarting (which could happen since module could be loaded very late, right after request of restarting a level)
 		// or if it's a dedicated server (when client-only mode is running)
@@ -175,7 +179,7 @@ void UNMMSpotComponent::BeginPlay()
 	if (!GetOwner()->ActorHasTag(ExpectedTagName))
 	{
 		UE_LOG(LogBomber, Log, TEXT("[%i] %hs: Skip initializing '%s' spot for '%s' actor, it doesn't have '%s' tag."),
-		       __LINE__, __FUNCTION__, *GetNameSafe(this), *GetNameSafe(GetOwner()), *ExpectedTagName.ToString());
+		    __LINE__, __FUNCTION__, *GetNameSafe(this), *GetNameSafe(GetOwner()), *ExpectedTagName.ToString());
 		return;
 	}
 
@@ -266,8 +270,8 @@ void UNMMSpotComponent::LoadMasterSequencePlayer()
 		const TAsyncLoadPriority Priority = IsCurrentSpot() ? FStreamableManager::AsyncLoadHighPriority : FStreamableManager::DefaultAsyncLoadPriority;
 		FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
 		StreamableManager.RequestAsyncLoad(FoundMasterSequence.ToSoftObjectPath(),
-		                                   FStreamableDelegate::CreateUObject(this, &ThisClass::OnMasterSequenceLoaded, FoundMasterSequence),
-		                                   Priority);
+		    FStreamableDelegate::CreateUObject(this, &ThisClass::OnMasterSequenceLoaded, FoundMasterSequence),
+		    Priority);
 	}
 }
 
@@ -374,7 +378,7 @@ void UNMMSpotComponent::OnGameStateChanged_Implementation(ECurrentGameState Curr
 
 	switch (CurrentGameState)
 	{
-	case ECurrentGameState::Menu:
+		case ECurrentGameState::Menu:
 		{
 			// Reset the sequence to the beginning to make it ready for the next play
 			constexpr bool bKeepCamera = true;
@@ -382,7 +386,7 @@ void UNMMSpotComponent::OnGameStateChanged_Implementation(ECurrentGameState Curr
 			break;
 		}
 
-	default: break;
+		default: break;
 	}
 }
 
@@ -393,24 +397,24 @@ void UNMMSpotComponent::OnNewMainMenuStateChanged_Implementation(ENMMState NewSt
 
 	switch (NewState)
 	{
-	case ENMMState::Idle:
-		if (bIsCurrentSpot)
-		{
-			ApplyMeshOnPlayer();
-		}
-		else
-		{
-			// Stop other spots from playing their cinematic
-			StopMasterSequence();
-		}
-		break;
-	case ENMMState::Cinematic:
-		if (bIsCurrentSpot)
-		{
-			MarkCinematicAsSeen();
-		}
-		break;
-	default: break;
+		case ENMMState::Idle:
+			if (bIsCurrentSpot)
+			{
+				ApplyMeshOnPlayer();
+			}
+			else
+			{
+				// Stop other spots from playing their cinematic
+				StopMasterSequence();
+			}
+			break;
+		case ENMMState::Cinematic:
+			if (bIsCurrentSpot)
+			{
+				MarkCinematicAsSeen();
+			}
+			break;
+		default: break;
 	}
 
 	if (bIsCurrentSpot)
@@ -428,7 +432,7 @@ void UNMMSpotComponent::OnMasterSequencePaused_Implementation()
 {
 	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
 	if (!MyPC
-		|| UNMMUtils::GetMainMenuState() != ENMMState::Cinematic)
+	    || UNMMUtils::GetMainMenuState() != ENMMState::Cinematic)
 	{
 		// Don't handle if not playing Main Part or is not local player
 		return;
@@ -448,12 +452,12 @@ void UNMMSpotComponent::OnCameraRailTransitionStateChanged_Implementation(ENMMCa
 {
 	switch (CameraRailTransitionStateChanged)
 	{
-	case ENMMCameraRailTransitionState::HalfwayTransition:
-		if (IsCurrentSpot())
-		{
-			ApplyMeshOnPlayer();
-		}
-		break;
-	default: break;
+		case ENMMCameraRailTransitionState::HalfwayTransition:
+			if (IsCurrentSpot())
+			{
+				ApplyMeshOnPlayer();
+			}
+			break;
+		default: break;
 	}
 }

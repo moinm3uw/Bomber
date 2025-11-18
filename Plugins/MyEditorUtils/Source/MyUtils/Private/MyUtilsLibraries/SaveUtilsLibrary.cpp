@@ -1,17 +1,19 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/SaveUtilsLibrary.h"
-//---
+
+// MyUtils
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "TimerManager.h"
+
+// UE
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/SaveGame.h"
 #include "HAL/FileManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/ConfigCacheIni.h"
-//---
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SaveUtilsLibrary)
 
 // Is code alternative of blueprintable UGameplayStatics::AsyncLoadGameFromSlot, which does the same, but ensures callback will be called in the correct world context, even in PIE multiplayer
@@ -19,14 +21,17 @@ void USaveUtilsLibrary::AsyncLoadGameFromSlot(const UObject* WorldContextObject,
 {
 	const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull) : nullptr;
 	if (!ensureMsgf(World, TEXT("ASSERT: [%i] %hs:\n'World' is not valid!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(Callback.IsBound(), TEXT("ASSERT: [%i] %hs:\n'Callback' is not bound!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(Callback.IsBound(), TEXT("ASSERT: [%i] %hs:\n'Callback' is not bound!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
 
 	// Outside the editor, UGameplayStatics::AsyncLoadGameFromSlot can be used directly as is, since each instance of the game runs in its own process
 	FAsyncLoadGameFromSlotDelegate MappedCallback;
-	MappedCallback.BindLambda([Callback](const FString&, const int32, USaveGame* LoadedSaveGame) { Callback.Execute(LoadedSaveGame); });
+	MappedCallback.BindLambda([Callback](const FString&, const int32, USaveGame* LoadedSaveGame)
+	{
+		Callback.Execute(LoadedSaveGame);
+	});
 
 #if WITH_EDITOR
 	if (UUtilsLibrary::IsEditor())
@@ -82,7 +87,7 @@ bool USaveUtilsLibrary::CanSaveConfig(const UObject* Object)
 
 	const UClass* ObjectClass = Object ? Object->GetClass() : nullptr;
 	if (!ObjectClass
-		|| !ObjectClass->HasAnyClassFlags(CLASS_Config))
+	    || !ObjectClass->HasAnyClassFlags(CLASS_Config))
 	{
 		// Object is not marked with Config flag
 		return false;
@@ -97,7 +102,7 @@ bool USaveUtilsLibrary::CanSaveConfig(const UObject* Object)
 
 	const FString DestIniFilename = Object->GetDefaultConfigFilename();
 	if (!FPaths::FileExists(DestIniFilename)
-		|| IFileManager::Get().IsReadOnly(*DestIniFilename))
+	    || IFileManager::Get().IsReadOnly(*DestIniFilename))
 	{
 		// Config was not found or is read-only
 		return false;

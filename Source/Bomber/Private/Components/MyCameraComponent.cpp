@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Components/MyCameraComponent.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/GameStateDataAsset.h"
@@ -12,11 +13,11 @@
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyCameraComponent)
 
 // If set, returns additional FOV modifier scaled by level size and current screen aspect ratio
@@ -54,7 +55,7 @@ float FCameraDistanceParams::CalculateDistanceToFitViewToFOV(const FVector2D& Vi
 	// So the camera will be able to align vertical grid to the wide screen as well as horizontal grid to the vertical screen
 	const bool bIsWideScreen = UUtilsLibrary::GetViewportAspectRatioAxisConstraint() == AspectRatio_MaintainYFOV;
 	const float HorizontalDistance = bIsWideScreen ? ViewSizeUU.Y / NewFOV : (ViewSizeUU.Y / 2.f) * NewFOV; // view is wider than higher on wide or vertical screen
-	const float VerticalDistance = bIsWideScreen ? ViewSizeUU.X / (2.f * NewFOV) : ViewSizeUU.X / NewFOV;   // view is longer than wider on wide or vertical screen
+	const float VerticalDistance = bIsWideScreen ? ViewSizeUU.X / (2.f * NewFOV) : ViewSizeUU.X / NewFOV; // view is longer than wider on wide or vertical screen
 
 	return FMath::Max(HorizontalDistance, VerticalDistance);
 }
@@ -75,7 +76,7 @@ UMyCameraComponent::UMyCameraComponent()
 
 	// Camera defaults
 	SetConstraintAspectRatio(false); // viewport without black borders
-#if WITH_EDITOR // [Editor]
+#if WITH_EDITOR //[Editor]
 	bCameraMeshHiddenInGame = !FEditorUtilsLibrary::IsEditor();
 #endif
 
@@ -95,7 +96,7 @@ float UMyCameraComponent::GetCameraManagerFOV() const
 }
 
 // Set the location between players
-bool UMyCameraComponent::UpdateLocation(float DeltaTime/* = 0.f*/)
+bool UMyCameraComponent::UpdateLocation(float DeltaTime /* = 0.f*/)
 {
 	auto MoveCamera = [this, DeltaTime](FVector NewLocation)
 	{
@@ -159,7 +160,7 @@ float UMyCameraComponent::GetCameraDistanceToCells(const FCells& Cells) const
 	float CurrentFOV = GetCameraManagerFOV();
 
 	// If is set in params, additional FOV modifier will be applied
-	DistanceParamsInternal.CalculateFitViewAdditiveAngle(/*InOut*/CurrentFOV);
+	DistanceParamsInternal.CalculateFitViewAdditiveAngle(/*InOut*/ CurrentFOV);
 
 	// Instead of changing real FOV, we can just change the distance to the camera to avoid the fisheye effect.
 	// Calculate how far away the camera should be placed to fit the given view by specified FOV
@@ -167,7 +168,7 @@ float UMyCameraComponent::GetCameraDistanceToCells(const FCells& Cells) const
 	float CameraDistance = FCameraDistanceParams::CalculateDistanceToFitViewToFOV(ViewSizeUU, CurrentFOV);
 
 	// If is set in params, cut camera distance by min value
-	DistanceParamsInternal.LimitToMinDistance(/*InOut*/CameraDistance);
+	DistanceParamsInternal.LimitToMinDistance(/*InOut*/ CameraDistance);
 
 	return CameraDistance;
 }
@@ -266,7 +267,7 @@ void UMyCameraComponent::OnAspectRatioChanged_Implementation(float NewAspectRati
 }
 
 // Starts viewing through this camera
-void UMyCameraComponent::PossessCamera(bool bBlendCamera/* = true*/)
+void UMyCameraComponent::PossessCamera(bool bBlendCamera /* = true*/)
 {
 	AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController();
 	if (!MyPC)

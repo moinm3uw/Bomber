@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/ViewModel/MVVM_MyCharacterBase.h"
-//---
+
+// Bomber
 #include "AdvancedSteamFriendsLibrary.h"
 #include "DataAssets/UIDataAsset.h"
 #include "GameFramework/MyPlayerState.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MVVM_MyCharacterBase)
 
 // Is overridden to prevent constructing this View Model, but only child classes
@@ -63,7 +64,7 @@ void UMVVM_MyCharacterBase::UpdateAvatar()
 	{
 		// Try to obtain online avatar, if not found - human default will be used
 		EBlueprintAsyncResultSwitch Result = EBlueprintAsyncResultSwitch::OnFailure;
-		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/Result);
+		UTexture2D* OnlineAvatar = UAdvancedSteamFriendsLibrary::GetSteamFriendAvatar(MyPlayerState->GetUniqueId(), /*out*/ Result);
 		if (OnlineAvatar
 		    && Result == EBlueprintAsyncResultSwitch::OnSuccess)
 		{
@@ -85,7 +86,7 @@ void UMVVM_MyCharacterBase::OnViewModelConstruct_Implementation(const UUserWidge
 {
 	Super::OnViewModelConstruct_Implementation(UserWidget);
 
-	BIND_ON_PLAYER_STATE_READY(this, ThisClass::OnPlayerStateReady, GetCharacterId());
+	BIND_ON_PLAYER_STATE_READY_ID(this, ThisClass::OnPlayerStateReady, GetCharacterId());
 }
 
 // Is called when this View Model is destructed
@@ -103,11 +104,7 @@ void UMVVM_MyCharacterBase::OnViewModelDestruct_Implementation()
 // Called when any player state is initialized and its assigned character is ready
 void UMVVM_MyCharacterBase::OnPlayerStateReady_Implementation(AMyPlayerState* PlayerState, int32 CharacterID)
 {
-	if (CharacterID != GetCharacterId())
-	{
-		// This View Model is not for this character
-		return;
-	}
+	checkf(CharacterID == GetCharacterId(), TEXT("ERROR: [%i] %hs:\n'CharacterID' is different than owned!"), __LINE__, __FUNCTION__);
 
 	checkf(PlayerState, TEXT("ERROR: [%i] %hs:\n'PlayerState' is null!"), __LINE__, __FUNCTION__);
 

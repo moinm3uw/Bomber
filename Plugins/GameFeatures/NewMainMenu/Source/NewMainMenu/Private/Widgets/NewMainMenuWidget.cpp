@@ -1,20 +1,24 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Widgets/NewMainMenuWidget.h"
-//---
-#include "NMMUtils.h"
-#include "Components/MySkeletalMeshComponent.h"
+
+// NMM
 #include "Components/NMMSpotComponent.h"
-#include "Controllers/MyPlayerController.h"
+#include "NMMUtils.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Components/MySkeletalMeshComponent.h"
+#include "Controllers/MyPlayerController.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UI/SettingsWidget.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NewMainMenuWidget)
 
 // Called after the underlying slate widget is constructed
@@ -85,7 +89,7 @@ void UNewMainMenuWidget::OnPlayButtonPressed()
 	const UNMMSpotComponent* MainMenuSpot = UNMMSpotsSubsystem::Get().GetCurrentSpot();
 	const FNMMCinematicRow& CinematicRow = MainMenuSpot ? MainMenuSpot->GetCinematicRow() : FNMMCinematicRow::Empty;
 	if (!ensureMsgf(CinematicRow.IsValid(), TEXT("ASSERT: [%i] %hs:\n'CinematicRow' is not valid!"), __LINE__, __FUNCTION__)
-		|| !MainMenuSpot->IsSpotAvailable())
+	    || !MainMenuSpot->IsSpotAvailable())
 	{
 		// The spot is locked
 		return;
@@ -93,7 +97,7 @@ void UNewMainMenuWidget::OnPlayButtonPressed()
 
 	if (!MainMenuSpot->IsSpotSkinAvailable())
 	{
-		// the spot's skin unavailable 
+		// the spot's skin unavailable
 		return;
 	}
 
@@ -143,7 +147,7 @@ void UNewMainMenuWidget::OnNextSkinButtonPressed()
 {
 	UNMMSpotComponent* MainMenuSpot = UNMMSpotsSubsystem::Get().GetCurrentSpot();
 	if (!ensureMsgf(MainMenuSpot, TEXT("ASSERT: 'MainMenuSpot' is not valid"))
-		|| !MainMenuSpot->IsSpotAvailable())
+	    || !MainMenuSpot->IsSpotAvailable())
 	{
 		// The spot is locked
 		return;

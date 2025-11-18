@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
-//---
+
+// MyUtils
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
+
+// UE
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MultiplayerUtilsLibrary)
 
 // Returns true if running from the server or party-leader client

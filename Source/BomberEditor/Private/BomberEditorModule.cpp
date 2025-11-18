@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "BomberEditorModule.h"
-//---
+
+// Bomber
 #include "AttachedMeshCustomization.h"
+#include "BmrPowerupTagCustomization.h"
 #include "PlayerTagCustomization.h"
-//---
+
+// UE
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_GAME_MODULE(FBomberEditorModule, BomberEditor);
@@ -16,6 +19,7 @@ void FBomberEditorModule::StartupModule()
 {
 	FAttachedMeshCustomization::RegisterAttachedMeshCustomization();
 	FPlayerTagCustomization::RegisterPlayersTagCustomization();
+	FBmrPowerupTagCustomization::RegisterPowerupTagCustomization();
 }
 
 // Called before the module is unloaded, right before the module object is destroyed
@@ -23,4 +27,5 @@ void FBomberEditorModule::ShutdownModule()
 {
 	FAttachedMeshCustomization::UnregisterAttachedMeshCustomization();
 	FPlayerTagCustomization::UnregisterPlayersTagCustomization();
+	FBmrPowerupTagCustomization::UnregisterPowerupTagCustomization();
 }

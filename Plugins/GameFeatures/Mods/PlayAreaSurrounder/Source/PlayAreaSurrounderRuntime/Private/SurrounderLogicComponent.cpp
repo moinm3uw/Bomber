@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "SurrounderLogicComponent.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(SurrounderLogicComponent)
 
 // Sets default values for this component's properties

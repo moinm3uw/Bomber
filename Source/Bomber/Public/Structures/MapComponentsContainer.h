@@ -3,11 +3,14 @@
 #pragma once
 
 #include "Iris/ReplicationState/IrisFastArraySerializer.h"
-//---
+
+// Bomber
 #include "Cell.h"
 #include "PoolManagerTypes.h" // FPoolObjectHandle
+
+// UE
 #include "Engine/NetSerialization.h" // FVector_NetQuantize
-//---
+
 #include "MapComponentsContainer.generated.h"
 
 /*********************************************************************************************
@@ -23,7 +26,7 @@ struct FCell;
 class UMapComponent;
 
 /**
- * Represents a specification for a map component, inheriting from FFastArraySerializerItem 
+ * Represents a specification for a map component, inheriting from FFastArraySerializerItem
  * to take advantage of its serialization and network replication capabilities.
  * PreReplicatedRemove and PostReplicatedAdd can be added to handle custom logic.
  */
@@ -167,7 +170,10 @@ public:
 template <>
 struct BOMBER_API TStructOpsTypeTraits<FMapComponentsContainer> : public TStructOpsTypeTraitsBase2<FMapComponentsContainer>
 {
-	enum { WithNetDeltaSerializer = true };
+	enum
+	{
+		WithNetDeltaSerializer = true
+	};
 };
 
 template <typename Type, typename SerializerType>

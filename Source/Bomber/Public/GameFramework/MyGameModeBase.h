@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/GameModeBase.h"
-//---
+
 #include "MyGameModeBase.generated.h"
 
 /**

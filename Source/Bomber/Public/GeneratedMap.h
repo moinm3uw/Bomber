@@ -3,13 +3,18 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
-#include "Bomber.h"
+
+// Bomber
 #include "Structures/Cell.h"
-#include "Structures/MapComponentsContainer.h"
 #include "Structures/GeneratedMapSettings.h"
-//---
+#include "Structures/MapComponentsContainer.h"
+
+// UE
+#include "AbilitySystemInterface.h"
+
 #include "GeneratedMap.generated.h"
+
+enum class EActorType : uint8;
 
 class UMapComponent;
 
@@ -18,7 +23,8 @@ class UMapComponent;
  * @see Access its data with UGeneratedMapDataAsset (Content/Bomber/DataAssets/DA_Levels).
  */
 UCLASS()
-class BOMBER_API AGeneratedMap final : public AActor
+class BOMBER_API AGeneratedMap final : public AActor,
+                                       public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -33,13 +39,6 @@ public:
 	 * Is called both on server and client. */
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
 	FOnGeneratedLevelActors OnGeneratedLevelActors;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPostDestroyedLevelActors, const TSet<FCell>&, DestroyedCells);
-
-	/** Called each time when any level actors were destroyed.
-	 * @warning is called only on the server as destroying level actors is an authority-only operation, use UMapComponent::OnPostRemovedFromLevel for both server and clients. */
-	UPROPERTY(BlueprintCallable, BlueprintAssignable, Transient, Category = "C++")
-	FOnPostDestroyedLevelActors OnPostDestroyedLevelActors;
 
 	/** Contains outside added dangerous cells, is useful for Game Features to notify bots that some cells are not safe.
 	 * @todo JanSeliv 3JBOo7L8 Remove after NewAI implementation. */
@@ -67,6 +66,14 @@ public:
 	 * Returns overridden if is set in the Class Defaults of the Generated Map itself, otherwise defaults from the Data Asset. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
 	const FGeneratedMapSettings& GetGenerationSetting() const;
+
+	/** Allows to override the default settings used for generating the map.
+	 * Is useful for mods, game features and cheats to change the level generation settings in runtime.
+	 * @param bEnableOverride If true, the InSettings will be used instead of the default ones from Data Asset.
+	 * @param InSettings The new settings to use for generating the map, if bEnableOverride is true.
+	 * @warning It will not regenerate the level automatically, call GenerateLevelActors() manually or restart the game (change the game state). */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (AutoCreateRefTerm = "InSettings"))
+	void SetOverriddenGenerationSettings(bool bEnableOverride, const FGeneratedMapSettings& InSettings);
 
 	/* Allows to change the size for generated map in runtime, it will automatically regenerate the level.
 	 * Is server-only function, so it will replicate the new transform to clients.
@@ -120,8 +127,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	void AddToGrid(UMapComponent* AddedComponent);
 
-	/** Internal client-only method to resolve a newly spawned Map Component. 
-	 * Unlike actors, components lack automatic FNetGUID resolution if the reference replicates 
+	/** Internal client-only method to resolve a newly spawned Map Component.
+	 * Unlike actors, components lack automatic FNetGUID resolution if the reference replicates
 	 * before the component is spawned. Manually binds the component to its replicated entry. */
 	void ResolveSpawnedMapComponent(UMapComponent& AddedComponent);
 
@@ -158,15 +165,17 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (DefaultToSelf = "DestroyCauser"))
 	void DestroyLevelActorsByType(EActorType ActorsType, UObject* DestroyCauser = nullptr);
 
+	/** Is called before Destroy happening, which only unregisters the Map Component.
+	 * It does not destroy its owner actor yet, so it wil remain on the scene as not interactable object until fully destroyed.
+	 * Is part of DestroyLevelActor() flow, but might be useful to call directly in cases when need to keep actor on level disabled (e.g: dead player). */
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (DefaultToSelf = "Causer"))
+	void RemoveFromGrid(UMapComponent* MapComponent, UObject* RemoveCauser = nullptr);
+
 	/** Applies the snapped cell to the specified Map Component.
 	 * @param MapComponent The Map Component to apply the snapped cell.
 	 * @return true if changed: new cell was applied to given Map Component; false is already snapped or failed. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
 	bool SetNearestCell(UMapComponent* MapComponent);
-
-	/** Returns true if specified map component has non-generated owner that is manually dragged to the scene. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	bool IsDraggedMapComponent(const UMapComponent* MapComponent) const;
 
 	/** Takes transform and returns aligned copy allowed to be used as actor transform for this map.
 	 * @param ActorTransform The transform to align.
@@ -177,6 +186,26 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "ActorTransform"))
 	static FTransform ActorTransformToGridTransform(const FTransform& ActorTransform);
 
+	/*********************************************************************************************
+	 * Gameplay Ability System (GAS)
+	 ********************************************************************************************* */
+public:
+	/** Returns ability system component that is used to manage environmental abilities.
+	 * In blueprints, can be obtained via regular Get Ability System Component call from ability interface. */
+	virtual FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	UAbilitySystemComponent& GetAbilitySystemComponentChecked() const;
+
+protected:
+	/** Ability System Component that is used to manage abilities (like place bomb) and attributes (like powerups) for owned player. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Ability System Component"))
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+
+	/** Attribute set for damage (e.g: environmental explosions) and health (e.g: damaging the level).
+	 * For read access, can be obtained with UBmrHealthAttributeSet::GetHealthAttributeSet(Owner) method.
+	 * For write access, apply gameplay effects. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UBmrHealthAttributeSet> HealthSetInternal = nullptr;
+
 protected:
 	/* ---------------------------------------------------
 	 *		Protected properties
@@ -186,13 +215,15 @@ protected:
 	friend class UCellsUtilsLibrary;
 	friend class ULevelActorsUtilsLibrary;
 
-	/** If toggled, custom data will be used for the level generation instead of the default one. */
+	/** If toggled, custom data will be used for the level generation instead of the default ones from Data Asset.
+	 * Can be set right in the Details Panel of the Generated Map actor on the scene, individually per each level.
+	 * Is also useful for mods, game features and cheats. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overide Generation Settings"))
 	bool bOverrideGenerationSettingsInternal = false;
 
 	/** Is optional settings to override the default data. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "C++", meta = (BlueprintProtected, DisplayName = "Overidden Generation Settings", EditCondition = "bOverrideGenerationSettingsInternal == true", EditConditionHides))
-	FGeneratedMapSettings OverriddenGenerationSettingsInternal;
+	FGeneratedMapSettings OverriddenGenerationSettingsInternal = FGeneratedMapSettings::Empty;
 
 	/** The blueprint background actor  */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Collision Component"))
@@ -205,23 +236,24 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Grid Cells", ShowOnlyInnerProperties))
 	TArray<FCell> LocalGridCellsInternal = FCell::EmptyCellsArr;
 
-	/** Stores and replicates map components of currently spawned level actors. 
-	 * Updates dynamically during level regeneration, explosions, player movement, and item spawns. 
-	 * Uses a fast array to replicate efficiently while minimizing network usage. 
+	/** Stores and replicates map components of currently spawned level actors.
+	 * Updates dynamically during level regeneration, explosions, player movement, and item spawns.
+	 * Uses a fast array to replicate efficiently while minimizing network usage.
 	 * Ensures reliable replication even when the number of components remains unchanged. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Map Components"))
 	FMapComponentsContainer MapComponentsInternal;
 
-	/** Is exposed to track when the Generate Level Actors is completed on the client. 
+	/** Is exposed to track when the Generate Level Actors is completed on the client.
 	 * Server updates this token on every Generate Level Actors call.
 	 * Client monitors updates and confirms when tokens match to broadcast the On Generated Level Actors event. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Replicated, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Generate Level Actors Token"))
 	int32 GenerateLevelActorsTokenInternal = 0;
 
-	/** Contains map components that were dragged to the scene
-	 * Is set in editor by adding and dragging actors, but can be changed during the game. */
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Dragged Cells"))
-	TMap<FCell, EActorType> DraggedCellsInternal;
+	/** Is server-only, true while the level actors are being generated, is useful to avoid reentry.
+	 * It takes some time to process as firstly it starts async task to compute pattern, and then spawns actors spreading over multiple frames.
+	 * Once completed, it will broadcast the OnGeneratedLevelActors event on both server and clients. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Transient, Category = "C++", meta = (BlueprintProtected, DisplayName = "Is Currently Generating"))
+	bool bIsCurrentlyGeneratingInternal = false;
 
 	/** Attached camera component. */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "C++", meta = (BlueprintProtected, DisplayName = "Camera Component"))
@@ -230,11 +262,13 @@ protected:
 	/** Specify for which level actors should show debug renders, is not available in shipping build.
 	 * Can be overridden by `Bomber.Debug.DisplayCells VALUES` cheat. */
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "C++", meta = (DevelopmentOnly, DisplayName = "Display Cells Actor Types", Bitmask, BitmaskEnum = "/Script/Bomber.EActorType"))
-	int32 DisplayCellsActorTypesInternal = TO_FLAG(EAT::None);
+	int32 DisplayCellsActorTypesInternal = 0;
 
 	/* ---------------------------------------------------
 	 *		Protected functions
 	 * --------------------------------------------------- */
+
+	friend class UMyCheatManager;
 
 	/** Called when an instance of this class is placed (in editor) or spawned. */
 	virtual void OnConstruction(const FTransform& Transform) override;
@@ -262,6 +296,10 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CallInEditor, Category = "C++", meta = (BlueprintProtected))
 	void GenerateLevelActors();
 
+	/** Internal methods to compute cells on background thread and finish with spawning on the game thread. */
+	static TMap<FCell, EActorType> GenerateLevelActors_StartAsync(struct FBmrGeneratorData&& GeneratorData);
+	void GenerateLevelActors_Finish(TMap<FCell, EActorType>&& ActorsToSpawn);
+
 	/** Listen game states to generate level actors. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
@@ -272,23 +310,36 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void BuildGridCells(const FTransform& Transform);
 
+	/*********************************************************************************************
+	 * Dragged Level Actors
+	 ********************************************************************************************* */
+public:
+	/** Returns true if specified map component has non-generated owner that is manually dragged to the scene. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	bool IsDraggedMapComponent(const UMapComponent* MapComponent) const;
+
 	/** Scales dragged cells according new grid if sizes are different. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void ScaleDraggedCellsOnGrid(const TSet<FCell>& OriginalGrid, const TSet<FCell>& NewGrid);
-
-	/* ---------------------------------------------------
-	 *					Editor development
-	 * --------------------------------------------------- */
 
 	/** The dragged version of the Add To Grid function to add the dragged actor on the level. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
 	void AddToGridDragged(UMapComponent* AddedComponent);
 
-	/** The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor. */
-	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly, AutoCreateRefTerm = "NewCell"))
-	void SetNearestCellDragged(const UMapComponent* MapComponent, const FCell& NewCell);
+	/** The dragged version of the Set Nearest Cell function to find closest cell for the dragged level actor.
+	 * @param MapComponent The Map Component of the dragged level actor.
+	 * @param InOutCell Takes suggested cell and performs additional snaps; or the same cell if not dragged.
+	 * @return true if the cell handled dragged actor, false otherwise. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
+	bool SetNearestCellDragged(const UMapComponent* MapComponent, UPARAM(ref) FCell& InOutCell);
 
 	/** The dragged version of the Destroy Level Actor function to hide the dragged actor from the level. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected, DevelopmentOnly))
 	void DestroyLevelActorDragged(const UMapComponent* MapComponent);
+
+protected:
+	/** Contains map components that were dragged to the scene
+	 * Is set in editor by adding and dragging actors, but can be changed during the game. */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, AdvancedDisplay, Category = "C++", meta = (BlueprintProtected, DisplayName = "Dragged Cells"))
+	TMap<FCell, EActorType> DraggedCellsInternal;
 };

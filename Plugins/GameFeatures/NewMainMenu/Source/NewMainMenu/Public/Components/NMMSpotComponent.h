@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Components/MySkeletalMeshComponent.h"
-//---
-#include "Data/NMMTypes.h"
-//---
+
+// NMM
+#include "Data/NMMTypes.h" // FNMMCinematicRow, ENMMState
+
 #include "NMMSpotComponent.generated.h"
 
 class ULevelSequence;

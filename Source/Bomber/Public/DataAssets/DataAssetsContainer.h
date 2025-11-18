@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Engine/DeveloperSettings.h"
-//---
+
 #include "DataAssetsContainer.generated.h"
 
 enum class EActorType : uint8;
@@ -48,7 +48,7 @@ public:
 	static const class UPlayerInputDataAsset* GetPlayerInputDataAsset();
 
 	/** Returns the Sounds Data Asset. */
-	UFUNCTION(BlueprintPure, Category = "C++")
+	UFUNCTION(BlueprintPure, Category = "C++", meta = (Keywords = "Sound"))
 	static const class USoundsDataAsset* GetSoundsDataAsset();
 
 	/** Returns the Game State Data Asset. */
@@ -62,7 +62,7 @@ public:
 	/** Best suits for blueprints to get the data asset by its class since converts the result to the specified class. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (DeterminesOutputType = "DataAssetClass", BlueprintAutocast, Keywords = "Bomb,Box,Item,Player,Character,Wall"))
 	static const ULevelActorDataAsset* GetLevelActorDataAsset(
-		UPARAM(meta=(AllowAbstract="false")) TSubclassOf<ULevelActorDataAsset> DataAssetClass);
+	    UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<ULevelActorDataAsset> DataAssetClass);
 
 	/** Returns the data asset by its class, if not found then crash. */
 	template <typename T = ULevelActorDataAsset>

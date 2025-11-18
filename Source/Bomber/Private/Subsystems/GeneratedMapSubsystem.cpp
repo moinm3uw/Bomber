@@ -1,20 +1,22 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/GeneratedMapSubsystem.h"
-//---
+
+// Bomber
 #include "GeneratedMap.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
-#include "Engine/World.h"
-//---
+
 #if WITH_EDITOR
 #include "MyEditorUtilsLibraries/EditorUtilsLibrary.h"
 #endif
-//---
+
+// UE
+#include "Engine/World.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GeneratedMapSubsystem)
 
 // Returns the Generated Map Subsystem, is checked and will crash if can't be obtained
-UGeneratedMapSubsystem& UGeneratedMapSubsystem::Get(const UObject* WorldContextObject/* = nullptr*/)
+UGeneratedMapSubsystem& UGeneratedMapSubsystem::Get(const UObject* WorldContextObject /* = nullptr*/)
 {
 	UGeneratedMapSubsystem* GeneratedMapSubsystem = GetGeneratedMapSubsystem(WorldContextObject);
 	checkf(GeneratedMapSubsystem, TEXT("%s: 'GeneratedMapSubsystem' is null"), *FString(__FUNCTION__));
@@ -22,14 +24,14 @@ UGeneratedMapSubsystem& UGeneratedMapSubsystem::Get(const UObject* WorldContextO
 }
 
 // Returns the pointer to the Generated Map Subsystem
-UGeneratedMapSubsystem* UGeneratedMapSubsystem::GetGeneratedMapSubsystem(const UObject* WorldContextObject/* = nullptr*/)
+UGeneratedMapSubsystem* UGeneratedMapSubsystem::GetGeneratedMapSubsystem(const UObject* WorldContextObject /* = nullptr*/)
 {
 	const UWorld* FoundWorld = UUtilsLibrary::GetPlayWorld(WorldContextObject);
 	return FoundWorld ? FoundWorld->GetSubsystem<UGeneratedMapSubsystem>() : nullptr;
 }
 
 // The Generated Map getter, nullptr otherwise
-AGeneratedMap* UGeneratedMapSubsystem::GetGeneratedMap(bool bWarnIfNull/* = true*/) const
+AGeneratedMap* UGeneratedMapSubsystem::GetGeneratedMap(bool bWarnIfNull /* = true*/) const
 {
 #if WITH_EDITOR
 	if (bWarnIfNull)

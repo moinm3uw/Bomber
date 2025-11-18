@@ -1,17 +1,18 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
-//---
+
+// UE
+#include "Engine/Engine.h"
+#include "Engine/LocalPlayer.h"
 #include "EnhancedActionKeyMapping.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
-#include "InputMappingContext.h"
-#include "Engine/Engine.h"
-#include "Engine/LocalPlayer.h"
 #include "GameFramework/PlayerController.h"
+#include "InputMappingContext.h"
 #include "UserSettings/EnhancedInputUserSettings.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(InputUtilsLibrary)
 
 /*********************************************************************************************
@@ -64,7 +65,7 @@ bool UInputUtilsLibrary::IsInputContextEnabled(const UObject* WorldContext, cons
 }
 
 // Enables or disables specified input context
-void UInputUtilsLibrary::SetInputContextEnabled(const UObject* WorldContext, bool bEnable, const UInputMappingContext* InInputContext, int32 Priority/* = 0*/)
+void UInputUtilsLibrary::SetInputContextEnabled(const UObject* WorldContext, bool bEnable, const UInputMappingContext* InInputContext, int32 Priority /* = 0*/)
 {
 	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = GetEnhancedInputSubsystem(WorldContext);
 	if (!InputSubsystem)
@@ -112,7 +113,7 @@ void UInputUtilsLibrary::GetAllActionsInContext(const UObject* WorldContext, con
 		// it's required since 'Action' is init as const, however UE reflection doesn't support array as argument\return value that has const type
 		UInputAction* MyInputAction = MappingIt.Action ? const_cast<UInputAction*>(MappingIt.Action.Get()) : nullptr;
 		if (!MyInputAction
-			|| OutInputActions.Contains(MyInputAction))
+		    || OutInputActions.Contains(MyInputAction))
 		{
 			continue;
 		}
@@ -120,16 +121,16 @@ void UInputUtilsLibrary::GetAllActionsInContext(const UObject* WorldContext, con
 		bool bIsMatchingState = false;
 		switch (State)
 		{
-		case EInputActionInContextState::NotBound:
-			bIsMatchingState = !IsInputActionBound(WorldContext, MyInputAction);
-			break;
-		case EInputActionInContextState::Bound:
-			bIsMatchingState = IsInputActionBound(WorldContext, MyInputAction);
-			break;
-		case EInputActionInContextState::Any:
-			bIsMatchingState = true;
-			break;
-		default: break;
+			case EInputActionInContextState::NotBound:
+				bIsMatchingState = !IsInputActionBound(WorldContext, MyInputAction);
+				break;
+			case EInputActionInContextState::Bound:
+				bIsMatchingState = IsInputActionBound(WorldContext, MyInputAction);
+				break;
+			case EInputActionInContextState::Any:
+				bIsMatchingState = true;
+				break;
+			default: break;
 		}
 
 		if (bIsMatchingState)
@@ -148,7 +149,7 @@ bool UInputUtilsLibrary::IsInputActionBound(const UObject* WorldContext, const U
 {
 	const UEnhancedInputComponent* InputComponent = GetEnhancedInputComponent(WorldContext);
 	if (!ensureMsgf(InputComponent, TEXT("ASSERT: [%i] %s:\n'InputComponent' is not valid!"), __LINE__, *FString(__FUNCTION__))
-		|| !ensureMsgf(InInputAction, TEXT("ASSERT: [%i] %s:\n'InInputAction' is not valid!"), __LINE__, *FString(__FUNCTION__)))
+	    || !ensureMsgf(InInputAction, TEXT("ASSERT: [%i] %s:\n'InInputAction' is not valid!"), __LINE__, *FString(__FUNCTION__)))
 	{
 		return false;
 	}
@@ -170,7 +171,7 @@ void UInputUtilsLibrary::GetAllMappingsInContext(const UObject* WorldContext, co
 	const UEnhancedInputLocalPlayerSubsystem* InputSubsystem = GetEnhancedInputSubsystem(WorldContext);
 	const UEnhancedInputUserSettings* EnhancedInputUserSettings = InputSubsystem ? InputSubsystem->GetUserSettings() : nullptr;
 	if (!ensureMsgf(EnhancedInputUserSettings, TEXT("ASSERT: [%i] %hs:\n'EnhancedInputUserSettings' is null, make sure 'Enable User Settings' is enabled in the Project Settings!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(InInputContext, TEXT("ASSERT: [%i] %hs:\n'InInputContext' is not valid!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(InInputContext, TEXT("ASSERT: [%i] %hs:\n'InInputContext' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		// Can be null on remote clients, do nothing
 		return;
@@ -207,13 +208,13 @@ bool UInputUtilsLibrary::IsMappedKeyInContext(const UObject* WorldContext, const
 	const UEnhancedInputLocalPlayerSubsystem* InputSubsystem = GetEnhancedInputSubsystem(WorldContext);
 	const UEnhancedInputUserSettings* EnhancedInputUserSettings = InputSubsystem ? InputSubsystem->GetUserSettings() : nullptr;
 	if (!ensureMsgf(EnhancedInputUserSettings, TEXT("ASSERT: [%i] %hs:\n'EnhancedInputUserSettings' is null, make sure 'Enable User Settings' is enabled in the Project Settings!"), __LINE__, __FUNCTION__)
-		|| !ensureMsgf(InInputContext, TEXT("ASSERT: [%i] %hs:\n'InInputContext' is not valid!"), __LINE__, __FUNCTION__))
+	    || !ensureMsgf(InInputContext, TEXT("ASSERT: [%i] %hs:\n'InInputContext' is not valid!"), __LINE__, __FUNCTION__))
 	{
 		return false;
 	}
 
 	TArray<FPlayerKeyMapping> AllMappings;
-	GetAllMappingsInContext(WorldContext, InInputContext, /*out*/AllMappings);
+	GetAllMappingsInContext(WorldContext, InInputContext, /*out*/ AllMappings);
 	return AllMappings.ContainsByPredicate([&Key](const FPlayerKeyMapping& MappingIt)
 	{
 		return MappingIt.GetCurrentKey() == Key;
@@ -224,9 +225,9 @@ bool UInputUtilsLibrary::IsMappedKeyInContext(const UObject* WorldContext, const
 bool UInputUtilsLibrary::RemapKeyInContext(const UObject* WorldContextObject, const UInputMappingContext* InInputContext, const UInputAction* ByInputAction, const FKey& PrevKey, const FKey& NewKey)
 {
 	if (!ensureMsgf(InInputContext, TEXT("ASSERT: 'InInputContext' is not valid"))
-		|| !ensureMsgf(ByInputAction, TEXT("ASSERT: [%i] %s:\n'ByInputAction' is not valid!"), __LINE__, *FString(__FUNCTION__))
-		|| NewKey == PrevKey
-		|| IsMappedKeyInContext(WorldContextObject, NewKey, InInputContext))
+	    || !ensureMsgf(ByInputAction, TEXT("ASSERT: [%i] %s:\n'ByInputAction' is not valid!"), __LINE__, *FString(__FUNCTION__))
+	    || NewKey == PrevKey
+	    || IsMappedKeyInContext(WorldContextObject, NewKey, InInputContext))
 	{
 		return false;
 	}

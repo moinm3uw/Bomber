@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Data/NMMSaveGameData.h"
-//---
+
+// UE
 #include "Kismet/GameplayStatics.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMSaveGameData)
 
 // Returns the name of the save slot

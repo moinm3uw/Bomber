@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "AIUtilsLibrary.generated.h"
 
 /**
@@ -16,7 +16,7 @@ class MYUTILS_API UAIUtilsLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	/** Finds and transform Navigation Mesh. */  
+	/** Finds and transform Navigation Mesh. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (WorldContext = "WorldContextObject", AutoCreateRefTerm = "Transform"))
 	static void RebuildNavMesh(UObject* WorldContextObject, const FTransform& Transform);
 

@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "MyAssets/AssetTypeActions_MyUserWidget.h"
-//---
-#include "UMGEditorProjectSettings.h"
-#include "WidgetBlueprint.h"
-#include "WidgetBlueprintEditor.h"
+
+// UE
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/MessageDialog.h"
-//---
+#include "UMGEditorProjectSettings.h"
+#include "WidgetBlueprint.h"
+#include "WidgetBlueprintEditor.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AssetTypeActions_MyUserWidget)
 
 #define LOCTEXT_NAMESPACE "AssetTypeActions"

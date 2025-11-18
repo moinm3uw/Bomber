@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Engine/DataTable.h"
-//---
+
 #include "MyDataTable.generated.h"
 
 /**
@@ -49,7 +49,7 @@ protected:
 	 * Is created to let child data tables reacts on changes without binding to its delegate,
 	 * can't use UDataTable::HandleDataTableChanged() since it is not virtual.
 	 * Is in runtime module since FDataTableEditor is private. */
-	virtual void OnThisDataTableChanged(FName RowName, const uint8& RowData) {}
+	virtual void OnThisDataTableChanged(FName RowName, const uint8& RowData) { }
 
 	/** Is called on saving the data table. */
 	virtual void PostSaveRoot(FObjectPostSaveRootContext ObjectSaveContext) override;

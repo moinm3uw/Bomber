@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "MyEditorUtilsModule.h"
-//---
+
+// MyEditorUtils
 #include "MyAssets/AssetTypeActions_MyUserWidget.h"
-//---
+
+// UE
 #include "KismetCompiler.h"
 #include "KismetCompilerModule.h"
-#include "UMGEditorModule.h"
 #include "Modules/ModuleManager.h"
+#include "UMGEditorModule.h"
 #include "WidgetBlueprintCompiler.h"
 
 // Called right after the module DLL has been loaded and the module object has been created
@@ -26,7 +28,7 @@ void FMyEditorUtilsModule::ShutdownModule()
 void FMyEditorUtilsModule::RegisterMyUserWidgetBlueprint()
 {
 	if (!FModuleManager::Get().IsModuleLoaded(UMGEditorModuleName)
-		|| !FModuleManager::Get().IsModuleLoaded(KismetCompilerModuleName))
+	    || !FModuleManager::Get().IsModuleLoaded(KismetCompilerModuleName))
 	{
 		return;
 	}
@@ -43,7 +45,7 @@ void FMyEditorUtilsModule::RegisterMyUserWidgetBlueprint()
 void FMyEditorUtilsModule::UnregisterMyUserWidgetBlueprint()
 {
 	if (!FModuleManager::Get().IsModuleLoaded(UMGEditorModuleName)
-		|| !FModuleManager::Get().IsModuleLoaded(KismetCompilerModuleName))
+	    || !FModuleManager::Get().IsModuleLoaded(KismetCompilerModuleName))
 	{
 		return;
 	}

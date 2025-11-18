@@ -3,11 +3,11 @@
 #pragma once
 
 #include "DataAssets/LevelActorDataAsset.h"
-//---
+
 #include "WallDataAsset.generated.h"
 
 /**
-* Describes common data for all walls.
+ * Describes common data for all walls.
  */
 UCLASS(Blueprintable, BlueprintType)
 class BOMBER_API UWallDataAsset final : public ULevelActorDataAsset

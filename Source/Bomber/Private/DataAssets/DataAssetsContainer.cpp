@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/DataAssetsContainer.h"
-//---
+
+// Bomber
 #include "Bomber.h"
 #include "DataAssets/AIDataAsset.h"
 #include "DataAssets/GameStateDataAsset.h"
@@ -10,9 +11,10 @@
 #include "DataAssets/PlayerInputDataAsset.h"
 #include "DataAssets/SoundsDataAsset.h"
 #include "DataAssets/UIDataAsset.h"
-//---
+
+// UE
 #include "GameFramework/Actor.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(DataAssetsContainer)
 
 // Returns the Levels Data Asset

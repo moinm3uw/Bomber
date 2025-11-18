@@ -3,7 +3,10 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
-#include "PlayAreaSurrounderTypes.h"
+
+// PAS
+#include "PlayAreaSurrounderTypes.h" // FVisualizerData
+
 #include "PlayAreaSurrounderData.generated.h"
 
 /**

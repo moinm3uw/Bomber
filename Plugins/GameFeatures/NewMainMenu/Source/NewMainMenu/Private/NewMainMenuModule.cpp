@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "NewMainMenuModule.h"
-//---
+
 #include "Modules/ModuleManager.h"
 
 void FNewMainMenuModule::StartupModule()

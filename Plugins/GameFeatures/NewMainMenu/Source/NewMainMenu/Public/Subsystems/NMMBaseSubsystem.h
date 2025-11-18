@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Subsystems/WorldSubsystem.h"
-//---
+
+// NMM
 #include "Data/NMMTypes.h" // ENMMState
-//---
+
 #include "NMMBaseSubsystem.generated.h"
 
 class UNMMDataAsset;
@@ -82,18 +83,18 @@ protected:
 	 * Events
 	 ********************************************************************************************* */
 protected:
-	/** Called when the current game state was changed, handles Main Menu states accordingly. */ 
+	/** Called when the current game state was changed, handles Main Menu states accordingly. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
 	void OnGameStateChanged(ECurrentGameState CurrentGameState);
 };
 
 /** Helper macro to bind and call the function when the game state was changed. */
-#define BIND_ON_MENU_STATE_CHANGED(Obj, Function) \
-{ \
-	UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get(); \
-	BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(Obj, &Function); \
-	if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None) \
-	{ \
-		Obj->Function(BaseSubsystem.GetCurrentMenuState(), ENMMState::None); \
-	} \
-}
+#define BIND_ON_MENU_STATE_CHANGED(Obj, Function)                                \
+	{                                                                            \
+		UNMMBaseSubsystem& BaseSubsystem = UNMMBaseSubsystem::Get();             \
+		BaseSubsystem.OnMainMenuStateChanged.AddUniqueDynamic(Obj, &Function);   \
+		if (BaseSubsystem.GetCurrentMenuState() != ENMMState::None)              \
+		{                                                                        \
+			Obj->Function(BaseSubsystem.GetCurrentMenuState(), ENMMState::None); \
+		}                                                                        \
+	}

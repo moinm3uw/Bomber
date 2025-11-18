@@ -1,24 +1,29 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyCheatManager.h"
-//---
+
+// Bomber
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
 #include "Bomber.h"
-#include "GeneratedMap.h"
 #include "Components/MapComponent.h"
 #include "Components/MyCameraComponent.h"
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyDebugCameraController.h"
 #include "Controllers/MyPlayerController.h"
 #include "DataAssets/DataAssetsContainer.h"
+#include "DataAssets/GeneratedMapDataAsset.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/PlayerState.h"
+#include "GeneratedMap.h"
 #include "LevelActors/PlayerCharacter.h"
+#include "Structures/BmrGameplayTags.h"
+#include "Structures/BmrPowerupTag.h"
 #include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyCheatManager)
 
 // Default constructor
@@ -102,8 +107,6 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 		return;
 	}
 
-	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
-
 	// Get all players
 	FCells CellsToDestroy;
 	FMapComponents MapComponents;
@@ -111,22 +114,21 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 	for (const UMapComponent* MapComponentIt : MapComponents)
 	{
 		const APlayerCharacter* PlayerCharacter = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
-		if (!PlayerCharacter)
+		UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+		if (!ASC)
 		{
 			continue;
 		}
 
 		const int32 PlayerIndex = PlayerCharacter->GetPlayerId();
-		const bool bDestroy = (1 << PlayerIndex & Bitmask) != 0;
-		if (bDestroy) // mark to destroy if specified in slot
+		const bool bIsMatchInSlot = (1 << PlayerIndex & Bitmask) != 0;
+		if (bIsMatchInSlot)
 		{
-			CellsToDestroy.Emplace(MapComponentIt->GetCell());
+			FGameplayEventData EventData;
+			EventData.Instigator = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+			ASC->HandleGameplayEvent(BmrGameplayTags::Event::Player_Death, &EventData);
 		}
 	}
-
-	// Destroy all specified
-	APlayerCharacter* DestroyCauser = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
-	GeneratedMap.DestroyLevelActorsOnCells(CellsToDestroy, DestroyCauser);
 }
 
 /*********************************************************************************************
@@ -135,32 +137,74 @@ void UMyCheatManager::DestroyPlayersBySlots(const FString& Slot)
 
 // Override the percentage of items spawn from boxes
 TAutoConsoleVariable<int32> UMyCheatManager::CVarPowerupsChance(
-	TEXT("Bomber.Box.SetPowerupsChance"),
-	0.f,
-	TEXT("100 - is maximum, 0 - is disabled (default chance will be used)"),
-	ECVF_Cheat);
-
-/*********************************************************************************************
- * Bomb
- ********************************************************************************************* */
-
-// Override blast radius of all bombs
-TAutoConsoleVariable<int32> UMyCheatManager::CVarBombRadius(
-	TEXT("Bomber.Bomb.SetRadius"),
-	INDEX_NONE,
-	TEXT("5 - Set five cells blast radius to each side of all bombs"),
-	ECVF_Cheat);
+    TEXT("Bomber.Box.SetPowerupsChance"),
+    0.f,
+    TEXT("100 - is maximum, 0 - is disabled (default chance will be used)"),
+    ECVF_Cheat);
 
 /*********************************************************************************************
  * Player
  ********************************************************************************************* */
 
+// Is overridden to apply damage immunity effect for proper integration with Ability System
+void UMyCheatManager::God()
+{
+	// Super is not called intentionally to implement custom god mode through GAS
+
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+	const TSubclassOf<UGameplayEffect> BlockIncomingDamageEffect = UPlayerDataAsset::Get().GetBlockIncomingDamageEffect();
+	if (!ensureMsgf(ASC, TEXT("ASSERT: [%i] %hs:\n'ASC' is not valid!"), __LINE__, __FUNCTION__)
+	    || !ensureMsgf(BlockIncomingDamageEffect, TEXT("ASSERT: [%i] %hs:\n'BlockIncomingDamageEffect' is not valid!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	const FGameplayTag BlockIncomingDamageTag = BmrGameplayTags::GameplayEffect::Block::IncomingDamage;
+	if (!ASC->HasMatchingGameplayTag(BlockIncomingDamageTag))
+	{
+		// Effect is not applied yet, so apply it
+		ASC->ApplyGameplayEffectToSelf(BlockIncomingDamageEffect.GetDefaultObject(), /*Level*/ 1.f, ASC->MakeEffectContext());
+	}
+	else
+	{
+		// Effect is already applied (in god mode), so remove it
+		ASC->RemoveActiveEffectsWithGrantedTags(BlockIncomingDamageTag.GetSingleTagContainer());
+	}
+}
+
+// Forcing locally controlled player to destroy itself immediately, resulting in loss
+void UMyCheatManager::Suicide()
+{
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	const int32 PlayerId = PlayerCharacter ? PlayerCharacter->GetPlayerId() : INDEX_NONE;
+	if (PlayerId < 0)
+	{
+		return;
+	}
+
+	FString SlotString = FString::ChrN(PlayerId, TEXT('0'));
+	SlotString.AppendChar(TEXT('1'));
+	DestroyPlayersBySlots(SlotString);
+}
+
 // Override the level of each powerup for a controlled player
 void UMyCheatManager::SetPlayerPowerups(int32 NewLevel)
 {
-	if (APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter())
+	const APlayerCharacter* PlayerCharacter = UMyBlueprintFunctionLibrary::GetLocalPlayerCharacter();
+	UAbilitySystemComponent* ASC = PlayerCharacter ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+	if (!ensureMsgf(ASC, TEXT("ASSERT: [%i] %hs:\n'ASC' is not valid!"), __LINE__, __FUNCTION__))
 	{
-		PlayerCharacter->SetPowerups(NewLevel);
+		return;
+	}
+
+	for (const FGameplayTag& PowerupTagIt : FBmrPowerupTag::GetAll())
+	{
+		const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::Conv_TagToBaseAttribute(PowerupTagIt);
+		if (PowerupAttribute.IsValid())
+		{
+			ASC->ApplyModToAttributeUnsafe(PowerupAttribute, EGameplayModOp::Override, NewLevel);
+		}
 	}
 }
 
@@ -185,10 +229,10 @@ void UMyCheatManager::SetAutoCopilot()
 
 // Enable or disable all bots
 TAutoConsoleVariable<bool> UMyCheatManager::CVarAISetEnabled(
-	TEXT("Bomber.AI.SetEnabled"),
-	true,
-	TEXT("Enable or disable all bots: 1 (Enable) OR 0 (Disable)"),
-	ECVF_Cheat);
+    TEXT("Bomber.AI.SetEnabled"),
+    true,
+    TEXT("Enable or disable all bots: 1 (Enable) OR 0 (Disable)"),
+    ECVF_Cheat);
 
 // Override the level of each powerup for bots
 void UMyCheatManager::SetAIPowerups(int32 NewLevel)
@@ -200,11 +244,13 @@ void UMyCheatManager::SetAIPowerups(int32 NewLevel)
 	// Override the level of each powerup for bots
 	for (const UMapComponent* MapComponentIt : MapComponents)
 	{
-		APlayerCharacter* Character = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
-		if (Character
-		    && Character->IsBotControlled())
+		const APlayerCharacter* PlayerCharacter = MapComponentIt ? MapComponentIt->GetOwner<APlayerCharacter>() : nullptr;
+		UAbilitySystemComponent* ASC = PlayerCharacter && PlayerCharacter->IsBotControlled() ? PlayerCharacter->GetAbilitySystemComponent() : nullptr;
+		if (ASC)
 		{
-			Character->SetPowerups(NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_SkateAttribute(), EGameplayModOp::Override, NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_FireAttribute(), EGameplayModOp::Override, NewLevel);
+			ASC->ApplyModToAttributeUnsafe(UBmrPowerupsAttributeSet::GetPowerup_BombsAvailableAttribute(), EGameplayModOp::Override, NewLevel);
 		}
 	}
 }
@@ -243,10 +289,10 @@ void UMyCheatManager::AddBot()
 
 // Override the percentage of items spawn from boxes
 TAutoConsoleVariable<FString> UMyCheatManager::CVarDisplayCells(
-	TEXT("Bomber.Debug.DisplayCells"),
-	TEXT(""),
-	TEXT("Shows coordinates of level actors of specified types (requires regeneration), e.g: Bomber.Debug.DisplayCells Bomb Player - show bombs and players"),
-	ECVF_Cheat);
+    TEXT("Bomber.Debug.DisplayCells"),
+    TEXT(""),
+    TEXT("Shows coordinates of level actors of specified types (requires regeneration), e.g: Bomber.Debug.DisplayCells Bomb Player - show bombs and players"),
+    ECVF_Cheat);
 
 /*********************************************************************************************
  * Level
@@ -290,6 +336,54 @@ void UMyCheatManager::SpawnActorByType(EActorType ActorType, int32 ColumnX, int3
 	checkf(DataAsset, TEXT("ERROR: [%i] %hs:\n'DataAsset' is null!"), __LINE__, __FUNCTION__);
 	const ULevelActorRow* Row = DataAsset->GetRowByIndex(RowIndex);
 	GeneratedMap.SpawnActorWithMesh(ActorType, Cell, {Row});
+}
+
+// Overrides the percentage of walls spawn during the level generation
+void UMyCheatManager::SetWallsChance(int32 WallsChance)
+{
+	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
+	FGeneratedMapSettings CurrentSettings = GeneratedMap.GetGenerationSetting();
+
+	// Use default from data asset if -1, otherwise use provided value
+	constexpr int32 MaxChance = 100;
+	WallsChance = FMath::Min(WallsChance, MaxChance);
+	CurrentSettings.WallsChance = WallsChance >= 0 ? WallsChance : UGeneratedMapDataAsset::Get().GetGenerationSettings().WallsChance;
+	GeneratedMap.SetOverriddenGenerationSettings(/*bEnableOverride*/ true, CurrentSettings);
+
+	// Restart the level
+	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	{
+		MyGameState->SetGameState(ECurrentGameState::GameStarting);
+	}
+	else
+	{
+		GeneratedMap.GenerateLevelActors();
+	}
+}
+
+// Overrides the percentage of boxes spawn during the level generation
+void UMyCheatManager::SetBoxesChance(int32 BoxesChance)
+{
+	AGeneratedMap& GeneratedMap = AGeneratedMap::Get();
+	FGeneratedMapSettings CurrentSettings = GeneratedMap.GetGenerationSetting();
+
+	// Use default from data asset if -1, otherwise use provided value
+	constexpr int32 MaxChance = 100;
+	BoxesChance = FMath::Min(BoxesChance, MaxChance);
+	CurrentSettings.BoxesChance = BoxesChance >= 0 ? BoxesChance : UGeneratedMapDataAsset::Get().GetGenerationSettings().BoxesChance;
+	GeneratedMap.SetOverriddenGenerationSettings(/*bEnableOverride*/ true, CurrentSettings);
+
+	// Restart the level
+	AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState();
+	if (AMyGameStateBase::GetCurrentGameState() == ECGS::InGame)
+	{
+		MyGameState->SetGameState(ECurrentGameState::GameStarting);
+	}
+	else
+	{
+		GeneratedMap.GenerateLevelActors();
+	}
 }
 
 /*********************************************************************************************
@@ -378,11 +472,10 @@ void UMyCheatManager::SetGameState(ECurrentGameState GameState)
 	// - We cannot rely on iterating enums using TEnumRange or bitmasks as enum members may not be defined in a logical order.
 	// - This ensures deterministic transitions and avoids potential issues caused by chaotic ordering of enum members.
 	static const TArray<ECurrentGameState> GameStateOrder = {
-		ECurrentGameState::Menu,
-		ECurrentGameState::GameStarting,
-		ECurrentGameState::InGame,
-		ECurrentGameState::EndGame
-	};
+	    ECurrentGameState::Menu,
+	    ECurrentGameState::GameStarting,
+	    ECurrentGameState::InGame,
+	    ECurrentGameState::EndGame};
 
 	// Find the current position and target position in the transition order
 	const ECurrentGameState CurrentState = MyGameState->GetCurrentGameState();

@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "Data/NMMTypes.h"
 #include "Subsystems/WorldSubsystem.h"
-//---
+
+// NMM
+#include "Data/NMMTypes.h" // ENMMCameraRailTransitionState
+
 #include "NMMCameraSubsystem.generated.h"
 
 enum class ENMMState : uint8;

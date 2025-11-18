@@ -1,22 +1,25 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyGameStateBase.h"
-//---
-#include "GeneratedMap.h"
+
+// Bomber
 #include "Components/GameDifficultyManagerComponent.h"
 #include "DataAssets/GameStateDataAsset.h"
 #include "DataAssets/ModularGameFeatureSettings.h"
+#include "GeneratedMap.h"
+#include "LevelActors/PlayerCharacter.h"
 #include "MyUtilsLibraries/GameplayUtilsLibrary.h"
 #include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "Subsystems/SoundsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
-#include "TimerManager.h"
+
+// UE
 #include "Components/GameFrameworkComponentManager.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
-//---
+#include "TimerManager.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameStateBase)
 
 // Default constructor

@@ -1,133 +1,43 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/PlayerCharacter.h"
-//---
-#include "Bomber.h"
-#include "GeneratedMap.h"
+
+// Bomber
+#include "Components/BmrMoverComponent.h"
 #include "Components/BmrPlayerNameWidgetComponent.h"
 #include "Components/MapComponent.h"
 #include "Components/MySkeletalMeshComponent.h"
 #include "Controllers/MyAIController.h"
 #include "Controllers/MyPlayerController.h"
-#include "DataAssets/ItemDataAsset.h"
 #include "DataAssets/PlayerDataAsset.h"
 #include "GameFramework/MyGameModeBase.h"
 #include "GameFramework/MyGameStateBase.h"
 #include "GameFramework/MyPlayerState.h"
-#include "LevelActors/BombActor.h"
-#include "LevelActors/ItemActor.h"
+#include "GeneratedMap.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
+#include "Structures/BmrGameplayTags.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
-#include "Subsystems/WidgetsSubsystem.h"
 #include "UtilityLibraries/CellsUtilsLibrary.h"
 #include "UtilityLibraries/LevelActorsUtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
-#include "InputActionValue.h"
+
+// UE
+#include "AbilitySystemComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/WidgetComponent.h"
-#include "Engine/CurveTable.h"
-#include "Engine/StaticMesh.h"
-#include "Engine/World.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "Net/UnrealNetwork.h"
-//---
+#include "GameplayEffect.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerCharacter)
 
-/*********************************************************************************************
- * Powerups
- ********************************************************************************************* */
-
-// Set powerups levels all at once, can be called only on the server
-void APlayerCharacter::SetPowerups(int32 NewLevel)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	// Go through each powerup type and set its new level
-	for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
-	{
-		PowerupsInternal.SetLevel(NewLevel, ItemTypeIt);
-	}
-}
-
-// Resets powerups levels to the default ones, can be called only on the server
-void APlayerCharacter::SetDefaultPowerups()
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	const FBmrPowerUpsContainer PrevPowerups = PowerupsInternal;
-
-	// Attempt to get defaults from the Curve Table by current Player Tag
-	const UCurveTable* DefaultPowerupsCurveTable = UItemDataAsset::Get().GetDefaultPowerupsCurveTable();
-	ensureMsgf(DefaultPowerupsCurveTable, TEXT("ASSERT: [%i] %hs:\n'DefaultPowerupsCurveTable' is not set, 1 will be used as default!"), __LINE__, __FUNCTION__);
-	const FRealCurve* DefaultItemLevelsCurve = DefaultPowerupsCurveTable ? DefaultPowerupsCurveTable->FindCurve(GetPlayerTag().GetTagName(), __FUNCTION__, /*bWarnIfNotFound*/false) : nullptr;
-	if (DefaultItemLevelsCurve)
-	{
-		// Go through each powerup type and set its level from the curve table
-		for (const EItemType ItemTypeIt : TEnumRange<EItemType>())
-		{
-			const int32 ItemLevel = FMath::RoundToInt(DefaultItemLevelsCurve->Eval(static_cast<float>(ItemTypeIt)));
-			PowerupsInternal.SetLevel(ItemLevel, ItemTypeIt);
-		}
-	}
-	else
-	{
-		// If the curve table is not set for the character (like bot), reset all powerups to first level by default 
-		SetPowerups(1);
-	}
-}
-
-// Apply effect of picked up powerups, can be called both on server and clients
-void APlayerCharacter::ApplyPowerups(const FBmrPowerUpsContainer& PrevPowerups)
-{
-	// Apply speed
-	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
-	{
-		static constexpr float SpeedMultiplier = 100.F;
-		const float SkateAdditiveStrength = UItemDataAsset::Get().GetSkateAdditiveStrength();
-		const int32 SkateN = PowerupsInternal.Get(EIT::Skate) * SpeedMultiplier + SkateAdditiveStrength;
-		MovementComponent->MaxWalkSpeed = SkateN;
-	}
-
-	// Here you might to apply others types of powerups
-	// ...
-
-	// Notify listeners
-	if (OnPowerUpsChanged.IsBound())
-	{
-		OnPowerUpsChanged.Broadcast(PowerupsInternal, PrevPowerups);
-	}
-}
-
-// Is called on clients to apply powerups
-void APlayerCharacter::OnRep_Powerups(const FBmrPowerUpsContainer& PrevPowerups)
-{
-	ApplyPowerups(PrevPowerups);
-}
-
-/** ---------------------------------------------------
- *		Public functions
- * --------------------------------------------------- */
-
 // Sets default values
-APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMySkeletalMeshComponent>(MeshComponentName)) // Init UMySkeletalMeshComponent instead of USkeletalMeshComponent
+APlayerCharacter::APlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	// Replicate an actor
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	SetReplicatingMovement(true);
 
 	// Set the default AI controller class
 	AIControllerClass = AMyAIController::StaticClass();
@@ -136,59 +46,23 @@ APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	// Do not rotate player by camera
 	bUseControllerRotationYaw = false;
 
-	// Initialize MapComponent
+	CapsuleComponentInternal = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CollisionCylinder"));
+	RootComponent = CapsuleComponentInternal;
+
 	MapComponentInternal = CreateDefaultSubobject<UMapComponent>(TEXT("MapComponent"));
 
-	// Initialize default powerup attributes
-	PowerupsInternal = FBmrPowerUpsContainer(1, *this);
-
 	// Initialize skeletal mesh
-	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
-	checkf(SkeletalMeshComponent, TEXT("ERROR: [%i] %hs:\n'SkeletalMeshComponent' is null!"), __LINE__, __FUNCTION__);
-	static const FVector MeshRelativeLocation(0, 0, -90.f);
-	SkeletalMeshComponent->SetRelativeLocation_Direct(MeshRelativeLocation);
-	static const FRotator MeshRelativeRotation(0, -90.f, 0);
-	SkeletalMeshComponent->SetRelativeRotation_Direct(MeshRelativeRotation);
-	SkeletalMeshComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	// Enable all lighting channels, so it's clearly visible in the dark
-	SkeletalMeshComponent->SetLightingChannels(/*bChannel0*/true, /*bChannel1*/true, /*bChannel2*/true);
-	MapComponentInternal->SetMeshComponent(SkeletalMeshComponent);
+	MeshComponentInternal = CreateDefaultSubobject<UMySkeletalMeshComponent>(TEXT("MeshComponent"));
+	MeshComponentInternal->SetupAttachment(RootComponent);
+	MapComponentInternal->SetMeshComponent(MeshComponentInternal);
 
 	// Initialize 3D widget component for the player name
 	PlayerName3DWidgetComponentInternal = CreateDefaultSubobject<UBmrPlayerNameWidgetComponent>(TEXT("PlayerName3DWidgetComponent"));
 	PlayerName3DWidgetComponentInternal->SetupAttachment(RootComponent);
 
-	if (UCharacterMovementComponent* MovementComponent = GetCharacterMovement())
-	{
-		// Rotate player by movement
-		MovementComponent->bOrientRotationToMovement = true;
-		static const FRotator RotationRate(0.f, 540.f, 0.f);
-		MovementComponent->RotationRate = RotationRate;
-
-		// Do not push out clients from collision
-		MovementComponent->MaxDepenetrationWithGeometryAsProxy = 0.f;
-	}
-
-	if (UCapsuleComponent* RootCapsuleComponent = GetCapsuleComponent())
-	{
-		// Setup collision to allow overlap players with each other, but block all other actors
-		RootCapsuleComponent->CanCharacterStepUpOn = ECB_Yes;
-		RootCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		RootCapsuleComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player0, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player1, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player2, ECR_Overlap);
-		RootCapsuleComponent->SetCollisionResponseToChannel(ECC_Player3, ECR_Overlap);
-	}
-}
-
-// Returns level type associated with player, e.g: Water level type for Roger character
-ELevelType APlayerCharacter::GetPlayerType() const
-{
-	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
-	return PlayerRow ? PlayerRow->LevelType : ELT::None;
+	// Initialize Mover Component: most setup is done in Details Panel as it is full of instanced properties
+	MoverComponentInternal = CreateDefaultSubobject<UBmrMoverComponent>(TEXT("MoverComponent"));
+	SetReplicatingMovement(false); // Mover requires to disable to handle on its own
 }
 
 // Returns the Player Tag associated with player
@@ -196,6 +70,21 @@ const FPlayerTag& APlayerCharacter::GetPlayerTag() const
 {
 	const UPlayerRow* PlayerRow = MapComponentInternal ? MapComponentInternal->GetMeshRow<UPlayerRow>() : nullptr;
 	return PlayerRow ? PlayerRow->PlayerTag : FPlayerTag::None;
+}
+
+// Returns the Ability System Component from the Player State
+UAbilitySystemComponent* APlayerCharacter::GetAbilitySystemComponent() const
+{
+	const AMyPlayerState* InPlayerState = GetPlayerState<AMyPlayerState>();
+	return InPlayerState ? InPlayerState->GetAbilitySystemComponent() : nullptr;
+}
+
+// Returns the Ability System Component from the Player State, crash if nullptr
+UAbilitySystemComponent& APlayerCharacter::GetAbilitySystemComponentChecked() const
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	checkf(ASC, TEXT("ERROR: [%i] %hs:\n'AbilitySystemComponent' is null!"), __LINE__, __FUNCTION__);
+	return *ASC;
 }
 
 /*********************************************************************************************
@@ -209,7 +98,7 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Set the animation blueprint on very first character spawn
-	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	if (UMySkeletalMeshComponent* MeshComp = GetMeshComponent())
 	{
 		const TSubclassOf<UAnimInstance> AnimInstanceClass = UPlayerDataAsset::Get().GetAnimInstanceClass();
 		MeshComp->SetAnimInstanceClass(AnimInstanceClass);
@@ -224,7 +113,7 @@ void APlayerCharacter::BeginPlay()
 		FGameModeEvents::GameModePostLoginEvent.AddUObject(this, &ThisClass::OnPostLogin);
 	}
 
-	BIND_ON_PLAYER_STATE_READY(this, ThisClass::OnPlayerStateReady, GetPlayerId());
+	BIND_ON_PLAYER_STATE_READY_ID(this, ThisClass::OnPlayerStateReady, GetPlayerId());
 }
 
 // Called when an instance of this class is placed (in editor) or spawned
@@ -232,28 +121,13 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	if (IS_TRANSIENT(this))
+	{
+		return;
+	}
+
+	BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel);
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
-}
-
-// Called every frame, is disabled on start, tick interval is decreased
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	UpdateLocation();
-}
-
-// Returns properties that are replicated for the lifetime of the actor channel
-void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	FDoRepLifetimeParams Params;
-	Params.bIsPushBased = true;
-
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PowerupsInternal, Params);
 }
 
 // Is overriden to handle the client login when is set new player state
@@ -280,9 +154,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 	MapComponent->OnCellChanged.AddUniqueDynamic(this, &ThisClass::OnCellChanged);
 	MapComponent->OnActorTypeChanged.AddUniqueDynamic(this, &ThisClass::OnActorTypeChanged);
 
-	OnActorBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnPlayerBeginOverlap);
-
-	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMeshComponentChecked().SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	if (!MapComponentInternal->GetReplicatedMeshData().IsValid())
@@ -300,7 +172,7 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 
 	// Spawn or destroy controller of specific ai with enabled visualization
 #if WITH_EDITOR // [IsEditorNotPieWorld]
-	if (UUtilsLibrary::IsEditorNotPieWorld()                                 // [IsEditorNotPieWorld] only
+	if (UUtilsLibrary::IsEditorNotPieWorld() // [IsEditorNotPieWorld] only
 	    && ULevelActorsUtilsLibrary::GetIndexByLevelActor(MapComponent) > 0) // Is a bot
 	{
 		AIControllerInternal = Cast<AAIController>(GetController());
@@ -320,53 +192,20 @@ void APlayerCharacter::OnAddedToLevel_Implementation(UMapComponent* MapComponent
 			}
 		}
 	}
-#endif	// WITH_EDITOR [IsEditorNotPieWorld]
+#endif // WITH_EDITOR [IsEditorNotPieWorld]
 
 	TryPossessController(EPlayerType::Any);
 
-	BIND_ON_GAME_STATE_CHANGED(this, ThisClass::OnGameStateChanged);
-
-	SetDefaultPowerups();
+	ApplyCharacterConfig();
 
 	UGlobalEventsSubsystem::Get().OnCharactersReadyHandler.Broadcast_OnCharacterAdded(*this);
 }
 
 // Is called when the Row from current Data Asset is changed for owner on the level, on both server and clients
-void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapComponent, const class ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow)
+void APlayerCharacter::OnActorTypeChanged_Implementation(UMapComponent* MapComponent, const ULevelActorRow* NewRow, const class ULevelActorRow* PreviousRow)
 {
-	// Update powerup attributes based on changed player type
-	SetDefaultPowerups();
-}
-
-// Triggers when this player character starts something overlap.
-void APlayerCharacter::OnPlayerBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
-{
-	const AItemActor* OverlappedItem = Cast<AItemActor>(OtherActor);
-	if (OverlappedItem)
-	{
-		PowerupsInternal.AddLevel(1, OverlappedItem->GetItemType());
-	}
-}
-
-// Listen to manage the tick
-void APlayerCharacter::OnGameStateChanged_Implementation(ECurrentGameState CurrentGameState)
-{
-	switch (CurrentGameState)
-	{
-		case ECurrentGameState::Menu: // fallthrough
-		case ECurrentGameState::GameStarting:
-		{
-			SetActorTickEnabled(false);
-			break;
-		}
-		case ECurrentGameState::InGame:
-		{
-			SetActorTickEnabled(true);
-			break;
-		}
-		default:
-			break;
-	}
+	// Handle character change: apply new config to update attributes
+	ApplyCharacterConfig();
 }
 
 // Is called on server when ANY human player joined the session
@@ -405,19 +244,9 @@ void APlayerCharacter::OnPreRemovedFromLevel_Implementation(UMapComponent* MapCo
 	}
 
 	// In the KillerPlayerState, mark this player as killed by DestroyCauser
-	AMyPlayerState* KillerPlayerState = [DestroyCauser]
+	if (AMyPlayerState* CauserPlayerState = Cast<AMyPlayerState>(DestroyCauser))
 	{
-		const APlayerCharacter* CauserCharacter = Cast<APlayerCharacter>(DestroyCauser);
-		if (!CauserCharacter)
-		{
-			const ABombActor* Bomb = DestroyCauser ? Cast<ABombActor>(DestroyCauser) : nullptr;
-			CauserCharacter = Bomb ? Cast<APlayerCharacter>(Bomb->GetBombPlacer()) : nullptr;
-		}
-		return CauserCharacter ? CauserCharacter->GetPlayerState<AMyPlayerState>() : nullptr;
-	}();
-	if (KillerPlayerState)
-	{
-		KillerPlayerState->SetOpponentKilled(this);
+		CauserPlayerState->SetOpponentKilled(this);
 	}
 }
 
@@ -435,14 +264,12 @@ void APlayerCharacter::OnPostRemovedFromLevel_Implementation(UMapComponent* MapC
 
 	UGlobalEventsSubsystem::Get().BP_OnGameStateChanged.RemoveAll(this);
 
-	GetMeshChecked().SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMeshComponentChecked().SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	if (Controller)
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
-		Controller->SetIgnoreMoveInput(true);
+		ASC->CancelAllAbilities();
 	}
-
-	SetDefaultPowerups();
 }
 
 // Is called for everytime when character changed its cell on the Generated Map
@@ -452,21 +279,19 @@ void APlayerCharacter::OnCellChanged_Implementation(UMapComponent* MapComponent,
 	if (HasActorBegunPlay())
 	{
 		// Visualize the cell changes during the gameplay
-		MapComponentInternal->TryDisplayOwnedCell(/*bClearPrevious*/true);
+		MapComponentInternal->TryDisplayOwnedCell(/*bClearPrevious*/ true);
 	}
 }
 
 // Is called when the player state is fully initialized
 void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlayerState, int32 CharacterID)
 {
-	if (GetPlayerId() != CharacterID)
-	{
-		// Is not this character
-		return;
-	}
+	checkf(InPlayerState == GetPlayerState(), TEXT("ERROR: [%i] %hs:\n'InPlayerState' is different than owned!"), __LINE__, __FUNCTION__);
 
 	checkf(PlayerName3DWidgetComponentInternal, TEXT("ERROR: [%i] %hs:\n'PlayerName3DWidgetComponentInternal' is null!"), __LINE__, __FUNCTION__);
 	PlayerName3DWidgetComponentInternal->Init(InPlayerState);
+
+	ApplyCharacterConfig();
 }
 
 /*********************************************************************************************
@@ -477,14 +302,13 @@ void APlayerCharacter::OnPlayerStateReady_Implementation(AMyPlayerState* InPlaye
 void APlayerCharacter::UpdateCollisionObjectType()
 {
 	const int32 PlayerId = GetPlayerId();
-	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
-	if (!ensureMsgf(CapsuleComp, TEXT("ASSERT: [%i] %hs:\n'CapsuleComp' is not valid!"), __LINE__, __FUNCTION__)
-	    || PlayerId < 0) // Might be replicating yet
+	if (PlayerId < 0) // Might be replicating yet
 	{
 		return;
 	}
 
 	// Set the object collision type
+	UCapsuleComponent* CapsuleComp = CastChecked<UCapsuleComponent>(RootComponent);
 	ECollisionChannel CollisionObjectType = CapsuleComp->GetCollisionObjectType();
 	switch (PlayerId)
 	{
@@ -505,6 +329,30 @@ void APlayerCharacter::UpdateCollisionObjectType()
 	}
 
 	CapsuleComp->SetCollisionObjectType(CollisionObjectType);
+}
+
+// Sets current config: each character has its own configuration, like different starting attributes
+void APlayerCharacter::ApplyCharacterConfig()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// Firstly, reset attributes
+	if (AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
+	{
+		MyPlayerState->ApplyDefaultAttributes();
+	}
+
+	// Secondly, apply config gameplay effect
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	const UPlayerRow* PlayerRow = UPlayerDataAsset::Get().GetRowByPlayerTag(GetPlayerTag());
+	const TSubclassOf<UGameplayEffect> ConfigGameplayEffect = PlayerRow ? PlayerRow->ConfigGameplayEffect : nullptr;
+	if (ASC && ConfigGameplayEffect)
+	{
+		ASC->ApplyGameplayEffectToSelf(ConfigGameplayEffect.GetDefaultObject(), /*Level*/ 1, ASC->MakeEffectContext());
+	}
 }
 
 /*********************************************************************************************
@@ -566,7 +414,7 @@ void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 
 		case EPlayerType::Bot:
 		{
-			if (!AIControllerInternal                             // Is not spawned yet
+			if (!AIControllerInternal // Is not spawned yet
 			    || !AIControllerInternal->IsA(AIControllerClass)) // Spawned, but wrong AI controller assigned
 			{
 				// Spawn AI controller
@@ -593,47 +441,19 @@ void APlayerCharacter::TryPossessController(EPlayerType PlayerType)
 	ControllerToPossess->Possess(this);
 }
 
-// Move the player character
-void APlayerCharacter::MovePlayer(const FInputActionValue& ActionValue)
+/*********************************************************************************************
+ * Movement
+ ********************************************************************************************* */
+
+// Is overridden to return the velocity from Mover Component instead
+FVector APlayerCharacter::GetVelocity() const
 {
-	const AController* OwnedController = GetController();
-	if (!OwnedController
-	    || OwnedController->IsMoveInputIgnored())
+	if (MoverComponentInternal)
 	{
-		return;
+		return MoverComponentInternal->GetVelocity();
 	}
 
-	// input is a Vector2D
-	const FVector2D MovementVector = ActionValue.Get<FVector2D>();
-
-	// Find out which way is forward
-	const FRotator ForwardRotation = UCellsUtilsLibrary::GetLevelGridRotation();
-
-	// Get forward vector
-	const FVector ForwardDirection = FRotationMatrix(ForwardRotation).GetUnitAxis(EAxis::X);
-
-	// Get right vector
-	const FVector RightDirection = FRotationMatrix(ForwardRotation).GetUnitAxis(EAxis::Y);
-
-	AddMovementInput(ForwardDirection, MovementVector.Y);
-	AddMovementInput(RightDirection, MovementVector.X);
-}
-
-// Takes the player current vector location and updates it on the level as a cell
-void APlayerCharacter::UpdateLocation()
-{
-	if (HasAuthority())
-	{
-		// On server, update a player location on the Generated Map
-		AGeneratedMap::Get().SetNearestCell(MapComponentInternal);
-	}
-	else if (IsLocallyControlled())
-	{
-		// On local client, directly set a player location for responsiveness while server replicates it
-		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-		const FCell SnappedCell = UCellsUtilsLibrary::SnapActorOnLevel(this);
-		MapComponentInternal->SetCell(SnappedCell);
-	}
+	return Super::GetVelocity();
 }
 
 /*********************************************************************************************
@@ -656,19 +476,16 @@ int32 APlayerCharacter::GetPlayerId() const
  * Player Mesh
  ********************************************************************************************* */
 
-// Returns the Skeletal Mesh of bombers
-UMySkeletalMeshComponent* APlayerCharacter::GetMySkeletalMeshComponent() const
+// Returns the Skeletal Mesh Component, or crash if can not be accessed
+UMySkeletalMeshComponent& APlayerCharacter::GetMeshComponentChecked() const
 {
-	return MapComponentInternal ? MapComponentInternal->GetMeshComponent<UMySkeletalMeshComponent>() : nullptr;
-}
-
-UMySkeletalMeshComponent& APlayerCharacter::GetMeshChecked() const
-{
-	return *CastChecked<UMySkeletalMeshComponent>(GetMesh());
+	UMySkeletalMeshComponent* SkeletalMeshComponent = GetMeshComponent();
+	checkf(SkeletalMeshComponent, TEXT("ERROR: [%i] %hs:\n'SkeletalMeshComponent' is null!"), __LINE__, __FUNCTION__);
+	return *SkeletalMeshComponent;
 }
 
 // Set and apply default skeletal mesh for this player
-void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin/* = false*/)
+void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin /* = false*/)
 {
 	if (!HasAuthority())
 	{
@@ -715,63 +532,12 @@ void APlayerCharacter::SetDefaultPlayerMeshData(bool bForcePlayerSkin/* = false*
  ********************************************************************************************* */
 
 // Spawns bomb on character position
-void APlayerCharacter::ServerSpawnBomb_Implementation(bool bForce/* = false*/)
+void APlayerCharacter::SpawnBomb()
 {
-	const AController* OwnedController = GetController();
-	if (!ensureMsgf(OwnedController, TEXT("ASSERT: [%i] %hs:\n'OwnedController' is not valid!"), __LINE__, __FUNCTION__)
-	    || !ensureMsgf(MapComponentInternal, TEXT("ASSERT: [%i] %hs:\n'MapComponentInternal' is not valid!"), __LINE__, __FUNCTION__))
-	{
-		return;
-	}
+	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
 
-	if (!bForce)
-	{
-		if (UUtilsLibrary::IsEditorNotPieWorld()        // Should not spawn bomb in PIE
-		    || PowerupsInternal.Get(EIT::Fire).IsZero() // Null length of explosion
-		    || PowerupsInternal.Get(EIT::Bomb).IsZero() // No more bombs
-		    || OwnedController->IsMoveInputIgnored())   // controller is blocked
-		{
-			return;
-		}
-	}
-
-	// Bomb is spawned on the current location, so make sure it's synced
-	UpdateLocation();
-
-	const TFunction<void(UMapComponent&)> OnBombSpawned = [WeakThis = TWeakObjectPtr(this)](UMapComponent& MapComponent)
-	{
-		APlayerCharacter* PlayerCharacter = WeakThis.Get();
-		if (!PlayerCharacter)
-		{
-			return;
-		}
-
-		PlayerCharacter->PowerupsInternal.AddCurrentLevel(-1, EIT::Bomb);
-
-		// Init Bomb
-		ABombActor& BombActor = *CastChecked<ABombActor>(MapComponent.GetOwner());
-		BombActor.InitBomb(PlayerCharacter);
-
-		// Start listening this bomb
-		MapComponent.OnPostRemovedFromLevel.AddUniqueDynamic(PlayerCharacter, &ThisClass::OnBombDestroyed);
-	};
-
-	// Spawn bomb
-	AGeneratedMap::Get().SpawnActorByType(EAT::Bomb, MapComponentInternal->GetCell(), OnBombSpawned);
-}
-
-// Event triggered when the bomb has been explicitly destroyed.
-void APlayerCharacter::OnBombDestroyed_Implementation(UMapComponent* MapComponent, UObject* DestroyCauser/* = nullptr*/)
-{
-	if (!MapComponent
-	    || MapComponent->GetActorType() != EAT::Bomb)
-	{
-		return;
-	}
-
-	// Stop listening this bomb
-	MapComponent->OnPostRemovedFromLevel.RemoveAll(this);
-
-	// Increment current bomb count back
-	PowerupsInternal.AddCurrentLevel(1, EIT::Bomb);
+	// Activate bomb ability
+	FGameplayEventData EventData;
+	EventData.EventMagnitude = UCellsUtilsLibrary::GetIndexByCellLevel(MapComponentInternal->GetCell());
+	GetAbilitySystemComponentChecked().HandleGameplayEvent(BmrGameplayTags::Event::Bomb_Placed, &EventData);
 }

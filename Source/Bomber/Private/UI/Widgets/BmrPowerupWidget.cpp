@@ -1,26 +1,77 @@
 // Copyright (c) Yevhenii Selivanov
 
 #include "UI/Widgets/BmrPowerupWidget.h"
-//---
-#include "DataAssets/ItemDataAsset.h"
+
+// Bomber
+#include "AbilitySystem/Attributes/BmrPowerupsAttributeSet.h"
+#include "AbilitySystemComponent.h"
+#include "DataAssets/UIDataAsset.h"
 #include "LevelActors/PlayerCharacter.h"
 #include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "Components/Image.h"
 #include "Components/RadialSlider.h"
-//---
+#include "Engine/Texture2D.h"
+#include "GameplayEffectExtension.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BmrPowerupWidget)
 
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
 
+// Updates the blends slider target to which widget will interpolate
+void UBmrPowerupWidget::SetTargetValue(float NewValue, float MaxValue, bool bImmediateUpdate)
+{
+	NewValue = FMath::Max(NewValue, 0.f);
+	MaxValue = FMath::Max(MaxValue, NewValue);
+	TargetValueInternal = NewValue / MaxValue;
+
+	if (bImmediateUpdate)
+	{
+		checkf(RadialSlider, TEXT("ERROR: [%i] %hs:\n'RadialSlider' is null!"), __LINE__, __FUNCTION__);
+		RadialSlider->SetValue(TargetValueInternal);
+	}
+	else
+	{
+		// Start the blend
+		bNeedsUpdateInternal = true;
+		ElapsedLerpTimeInternal = 0.f;
+	}
+}
+
+// Updates the icon of the powerup item in the UI
+void UBmrPowerupWidget::SetPowerupIcon(FBmrPowerupTag NewItemType)
+{
+	if (!ensureMsgf(PowerUpIcon, TEXT("ASSERT: [%i] %hs:\n'PowerUpIcon' is not constructed!"), __LINE__, __FUNCTION__))
+	{
+		return;
+	}
+
+	ItemTypeInternal = NewItemType;
+
+	UTexture2D* IconTexture = UUIDataAsset::Get().GetPowerupIcon(NewItemType);
+	ensureMsgf(PowerUpIcon, TEXT("ASSERT: [%i] %hs:\n'PowerUpIcon' is not set in UI Data Asset"), __LINE__, __FUNCTION__);
+	PowerUpIcon->SetBrushResourceObject(IconTexture);
+}
+
+// Called before the underlying slate widget is constructed to update widget at design time
+void UBmrPowerupWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	// Update the icon brush in the editor when tag property is changed
+	SetPowerupIcon(ItemTypeInternal);
+}
+
 // Called after the underlying slate widget is constructed
 void UBmrPowerupWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (!ensureMsgf(ItemTypeInternal != EItemType::None, TEXT("ASSERT: [%i] %hs:\n'ItemType' is not set!"), __LINE__, __FUNCTION__))
+	if (!ensureMsgf(ItemTypeInternal != FBmrPowerupTag::None, TEXT("ASSERT: [%i] %hs:\n'ItemType' is not set!"), __LINE__, __FUNCTION__))
 	{
 		return;
 	}
@@ -59,30 +110,27 @@ void UBmrPowerupWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
  * Events
  ********************************************************************************************* */
 
-// Called when the local player character is spawned, possessed, and replicated
-void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(class APlayerCharacter* PlayerCharacter, int32 CharacterID)
+// Called when the local player state is initialized and its assigned character is ready
+void UBmrPowerupWidget::OnLocalCharacterReady_Implementation(APlayerCharacter* Character, int32 CharacterID)
 {
-	checkf(PlayerCharacter, TEXT("ERROR: [%i] %hs:\n'PlayerCharacter' is null!"), __LINE__, __FUNCTION__);
-	PlayerCharacter->OnPowerUpsChanged.AddUniqueDynamic(this, &ThisClass::OnPowerUpsChanged);
-	TargetValueInternal = PlayerCharacter->GetPowerUp(ItemTypeInternal).GetCurrentLevelPercent();
+	checkf(Character, TEXT("ERROR: [%i] %hs:\n'Character' is null!"), __LINE__, __FUNCTION__);
 
-	// Set the initial values
-	checkf(RadialSlider, TEXT("ERROR: [%i] %hs:\n'' is null!"), __LINE__, __FUNCTION__);
-	RadialSlider->SetValue(TargetValueInternal);
+	UAbilitySystemComponent& ASC = Character->GetAbilitySystemComponentChecked();
+	const FGameplayAttribute PowerupAttribute = UBmrPowerupsAttributeSet::Conv_TagToBaseAttribute(ItemTypeInternal);
+	ASC.GetGameplayAttributeValueChangeDelegate(PowerupAttribute).AddUObject(this, &ThisClass::OnPowerupAttributeChanged);
+
+	constexpr bool bImmediateUpdate = true;
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(&ASC);
+	const float InitialValue = PowerupsAttributeSet.GetPowerupValueByTag(ItemTypeInternal);
+	const float MaxValue = PowerupsAttributeSet.GetPowerupMaxValueByTag(ItemTypeInternal);
+	SetTargetValue(InitialValue, MaxValue, bImmediateUpdate);
 }
 
-// Called when the power-up data is updated and the UI should reflect new values
-void UBmrPowerupWidget::OnPowerUpsChanged_Implementation(const FBmrPowerUpsContainer& NewPowerUps, const FBmrPowerUpsContainer& PrevPowerUps)
+// Is called when the Skate attribute is changed, e.g: when player picked up given item
+void UBmrPowerupWidget::OnPowerupAttributeChanged(const FOnAttributeChangeData& OnAttributeChangeData)
 {
-	if (NewPowerUps.Get(ItemTypeInternal) == PrevPowerUps.Get(ItemTypeInternal))
-	{
-		// No change in current powerup
-		return;
-	}
-
-	bNeedsUpdateInternal = true;
-	ElapsedLerpTimeInternal = 0.f;
-
-	// Set the new target value
-	TargetValueInternal = NewPowerUps.Get(ItemTypeInternal).GetCurrentLevelPercent();
+	const UAbilitySystemComponent* ASC = OnAttributeChangeData.GEModData ? &OnAttributeChangeData.GEModData->Target : UMyBlueprintFunctionLibrary::GetLocalAbilitySystemComponent();
+	const UBmrPowerupsAttributeSet& PowerupsAttributeSet = UBmrPowerupsAttributeSet::Get(ASC);
+	const float MaxValue = PowerupsAttributeSet.GetPowerupMaxValueByTag(ItemTypeInternal);
+	SetTargetValue(OnAttributeChangeData.NewValue, MaxValue);
 }

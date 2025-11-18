@@ -5,7 +5,7 @@
 #include "GameDifficultyData.generated.h"
 
 /**
- * The type of the game difficulty. 
+ * The type of the game difficulty.
  */
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
 enum class EGameDifficulty : uint8

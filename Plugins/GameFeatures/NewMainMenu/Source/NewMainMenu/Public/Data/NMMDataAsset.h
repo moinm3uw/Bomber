@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Data/MyPrimaryDataAsset.h"
-//---
+
+// Bomber
 #include "Structures/ManageableWidgetData.h"
-//---
+
 #include "NMMDataAsset.generated.h"
 
 enum class ENMMState : uint8;
@@ -59,7 +60,7 @@ protected:
 	 ********************************************************************************************* */
 public:
 	/** Returns the duration of transitioning between Main Menu spots.
-	* @see UNMMDataAsset::CameraTransitionTimeInternal */
+	 * @see UNMMDataAsset::CameraTransitionTimeInternal */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	FORCEINLINE float GetCameraTransitionTime() const { return CameraTransitionTimeInternal; }
 

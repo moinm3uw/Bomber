@@ -1,24 +1,26 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "UI/Input/InputCategoryWidget.h"
-//---
+
+// Bomber
 #include "Data/SettingsDataAsset.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
-#include "UI/SettingsWidget.h"
 #include "UI/Input/InputButtonWidget.h"
-//---
+#include "UI/SettingsWidget.h"
+
+// UE
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
-#include "UserSettings/EnhancedInputUserSettings.h" // FPlayerKeyMapping
-//---
+#include "UserSettings/EnhancedInputUserSettings.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(InputCategoryWidget)
 
 // Returns all categories from the specified input mapping context
 void FInputCategoryData::GetCategoriesDataFromMappings(const UObject& WorldContext, const UMyInputMappingContext& InInputMappingContext, TArray<FInputCategoryData>& OutInputCategoriesData)
 {
 	TArray<FPlayerKeyMapping> AllMappings;
-	UInputUtilsLibrary::GetAllMappingsInContext(&WorldContext, &InInputMappingContext, /*out*/AllMappings);
+	UInputUtilsLibrary::GetAllMappingsInContext(&WorldContext, &InInputMappingContext, /*out*/ AllMappings);
 
 	// Find all categories in every mapping
 	for (const FPlayerKeyMapping& MappingIt : AllMappings)

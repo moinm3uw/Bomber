@@ -1,46 +1,50 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "NMMUtils.h"
-//---
+
+// NMM
 #include "Components/NMMHUDComponent.h"
 #include "Components/NMMPlayerControllerComponent.h"
-#include "Controllers/MyPlayerController.h"
 #include "Data/NMMDataAsset.h"
 #include "Data/NMMSaveGameData.h"
 #include "Data/NMMTypes.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "MyUtilsLibraries/CinematicUtils.h"
-#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
-#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMCameraSubsystem.h"
 #include "Subsystems/NMMInGameSettingsSubsystem.h"
 #include "Subsystems/NMMSpotsSubsystem.h"
+
+// Bomber
+#include "Controllers/MyPlayerController.h"
+#include "GameFramework/MyGameStateBase.h"
+#include "MyUtilsLibraries/CinematicUtils.h"
+#include "MyUtilsLibraries/MultiplayerUtilsLibrary.h"
+#include "MyUtilsLibraries/UtilsLibrary.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
-#include "MovieSceneSequencePlaybackSettings.h"
-#include "MovieSceneSequencePlayer.h"
+
+// UE
 #include "Engine/Engine.h"
 #include "Engine/World.h"
-//---
+#include "MovieSceneSequencePlaybackSettings.h"
+#include "MovieSceneSequencePlayer.h"
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMUtils)
 
 // Returns Main Menu subsystem that provides access to the most important data like Data Asset and current state
-UNMMBaseSubsystem* UNMMUtils::GetBaseSubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMBaseSubsystem* UNMMUtils::GetBaseSubsystem(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UWorld* World = UUtilsLibrary::GetPlayWorld(OptionalWorldContext);
 	return World ? World->GetSubsystem<UNMMBaseSubsystem>() : nullptr;
 }
 
 // Returns Main Menu subsystem that handles menu spots
-UNMMSpotsSubsystem* UNMMUtils::GetSpotsSubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMSpotsSubsystem* UNMMUtils::GetSpotsSubsystem(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UWorld* World = UUtilsLibrary::GetPlayWorld(OptionalWorldContext);
 	return World ? World->GetSubsystem<UNMMSpotsSubsystem>() : nullptr;
 }
 
 // Returns Main Menu subsystem that handles In-Game Settings which are tweaked by player in Settings menu during the game
-UNMMInGameSettingsSubsystem* UNMMUtils::GetInGameSettingsSubsystem(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMInGameSettingsSubsystem* UNMMUtils::GetInGameSettingsSubsystem(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	return GEngine ? GEngine->GetEngineSubsystem<UNMMInGameSettingsSubsystem>() : nullptr;
 }
@@ -60,35 +64,35 @@ const UNMMDataAsset* UNMMUtils::GetDataAsset(const UObject* OptionalWorldContext
 }
 
 // Returns the HUD component of the Main Menu
-UNMMHUDComponent* UNMMUtils::GetHUDComponent(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMHUDComponent* UNMMUtils::GetHUDComponent(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const AMyGameStateBase* MyGameState = UMyBlueprintFunctionLibrary::GetMyGameState(OptionalWorldContext);
 	return MyGameState ? MyGameState->FindComponentByClass<UNMMHUDComponent>() : nullptr;
 }
 
 // Returns the Player Controller component of the Main Menu
-UNMMPlayerControllerComponent* UNMMUtils::GetPlayerControllerComponent(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMPlayerControllerComponent* UNMMUtils::GetPlayerControllerComponent(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const AMyPlayerController* MyPC = UMyBlueprintFunctionLibrary::GetLocalPlayerController(OptionalWorldContext);
 	return MyPC ? MyPC->FindComponentByClass<UNMMPlayerControllerComponent>() : nullptr;
 }
 
 // Returns the widget of the Main Menu.
-UNewMainMenuWidget* UNMMUtils::GetMainMenuWidget(const UObject* OptionalWorldContext/* = nullptr*/)
+UNewMainMenuWidget* UNMMUtils::GetMainMenuWidget(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UNMMHUDComponent* HUDComponent = GetHUDComponent(OptionalWorldContext);
 	return HUDComponent ? HUDComponent->GetMainMenuWidget() : nullptr;
 }
 
 // Returns the widget of the In Cinematic State
-UNMMCinematicStateWidget* UNMMUtils::GetInCinematicStateWidget(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMCinematicStateWidget* UNMMUtils::GetInCinematicStateWidget(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UNMMHUDComponent* HUDComponent = GetHUDComponent(OptionalWorldContext);
 	return HUDComponent ? HUDComponent->GetInCinematicStateWidget() : nullptr;
 }
 
 // Returns the Save Game data of the Main Menu
-UNMMSaveGameData* UNMMUtils::GetSaveGameData(const UObject* OptionalWorldContext/* = nullptr*/)
+UNMMSaveGameData* UNMMUtils::GetSaveGameData(const UObject* OptionalWorldContext /* = nullptr*/)
 {
 	const UNMMPlayerControllerComponent* MenuControllerComp = GetPlayerControllerComponent(OptionalWorldContext);
 	return MenuControllerComp ? MenuControllerComp->GetSaveGameData() : nullptr;
@@ -131,30 +135,30 @@ bool UNMMUtils::ShouldSkipCinematic(const FNMMCinematicRow& CinematicRow)
 // Helper namespace to initialize playback settings once
 namespace NMMPlaybackSettings
 {
-	FMovieSceneSequencePlaybackSettings InitPlaybackSettings(ENMMState MainMenuState)
-	{
-		FMovieSceneSequencePlaybackSettings Settings;
-		Settings.LoopCount.Value = MainMenuState == ENMMState::Idle ? INDEX_NONE : 0; // Loop infinitely if idle, otherwise play once
-		Settings.bPauseAtEnd = true; // Pause at the end, so gameplay camera can blend-out from correct position
-		Settings.bDisableCameraCuts = true; // Let the Spot to control the camera possessing instead of auto-possessed one that prevents blend-out while active
-		const bool bRestoreState = MainMenuState != ENMMState::Cinematic; // Reset all 'Keep States' tracks when entered to None or Idle states
-		Settings.FinishCompletionStateOverride = bRestoreState ? EMovieSceneCompletionModeOverride::ForceRestoreState : EMovieSceneCompletionModeOverride::None;
-		return Settings;
-	}
-
-	const FMovieSceneSequencePlaybackSettings EmptySettings = InitPlaybackSettings(ENMMState::None);
-	const FMovieSceneSequencePlaybackSettings IdlePartSettings = InitPlaybackSettings(ENMMState::Idle);
-	const FMovieSceneSequencePlaybackSettings MainPartSettings = InitPlaybackSettings(ENMMState::Cinematic);
+FMovieSceneSequencePlaybackSettings InitPlaybackSettings(ENMMState MainMenuState)
+{
+	FMovieSceneSequencePlaybackSettings Settings;
+	Settings.LoopCount.Value = MainMenuState == ENMMState::Idle ? INDEX_NONE : 0; // Loop infinitely if idle, otherwise play once
+	Settings.bPauseAtEnd = true; // Pause at the end, so gameplay camera can blend-out from correct position
+	Settings.bDisableCameraCuts = true; // Let the Spot to control the camera possessing instead of auto-possessed one that prevents blend-out while active
+	const bool bRestoreState = MainMenuState != ENMMState::Cinematic; // Reset all 'Keep States' tracks when entered to None or Idle states
+	Settings.FinishCompletionStateOverride = bRestoreState ? EMovieSceneCompletionModeOverride::ForceRestoreState : EMovieSceneCompletionModeOverride::None;
+	return Settings;
 }
+
+const FMovieSceneSequencePlaybackSettings EmptySettings = InitPlaybackSettings(ENMMState::None);
+const FMovieSceneSequencePlaybackSettings IdlePartSettings = InitPlaybackSettings(ENMMState::Idle);
+const FMovieSceneSequencePlaybackSettings MainPartSettings = InitPlaybackSettings(ENMMState::Cinematic);
+} // namespace NMMPlaybackSettings
 
 // Returns the Playback Settings by given cinematic state
 const FMovieSceneSequencePlaybackSettings& UNMMUtils::GetCinematicSettings(ENMMState MainMenuState)
 {
 	switch (MainMenuState)
 	{
-	case ENMMState::Idle: return NMMPlaybackSettings::IdlePartSettings;
-	case ENMMState::Cinematic: return NMMPlaybackSettings::MainPartSettings;
-	default: return NMMPlaybackSettings::EmptySettings;
+		case ENMMState::Idle: return NMMPlaybackSettings::IdlePartSettings;
+		case ENMMState::Cinematic: return NMMPlaybackSettings::MainPartSettings;
+		default: return NMMPlaybackSettings::EmptySettings;
 	}
 }
 
@@ -165,7 +169,7 @@ int32 UNMMUtils::GetCinematicTotalFrames(ENMMState MainMenuState, const UMovieSc
 	if (MainMenuState == ENMMState::Idle)
 	{
 		// Obtain the first subsequence of the Master sequence or null if not found
-		LevelSequenceTemplate = UCinematicUtils::FindSubsequence(/*Index*/0, LevelSequenceTemplate);
+		LevelSequenceTemplate = UCinematicUtils::FindSubsequence(/*Index*/ 0, LevelSequenceTemplate);
 	}
 
 	return UCinematicUtils::GetSequenceTotalFrames(LevelSequenceTemplate);
@@ -179,16 +183,16 @@ FMovieSceneSequencePlaybackParams UNMMUtils::GetPlaybackPositionParams(ENMMState
 	{
 		switch (MainMenuState)
 		{
-		case ENMMState::None:
-			// Moving to the last frame will stop the cinematic while regular 'Stop' does not work for clients
-			return UCinematicUtils::GetSequenceTotalFrames(LevelSequencePlayer->GetSequence()) - 1;
-		case ENMMState::Idle:
-			// Start from the beginning
-			return 0;
-		case ENMMState::Cinematic:
-			// Continue from the current frame
-			return LevelSequencePlayer->GetCurrentTime().Time.FrameNumber.Value;
-		default: return -1;
+			case ENMMState::None:
+				// Moving to the last frame will stop the cinematic while regular 'Stop' does not work for clients
+				return UCinematicUtils::GetSequenceTotalFrames(LevelSequencePlayer->GetSequence()) - 1;
+			case ENMMState::Idle:
+				// Start from the beginning
+				return 0;
+			case ENMMState::Cinematic:
+				// Continue from the current frame
+				return LevelSequencePlayer->GetCurrentTime().Time.FrameNumber.Value;
+			default: return -1;
 		}
 	}();
 

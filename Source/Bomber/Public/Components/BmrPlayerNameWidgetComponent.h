@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Components/WidgetComponent.h"
-//---
+
 #include "BmrPlayerNameWidgetComponent.generated.h"
 
 enum class ECurrentGameState : uint8;

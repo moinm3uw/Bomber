@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Engine/GameViewportClient.h"
-//---
+
 #include "MyGameViewportClient.generated.h"
 
 enum EAspectRatioAxisConstraint : int;

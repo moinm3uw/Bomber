@@ -1,17 +1,21 @@
 ﻿// Copyright (c) Yevhenii Selivanov.
 
 #include "LevelActors/ItemActor.h"
-//---
-#include "Bomber.h"
-#include "GeneratedMap.h"
+
+// Bomber
 #include "Components/MapComponent.h"
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/ItemDataAsset.h"
-#include "Subsystems/SoundsSubsystem.h"
+#include "GeneratedMap.h"
+#include "Structures/BmrGameplayTags.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
+// UE
+#include "Abilities/GameplayAbilityTypes.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "Net/UnrealNetwork.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ItemActor)
 
 // Sets default values
@@ -36,7 +40,7 @@ AItemActor::AItemActor()
 }
 
 // Set new item type, can be called on the server-only
-void AItemActor::SetItemType(EItemType NewItemType)
+void AItemActor::SetItemType(FBmrPowerupTag NewItemType)
 {
 	if (!HasAuthority()
 	    || ItemTypeInternal == NewItemType)
@@ -48,6 +52,22 @@ void AItemActor::SetItemType(EItemType NewItemType)
 	MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, ItemTypeInternal, this);
 }
 
+// Is called on client when item type is replicated
+void AItemActor::OnRep_ItemType()
+{
+	UpdateItemMesh();
+}
+
+// Is called on both server and clients to update the item mesh based on the item type
+void AItemActor::UpdateItemMesh()
+{
+	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
+	{
+		checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
+		MapComponentInternal->SetLocalMesh(FoundItemRow->Mesh);
+	}
+}
+
 /*********************************************************************************************
  * Overrides
  ********************************************************************************************* */
@@ -57,8 +77,7 @@ void AItemActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	checkf(MapComponentInternal, TEXT("ERROR: [%i] %hs:\n'MapComponentInternal' is null!"), __LINE__, __FUNCTION__);
-	MapComponentInternal->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnAddedToLevel);
+	BIND_ON_ADDED_TO_LEVEL(this, ThisClass::OnAddedToLevel);
 	AGeneratedMap::Get().AddToGrid(MapComponentInternal);
 }
 
@@ -86,33 +105,35 @@ void AItemActor::OnAddedToLevel_Implementation(UMapComponent* MapComponent)
 	OnActorBeginOverlap.AddUniqueDynamic(this, &AItemActor::OnItemBeginOverlap);
 
 	// Rand the item type if not set yet
-	if (ItemTypeInternal == EItemType::None)
+	if (HasAuthority()
+	    && ItemTypeInternal == FBmrPowerupTag::None)
 	{
-		const int32 RandomIndex = FMath::RandRange(EIT_FIRST_FLAG, EIT_LAST_FLAG);
-		const EItemType NewItemType = static_cast<EItemType>(RandomIndex);
+		const int32 RandomIndex = FMath::RandRange(0, FBmrPowerupTag::GetAll().Num() - 1);
+		const FBmrPowerupTag NewItemType = FBmrPowerupTag::GetAll().GetByIndex(RandomIndex);
 		SetItemType(NewItemType);
-	}
-
-	// Override mesh
-	if (const UItemRow* FoundItemRow = UItemDataAsset::Get().GetRowByItemType(ItemTypeInternal, UMyBlueprintFunctionLibrary::GetLevelType()))
-	{
-		MapComponent->SetLocalMesh(FoundItemRow->Mesh);
+		UpdateItemMesh();
 	}
 }
 
 // Triggers when this item starts overlap a player character to destroy itself
 void AItemActor::OnItemBeginOverlap_Implementation(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if (!OtherActor
-	    || !OtherActor->IsA(UDataAssetsContainer::GetActorClassByType(EAT::Player)))
+	if (IsHidden())
+	{
+		// Might happen on predicted client when the item is already collected
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OtherActor);
+	if (!ASC)
 	{
 		return;
 	}
 
-	USoundsSubsystem::Get().PlayItemPickUpSFX();
-
-	// Destroy itself on overlapping
-	AGeneratedMap::Get().DestroyLevelActor(MapComponentInternal, OtherActor);
+	FGameplayEventData EventData;
+	EventData.Instigator = this;
+	EventData.InstigatorTags.AddTag(ItemTypeInternal);
+	ASC->HandleGameplayEvent(BmrGameplayTags::Event::Powerup_Collected, &EventData);
 }
 
 // Called when this level actor is destroyed from the Generated Map
@@ -123,5 +144,5 @@ void AItemActor::OnPostRemovedFromLevel_Implementation(UMapComponent* MapCompone
 
 	OnActorBeginOverlap.RemoveAll(this);
 
-	SetItemType(EItemType::None);
+	SetItemType(FBmrPowerupTag::None);
 }

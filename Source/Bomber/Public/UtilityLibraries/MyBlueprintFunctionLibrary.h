@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
 #include "MyBlueprintFunctionLibrary.generated.h"
 
 enum class ELevelType : uint8;
@@ -53,8 +53,8 @@ public:
 	static class AMyPlayerController* GetLocalPlayerController(const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the Bomber Player State for specified player, nullptr otherwise. */
-	UFUNCTION(BlueprintPure, Category = "C++")
-	static class AMyPlayerState* GetMyPlayerState(int32 CharacterID);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class AMyPlayerState* GetMyPlayerState(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
 
 	/** Returns the player state of current controller. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
@@ -84,6 +84,26 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
 	static class APlayerCharacter* GetLocalPlayerCharacter(const UObject* OptionalWorldContext = nullptr);
 
+	/** Returns specified Ability System Component.
+	 * @param CharacterID - Global ID of a character in session to find.
+	 * @param OptionalWorldContext - the world context object. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UAbilitySystemComponent* GetAbilitySystemComponent(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns the Ability System Component from the local Player State. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UAbilitySystemComponent* GetLocalAbilitySystemComponent(const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns specified Mover Component.
+	 * @param CharacterID - Global ID of a character in session to find.
+	 * @param OptionalWorldContext - the world context object. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UBmrMoverComponent* GetMoverComponent(int32 CharacterID, const UObject* OptionalWorldContext = nullptr);
+
+	/** Returns the Mover Component from the local Player Character. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (WorldContext = "OptionalWorldContext", CallableWithoutWorldContext))
+	static class UBmrMoverComponent* GetLocalMoverComponent(const UObject* OptionalWorldContext = nullptr);
+
 	/** Returns implemented Game Viewport Client on the project side. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static class UMyGameViewportClient* GetGameViewportClient();
@@ -93,15 +113,15 @@ public:
 	static class UMouseActivityComponent* GetMouseActivityComponent(const UObject* OptionalWorldContext = nullptr);
 
 	/* ---------------------------------------------------
-	*		EActorType functions
-	* --------------------------------------------------- */
+	 *		EActorType functions
+	 * --------------------------------------------------- */
 
 	/** Bitwise and(&) operation with bitmasks of actors types.
 	 * Checks the actors types among each other between themselves */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (CompactNodeTitle = "&"))
 	static FORCEINLINE bool BitwiseActorTypes(
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 LBitmask,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 RBitmask)
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 LBitmask,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 RBitmask)
 	{
 		return (LBitmask & RBitmask) != 0;
 	}
@@ -117,6 +137,6 @@ public:
 	/** Returns true if specified level actor has at least one specified type. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static bool IsActorHasAnyMatchingType(
-		const AActor* Actor,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const AActor* Actor,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 };

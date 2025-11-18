@@ -1,22 +1,23 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/PlayerInputDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
 #include "DataAssets/MyInputMappingContext.h"
 #include "MyUtilsLibraries/InputUtilsLibrary.h"
 #include "MyUtilsLibraries/UtilsLibrary.h"
-//---
+
+// UE
 #include "Engine/World.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(PlayerInputDataAsset)
 
 // Returns the player input data asset
 const UPlayerInputDataAsset& UPlayerInputDataAsset::Get()
 {
 	const UPlayerInputDataAsset* PlayerInputDataAsset = UDataAssetsContainer::GetPlayerInputDataAsset();
-	checkf(PlayerInputDataAsset, TEXT("The Player Input Data Asset is not valid"))
-	return *PlayerInputDataAsset;
+	checkf(PlayerInputDataAsset, TEXT("The Player Input Data Asset is not valid")) return *PlayerInputDataAsset;
 }
 
 // Returns all input contexts contained in this data asset

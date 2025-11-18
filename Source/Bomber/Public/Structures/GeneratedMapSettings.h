@@ -5,12 +5,15 @@
 #include "GeneratedMapSettings.generated.h"
 
 /**
- * Contains settings for runtime generation of the level map. 
+ * Contains settings for runtime generation of the level map.
  */
 USTRUCT(BlueprintType)
 struct BOMBER_API FGeneratedMapSettings
 {
 	GENERATED_BODY()
+
+	/** Empty generation settings instance. */
+	static const FGeneratedMapSettings Empty;
 
 	/** The chance of walls generation. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ShowOnlyInnerProperties, Units = "Percent", ClampMin = "0", ClampMax = "100"))
@@ -24,4 +27,11 @@ struct BOMBER_API FGeneratedMapSettings
 	 * Disable to allow the Generated Map to be moved around the scene. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ShowOnlyInnerProperties))
 	bool LockOnZero = true;
+
+	/** Determines main generation logic (e.g., Symmetrical, Classic etc).
+	 * Contains additional settings per selected generator. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced, meta = (ShowOnlyInnerProperties))
+	TObjectPtr<class UBmrCellsGenerator_Base> Generator = nullptr;
+
+	bool FORCEINLINE IsValid() const { return Generator != nullptr; }
 };

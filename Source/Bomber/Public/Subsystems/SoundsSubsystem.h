@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Subsystems/WorldSubsystem.h"
-//---
+
 #include "SoundsSubsystem.generated.h"
 
 enum class ELevelType : uint8;
@@ -122,14 +122,6 @@ public:
 	/** Stops currently played in-match background music. */
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void StopInGameMusic();
-
-	/** Play the blast sound of the bomb. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void PlayExplosionSFX();
-
-	/** Play the sound of the picked power-up. */
-	UFUNCTION(BlueprintCallable, Category = "C++")
-	void PlayItemPickUpSFX();
 
 	/** Play the sound that is played right before the match ends. */
 	UFUNCTION(BlueprintCallable, Category = "C++")

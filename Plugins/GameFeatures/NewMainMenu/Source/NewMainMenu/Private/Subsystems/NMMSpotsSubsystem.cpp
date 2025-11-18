@@ -1,15 +1,18 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "Subsystems/NMMSpotsSubsystem.h"
-//---
-#include "NMMUtils.h"
+
+// NMM
 #include "Components/NMMSpotComponent.h"
-#include "GameFramework/MyGameStateBase.h"
-#include "Subsystems/GlobalEventsSubsystem.h"
+#include "NMMUtils.h"
 #include "Subsystems/NMMBaseSubsystem.h"
 #include "Subsystems/NMMInGameSettingsSubsystem.h"
+
+// Bomber
+#include "GameFramework/MyGameStateBase.h"
+#include "Subsystems/GlobalEventsSubsystem.h"
 #include "UtilityLibraries/MyBlueprintFunctionLibrary.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NMMSpotsSubsystem)
 
 UNMMSpotsSubsystem& UNMMSpotsSubsystem::Get(const UObject* OptionalWorldContext)
@@ -64,7 +67,7 @@ void UNMMSpotsSubsystem::GetMainMenuSpotsByLevelType(TArray<UNMMSpotComponent*>&
 	for (UNMMSpotComponent* MainMenuSpotComponent : MainMenuSpotsInternal)
 	{
 		if (MainMenuSpotComponent
-			&& MainMenuSpotComponent->GetCinematicRow().LevelType == LevelType)
+		    && MainMenuSpotComponent->GetCinematicRow().LevelType == LevelType)
 		{
 			OutSpots.AddUnique(MainMenuSpotComponent);
 		}
@@ -81,7 +84,7 @@ void UNMMSpotsSubsystem::GetMainMenuSpotsByLevelType(TArray<UNMMSpotComponent*>&
 UNMMSpotComponent* UNMMSpotsSubsystem::GetNextSpot(int32 Incrementer, ELevelType LevelType) const
 {
 	TArray<UNMMSpotComponent*> CurrentLevelTypeSpots;
-	GetMainMenuSpotsByLevelType(/*out*/CurrentLevelTypeSpots, LevelType);
+	GetMainMenuSpotsByLevelType(/*out*/ CurrentLevelTypeSpots, LevelType);
 
 	// Extract the row indices, so we can track the bounds
 	TArray<int32> SpotRowIndices;
@@ -118,7 +121,7 @@ UNMMSpotComponent* UNMMSpotsSubsystem::MoveMainMenuSpot(int32 Incrementer)
 	ActiveMenuSpotIdxInternal = NextMainMenuSpot->GetCinematicRow().RowIndex;
 	LastMoveSpotDirectionInternal = Incrementer;
 
-	// If transition happened in opened menu, change the internal state 
+	// If transition happened in opened menu, change the internal state
 	if (AMyGameStateBase::GetCurrentGameState() == ECGS::Menu)
 	{
 		// If instant, then switch to the next spot, it will possess the camera and start playing its cinematic
@@ -192,7 +195,10 @@ void UNMMSpotsSubsystem::HandleUnavailableMenuSpot()
 	// Current is inactive (hidden), likely it's locked by different systems
 	// Switch to any previous spot that is active
 	constexpr int32 BackwardDir = -1;
-	MoveMainMenuSpotByPredicate(BackwardDir, [](const UNMMSpotComponent* Spot) { return Spot->IsSpotAvailable(); });
+	MoveMainMenuSpotByPredicate(BackwardDir, [](const UNMMSpotComponent* Spot)
+	{
+		return Spot->IsSpotAvailable();
+	});
 }
 
 /*********************************************************************************************
@@ -234,10 +240,10 @@ void UNMMSpotsSubsystem::OnGameStateChanged_Implementation(ECurrentGameState Cur
 {
 	switch (CurrentGameState)
 	{
-	case ECGS::GameStarting:
-		HandleUnavailableMenuSpot();
-		break;
+		case ECGS::GameStarting:
+			HandleUnavailableMenuSpot();
+			break;
 
-	default: break;
+		default: break;
 	}
 }

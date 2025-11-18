@@ -3,10 +3,13 @@
 #pragma once
 
 #include "Engine/DataTable.h"
-//---
+
+// Bomber
 #include "Bomber.h" // ELevelType
-#include "Misc/EnumRange.h"
-//---
+
+// UE
+#include "Misc/EnumRange.h" // ENUM_RANGE_BY_FIRST_AND_LAST
+
 #include "FTGTypes.generated.h"
 
 /**
@@ -46,10 +49,10 @@ struct FOOTTRAILSGENERATORRUNTIME_API FFTGArchetype : public FTableRowBase
 	TSoftObjectPtr<class UStaticMesh> Mesh = nullptr;
 
 	/** Compares for equality.
-	* @param Other The other object being compared. */
+	 * @param Other The other object being compared. */
 	bool operator==(const FFTGArchetype& Other) const { return GetTypeHash(*this) == GetTypeHash(Other); }
 
 	/** Creates a hash value.
-	* @param Other the other object to create a hash value for. */
+	 * @param Other the other object to create a hash value for. */
 	friend FOOTTRAILSGENERATORRUNTIME_API uint32 GetTypeHash(const FFTGArchetype& Other) { return GetTypeHash(Other.FootTrailType) ^ GetTypeHash(Other.LevelType) ^ GetTypeHash(Other.Mesh); }
 };

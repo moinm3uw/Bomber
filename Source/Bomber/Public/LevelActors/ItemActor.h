@@ -3,9 +3,10 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-//---
-#include "Structures/BmrPowerUp.h"
-//---
+
+// Bomber
+#include "Structures/BmrPowerupTag.h"
+
 #include "ItemActor.generated.h"
 
 /**
@@ -23,11 +24,11 @@ public:
 
 	/** Return current item type. */
 	UFUNCTION(BlueprintPure, Category = "C++")
-	FORCEINLINE EItemType GetItemType() const { return ItemTypeInternal; }
+	FORCEINLINE FBmrPowerupTag GetItemType() const { return ItemTypeInternal; }
 
 	/** Set new item type, can be called on the server-only. */
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "C++")
-	void SetItemType(EItemType NewItemType);
+	void SetItemType(FBmrPowerupTag NewItemType);
 
 protected:
 	/** The MapComponent manages this actor on the Generated Map */
@@ -35,12 +36,20 @@ protected:
 	TObjectPtr<class UMapComponent> MapComponentInternal = nullptr;
 
 	/**
-	* Skate: Increase the movement speed of the character.
-	* Bomb: Increase the number of bombs that can be set at one time.
-	* Fire: Increase the bomb blast radius.
-	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "C++", meta = (BlueprintProtected, DisplayName = "Item Type"))
-	EItemType ItemTypeInternal = EItemType::None;
+	 * Skate: Increase the movement speed of the character.
+	 * Bomb: Increase the number of bombs that can be set at one time.
+	 * Fire: Increase the bomb blast radius.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = "OnRep_ItemType", Category = "C++", meta = (BlueprintProtected, DisplayName = "Item Type"))
+	FBmrPowerupTag ItemTypeInternal = FBmrPowerupTag::None;
+
+	/** Is called on client when item type is replicated. */
+	UFUNCTION()
+	void OnRep_ItemType();
+
+	/** Is called on both server and clients to update the item mesh based on the item type. */
+	UFUNCTION(BlueprintCallable, Category = "C++", meta = (BlueprintProtected))
+	void UpdateItemMesh();
 
 	/*********************************************************************************************
 	 * Overrides

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-//---
+
 #include "PlayerNameWidget.generated.h"
 
 /**
@@ -32,7 +32,7 @@ protected:
 	TObjectPtr<class UTextBlock> PlayerNameTextWidget = nullptr;
 
 	/** Background image for nameplate styling */
-UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Transient, Category = "C++", meta = (BlueprintProtected, BindWidget))
 	TObjectPtr<class UImage> BackgroundImageWidget = nullptr;
 
 	/*********************************************************************************************

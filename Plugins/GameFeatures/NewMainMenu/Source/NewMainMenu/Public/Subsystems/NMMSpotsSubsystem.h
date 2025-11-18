@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Subsystems/WorldSubsystem.h"
-//---
+
 #include "NMMSpotsSubsystem.generated.h"
 
 class UNMMSpotComponent;

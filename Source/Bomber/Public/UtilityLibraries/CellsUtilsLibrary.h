@@ -3,9 +3,10 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-//---
+
+// Bomber
 #include "Structures/Cell.h"
-//---
+
 #include "CellsUtilsLibrary.generated.h"
 
 enum class EPathType : uint8;
@@ -197,7 +198,7 @@ public:
 	static FORCEINLINE FIntPoint GetPositionByCellOnGrid(const FCell& InCell, const TSet<FCell>& InGrid) { return FCell::GetPositionByCellOnGrid(InCell, InGrid); }
 
 	/** Returns the center column (X) and row (Y) position on given grid.
-	  * E.g: for grid with 5 rows and 5 columns, the center cell will be (2,2). */
+	 * E.g: for grid with 5 rows and 5 columns, the center cell will be (2,2). */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static FORCEINLINE FIntPoint GetCenterCellPositionOnGrid(const TSet<FCell>& InGrid) { return FCell::GetCenterCellPositionOnGrid(InGrid); }
 
@@ -328,6 +329,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InCell"))
 	static void GetPositionByCellOnLevel(const FCell& InCell, int32& OutColumnX, int32& OutRowY);
 
+	/** Returns array index for cell in grid data structure, otherwise -1 if not found.
+	 * Might be useful as cell ID for networking or data association (e.g. cell(200,400) at position [1,2] has index 15) */
+	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "InCell"))
+	static int32 GetIndexByCellLevel(const FCell& InCell);
+
+	/** Gets cell from array index in grid data structure, otherwise invalid cell if not found.
+	 * Might be useful as cell ID for networking or data association (e.g. index 15 → cell(200,400) at position [1,2]) */
+	UFUNCTION(BlueprintPure, Category = "C++")
+	static FCell GetCellByIndexOnLevel(int32 CellIndex);
+
 	/** Returns all grid cell locations on the Generated Map as Set. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static FORCEINLINE TSet<FCell> GetAllCellsOnLevel() { return FCells{GetAllCellsOnLevelAsArray()}; }
@@ -355,11 +366,10 @@ public:
 	 * If none of actors are chosen, returns all empty cells without actors. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (Keywords = "Cell By Actor"))
 	static TSet<FCell> GetAllCellsWithActors(
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** The intersection of (OutCells ∩ ActorsTypesBitmask).
 	 * @warning Is not public blueprintable since all related ufunctions are already use this method, they all do the same e.g: FilterCellsByActors, IsCellHasAnyMatchingActor etc.
-	 * 
 	 * @param InOutCells Will contain cells with actors of specified types.
 	 * @param ActorsTypesBitmask Bitmask of actors types to intersect.
 	 * @param bIntersectAllIfEmpty If the specified set is empty, then all non-empty cells of each actor will be iterated as a source set.
@@ -381,11 +391,11 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static TSet<FCell> FilterCellsByActors(
-		const TSet<FCell>& InCells,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const TSet<FCell>& InCells,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns true if specified cell is empty, so it does not have own actor.
-	* Could be useful to make sure there is nothing on cell, so some actor could be spawned there. */
+	 * Could be useful to make sure there is nothing on cell, so some actor could be spawned there. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell", Keywords = "Free"))
 	static bool IsEmptyCellWithoutActor(const FCell& Cell);
 
@@ -394,8 +404,8 @@ public:
 	 * Could be useful to determine does input cell contain specific actor in itself like wall, so there is no way. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell"))
 	static bool IsCellHasAnyMatchingActor(
-		const FCell& Cell,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const FCell& Cell,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns true if at least one cell along specified is empty, so it does not have own actor.*/
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell", Keywords = "Free"))
@@ -406,8 +416,8 @@ public:
 	 * Could be useful to determine do input cells contain at least one item. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static bool AreCellsHaveAnyMatchingActors(
-		const TSet<FCell>& Cells,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const TSet<FCell>& Cells,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns true if all specified cells are empty, so don't have own actors.
 	 * Could be useful to make sure there are nothing on cells, so some actors could be spawned there. */
@@ -419,8 +429,8 @@ public:
 	 * Could be useful to make sure there only players on input cells. */
 	UFUNCTION(BlueprintPure, Category = "C++")
 	static bool AreCellsHaveAllMatchingActors(
-		const TSet<FCell>& Cells,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const TSet<FCell>& Cells,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns true if specified cell is present on the Generated Map.
 	 * Could be useful to check is input cell valid. */
@@ -443,7 +453,7 @@ public:
 
 	/** Getting an array of cells by any sides from an input center cell and type of breaks.
 	 * @warning Is not public blueprintable since all related ufunctions are already use this method, they all do the same e.g: GetCellsAround, GetCellInDirection etc.
-	 * 
+	 *
 	 * @param OutCells Will contain found cells.
 	 * @param Cell The start of searching by the sides.
 	 * @param Pathfinder Type of cells searching.
@@ -452,12 +462,12 @@ public:
 	 * @param bBreakInputCells In case, specified OutCells is not empty, these cells break lines as the Wall behavior, will not be removed from the array.
 	 */
 	static void GetSideCells(
-		FCells& OutCells,
-		const FCell& Cell,
-		EPathType Pathfinder,
-		int32 SideLength,
-		int32 DirectionsBitmask,
-		bool bBreakInputCells = false);
+	    FCells& OutCells,
+	    const FCell& Cell,
+	    EPathType Pathfinder,
+	    int32 SideLength,
+	    int32 DirectionsBitmask,
+	    bool bBreakInputCells = false);
 
 	/** Returns cells around the center in specified radius and according desired type of breaks.
 	 * Could be useful to find all possible ways around.
@@ -468,9 +478,9 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell", Keywords = "Side"))
 	static TSet<FCell> GetCellsAround(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 Radius);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 Radius);
 
 	/** Returns cells that match specified actors in specified radius from a center, according desired type of breaks.
 	 * If none of actors are chosen, returns matching empty cells around without actors.
@@ -483,10 +493,10 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell", Keywords = "Cell By Actor,Side"))
 	static TSet<FCell> GetCellsAroundWithActors(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 Radius,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 Radius,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns matching empty cells around without actors, according desired type of breaks.
 	 * Could be useful to determine are there empty cells around.
@@ -497,9 +507,9 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell", Keywords = "Cell By Actor,Free,Side"))
 	static TSet<FCell> GetEmptyCellsAroundWithoutActors(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 Radius);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 Radius);
 
 	/** Returns first cell in specified direction from a center, according desired type of breaks.
 	 * Could be useful to get next cell.
@@ -510,9 +520,9 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell,Side"))
 	static FCell GetCellInDirection(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		ECellDirection Direction);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    ECellDirection Direction);
 
 	/** Returns true if a cell was found in specified direction from a center, according desired type of breaks.
 	 * Could be useful to determine can the next cell be taken.
@@ -523,9 +533,9 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell,Side"))
 	static bool CanGetCellInDirection(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		ECellDirection Direction);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    ECellDirection Direction);
 
 	/** Returns cells in specified direction from a center, according desired type of breaks.
 	 * Could be useful to get horizontal cells in left and right direction or vertical cells in forward and backward directions.
@@ -537,10 +547,10 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell,Side"))
 	static TSet<FCell> GetCellsInDirections(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 SideLength,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 SideLength,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask);
 
 	/** Returns cells that match specified actors in specified direction from a center, according desired type of breaks.
 	 * If none of actors are chosen, returns matching empty cells without actors in chosen direction(s).
@@ -554,11 +564,11 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell", Keywords = "Cell By Actor,Side"))
 	static TSet<FCell> GetCellsInDirectionsWithActors(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 SideLength,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 SideLength,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.EActorType")) int32 ActorsTypesBitmask);
 
 	/** Returns matching empty cells without actors in chosen direction(s), according desired type of breaks.
 	 * Could be useful to determine are there empty cells on the way.
@@ -570,10 +580,10 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "CenterCell", Keywords = "Cell By Actor,Free,Side"))
 	static TSet<FCell> GetEmptyCellsInDirectionsWithoutActors(
-		const FCell& CenterCell,
-		EPathType Pathfinder,
-		int32 SideLength,
-		UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask);
+	    const FCell& CenterCell,
+	    EPathType Pathfinder,
+	    int32 SideLength,
+	    UPARAM(meta = (Bitmask, BitmaskEnum = "/Script/Bomber.ECellDirection")) int32 DirectionsBitmask);
 
 	/** Returns true if player is not able to reach specified cell by any path. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell", Keywords = "Path"))
@@ -596,7 +606,7 @@ public:
 	/** Gets actor location snapped to nearest cell on the level grid.
 	 * @param Actor The actor to obtain location and snap to the grid. Is not `const` because of `BlueprintAutocast` limitation to make Drag & Drop work from Actor parameter to Cell parameter. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (BlueprintAutocast))
-	static FCell SnapActorOnLevel(class AActor* Actor);
+	static FCell SnapActorOnLevel(const class AActor* Actor);
 
 	/** Returns nearest free cell to given cell, where free means cell with no other level actors except players. */
 	UFUNCTION(BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "Cell"))
@@ -608,8 +618,7 @@ public:
 
 	/** Returns true if any player is able to reach all specified cells by any path.
 	 * @param CellsToFind Cells to which needs to find any path.
-	 * @param OptionalPathBreakers Unreachable cells, where path will stop (e.g: walls), can be empty.
-	 * @TODO JanSeliv twoZAVVk Improve algorithm to be more efficient and faster. */
+	 * @param OptionalPathBreakers Unreachable cells, where path will stop (e.g: walls), can be empty. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++", meta = (AutoCreateRefTerm = "OptionalPathBreakers"))
 	static bool DoesPathExistToCellsOnLevel(const TSet<FCell>& CellsToFind, const TSet<FCell>& OptionalPathBreakers);
 
@@ -640,7 +649,7 @@ public:
 public:
 	/** Remove all text renders of the Owner, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly, DefaultToSelf = "Owner"))
-	static void ClearDisplayedCells(const UObject* Owner);
+	static void ClearDisplayedCells(const UObject* Owner = nullptr);
 
 	/** Display coordinates of specified cells on the level, is not available in shipping build. */
 	UFUNCTION(BlueprintCallable, Category = "C++", meta = (DevelopmentOnly, DefaultToSelf = "Owner", AdvancedDisplay = 2, AutoCreateRefTerm = "Params"))

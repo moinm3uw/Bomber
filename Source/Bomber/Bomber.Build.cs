@@ -8,7 +8,7 @@ public class Bomber : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Latest;
-		bEnableNonInlinedGenCppWarnings = true;
+		CppCompileWarningSettings.NonInlinedGenCppWarningLevel = WarningLevel.Error;
 
 		// Network: enable Iris replication
 		const bool bAddAsPublicDependency = true; // Created FMapComponentsContainer
@@ -20,6 +20,9 @@ public class Bomber : ModuleRules
                 , "UMG" // UUserWidget creation
                 , "EnhancedInput" // Created UMyInputAction, UMyInputMappingContext
                 , "DeveloperSettings" // Created UDataAssetsContainer
+                , "GameFeatures" // Inherited IGameFeatureStateChangeObserver
+                , "GameplayAbilities", "GameplayTags", "GameplayTasks" // Gameplay Ability System (GAS)
+                , "Mover" // Created UBmrMoverComponent, UBmrMoverWalkingMode
                 //My modules
                 , "FunctionPicker" // Created properties in UMyInputAction
                 , "MetaCheatManager" // Created UMyCheatManager
@@ -39,7 +42,7 @@ public class Bomber : ModuleRules
 				, "AIModule" // AI
 				, "Niagara" // VFX
 				, "GameplayTags" // FGameplayTag
-                , "GameFeatures", "ModularGameplay" // Modular Game Features
+                , "ModularGameplay" // Modular Game Features (MGF)
                 , "ModelViewViewModel" // MVVM UI pattern
 				//My modules
 				, "SettingsWidgetConstructor" // Generates settings

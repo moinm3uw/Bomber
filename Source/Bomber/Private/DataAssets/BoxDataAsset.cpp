@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "DataAssets/BoxDataAsset.h"
-//---
+
+// Bomber
 #include "DataAssets/DataAssetsContainer.h"
 #include "GameFramework/MyCheatManager.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(BoxDataAsset)
 
 // Default constructor
@@ -28,7 +29,7 @@ int32 UBoxDataAsset::GetPowerupsChance() const
 	{
 		return CheatOverride;
 	}
-#endif //!UE_BUILD_SHIPPING
+#endif // !UE_BUILD_SHIPPING
 
 	return SpawnItemChanceInternal;
 }

@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Yevhenii Selivanov
 
 #include "GameFramework/MyGameSession.h"
-//---
+
+// Bomber
 #include "GameFramework/MyPlayerState.h"
-//---
 #include "GameFramework/PlayerController.h"
-//---
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MyGameSession)
 
 // Is overridden to set proper ID for the player

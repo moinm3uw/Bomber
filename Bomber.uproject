@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.5",
+	"EngineAssociation": "5.6",
 	"Category": "",
 	"Description": "Open-source Bomberman game made in Unreal Engine 5",
 	"Modules": [
@@ -54,6 +54,18 @@
 		},
 		{
 			"Name": "Iris",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "Mover",
+			"Enabled": true
+		},
+		{
+			"Name": "SteamSockets",
 			"Enabled": true
 		}
 	]

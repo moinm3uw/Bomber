@@ -2,8 +2,9 @@
 
 #pragma once
 
+// Bomber
 #include "Bomber.h" // ECurrentGameState
-//---
+
 #include "MouseVisibilitySettings.generated.h"
 
 /**
