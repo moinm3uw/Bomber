@@ -250,7 +250,7 @@ void UWidgetsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	UGameFeaturesSubsystem::Get().AddObserver(this);
+	UGameFeaturesSubsystem::Get().AddObserver(this, UGameFeaturesSubsystem::EObserverPluginStateUpdateMode::FutureOnly);
 }
 
 // Is overridden to cleanup injected widgets to let them unload properly

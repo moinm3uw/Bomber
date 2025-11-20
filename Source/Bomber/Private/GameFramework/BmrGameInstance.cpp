@@ -22,7 +22,7 @@
 UBmrGameInstance::UBmrGameInstance(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-	bAutoJoinOnAcceptedUserInviteReceived = false;
+	bAutoJoinSessionOnAcceptedUserInviteReceived = false;
 }
 
 // Is overridden to listen when first local player is added

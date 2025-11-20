@@ -1,5 +1,5 @@
 <a href="https://github.com/JanSeliv/Bomber/blob/main/LICENSE">![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)</a>
-<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.6-dea309?style=flat&logo=unrealengine)</a>
+<a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-5.7-dea309?style=flat&logo=unrealengine)</a>
 
 <br/>
 <p align="center">
@@ -61,7 +61,7 @@ git submodule update --init --recursive
 
 ## 💻 Unreal Project Requirements
 
-- **Unreal Engine 5.6**
+- **Unreal Engine 5.7**
 - **Project Size:** ~30GB (build ~3GB)
 
 The project has been tested and launching the editor on the following platforms:
@@ -110,6 +110,8 @@ Next [plugins](https://github.com/JanSeliv/Bomber/tree/master/Plugins) were deve
 Stay updated with the current progress and plans on the [Trello board](https://trello.com/b/1jbKvyeh/bomber-kanban).
 
 ## 📅 Changelog
+#### `2026-XX-XX:`
+- Updated to **Unreal Engine 5.7**.
 #### `2025-11-17:`
 - Updated to **Unreal Engine 5.6**.
 - Migrated the project to use **Gameplay Ability System (GAS)** for actions (bombs, damage, powerups) and **Mover 2.0** for movement, significantly improving the responsiveness in multiplayer for players with high ping.

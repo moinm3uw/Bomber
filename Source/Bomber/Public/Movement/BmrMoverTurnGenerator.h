@@ -20,5 +20,5 @@ public:
 	bool bOrientRotationToMovement = true;
 
 	/** Is overridden to handle orientation-related movement. */
-	virtual FRotator GetTurn_Implementation(FRotator TargetOrientation, const FMoverTickStartData& FullStartState, const struct FMoverDefaultSyncState& MoverState, const FMoverTimeStep& TimeStep, const FProposedMove& ProposedMove, UMoverBlackboard* SimBlackboard) override;
+	virtual FVector GetTurn_Implementation(FRotator TargetOrientation, const FMoverTickStartData& FullStartState, const struct FMoverDefaultSyncState& MoverState, const FMoverTimeStep& TimeStep, const FProposedMove& ProposedMove, UMoverBlackboard* SimBlackboard) override;
 };
