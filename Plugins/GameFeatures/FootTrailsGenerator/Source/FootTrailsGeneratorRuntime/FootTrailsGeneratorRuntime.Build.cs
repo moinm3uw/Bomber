@@ -7,7 +7,6 @@ public class FootTrailsGeneratorRuntime : ModuleRules
 	public FootTrailsGeneratorRuntime(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		CppStandard = CppStandardVersion.Latest;
 		CppCompileWarningSettings.NonInlinedGenCppWarningLevel = WarningLevel.Error;
 
 		PublicDependencyModuleNames.AddRange(new[]
