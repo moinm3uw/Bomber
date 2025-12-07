@@ -25,7 +25,7 @@ public class Bomber : ModuleRules
                 //My modules
                 , "FunctionPicker" // Created properties in UBmrInputAction
                 , "MetaCheatManager" // Created UBmrCheatManager
-                , "PoolManager" // Created property in FBmrMapComponentSpec
+                , "PoolManager" // Created UBmrPoolFactory_Pawn
                 , "MyUtils" // Inherited from Base classes
 		    }
 		);

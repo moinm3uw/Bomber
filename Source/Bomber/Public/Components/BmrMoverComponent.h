@@ -27,6 +27,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "[Bomber]")
 	void RequestMoveByIntent(const FVector& Direction);
 
+	/** Instantly teleports owner to given location, useful for respawning or level transitions.
+	 * Should be called instead of setting actor location directly to avoid desyncs in simulation. */
+	UFUNCTION(BlueprintCallable, Category = "[Bomber]")
+	void TeleportToLocation(const FVector& InLocation);
+
 	/** When blocked, all movement inputs are ignored and the owner pawn will not move.
 	 * Alternatively, UBmrPlayerDataAsset::BlockMovementEffect can be applied/removed directly. */
 	UFUNCTION(BlueprintCallable, Category = "[Bomber]")
@@ -72,10 +77,6 @@ protected:
 	/** Listen to react when entered to different game state. */
 	UFUNCTION(BlueprintCallable, Category = "[Bomber]", meta = (BlueprintProtected))
 	void OnGameStateChanged(EBmrCurrentGameState CurrentGameState);
-
-	/** Called when owner is added on the Generated Map, on both server and client. */
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "[Bomber]", meta = (BlueprintProtected))
-	void OnOwnerAddedToLevel(class UBmrMapComponent* MapComponent);
 
 	/** Called when owner is unregistered from the Generated Map, on both server and client. */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "[Bomber]", meta = (BlueprintProtected))

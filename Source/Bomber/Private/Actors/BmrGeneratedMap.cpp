@@ -360,19 +360,19 @@ void ABmrGeneratedMap::AddToGrid(UBmrMapComponent* AddedComponent)
 		static constexpr int32 MaxRange = 4;
 		ActorRotation.Yaw += FMath::RandRange(MinRange, MaxRange) * RotationMultiplier;
 	}
-	static constexpr float HeightAdditive = 100.f;
-	const FVector ActorLocation{Cell.X(), Cell.Y(), Cell.Z() + HeightAdditive};
+	const FVector ActorLocation{Cell.X(), Cell.Y(), Cell.Z() + UBmrGeneratedMapDataAsset::Get().GetActorsHeightOffset()};
 
-	// Attach to the Generated Map actor
-	if (!ComponentOwner->IsAttachedTo(this)
-	    && ActorType != EAT::Player)
+	if (ActorType != EAT::Player)
 	{
-		// Do not attach players to level since they have to move on level freely
-		ComponentOwner->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
-	}
+		// Attach to the Generated Map actor (except player since they have to move on level freely)
+		if (!ComponentOwner->IsAttachedTo(this))
+		{
+			ComponentOwner->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+		}
 
-	// Locate actor on cell
-	ComponentOwner->SetActorTransform(FTransform(ActorRotation, ActorLocation, FVector::OneVector));
+		// Locate actor on cell (except pawns, which are handled by Mover)
+		ComponentOwner->SetActorTransform(FTransform(ActorRotation, ActorLocation, FVector::OneVector));
+	}
 
 	// Notify listeners
 	AddedComponent->OnAdded();

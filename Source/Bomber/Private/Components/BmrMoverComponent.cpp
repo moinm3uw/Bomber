@@ -8,6 +8,7 @@
 #include "Actors/BmrPawn.h"
 #include "Bomber.h"
 #include "Components/BmrMapComponent.h"
+#include "DataAssets/BmrGeneratedMapDataAsset.h"
 #include "DataAssets/BmrPlayerDataAsset.h"
 #include "GameFramework/BmrGameState.h"
 #include "Structures/BmrGameplayTags.h"
@@ -28,6 +29,26 @@
 void UBmrMoverComponent::RequestMoveByIntent(const FVector& Direction)
 {
 	CurrentMoveInput = Direction;
+}
+
+// Instantly teleports owner to given location, useful for respawning or level transitions
+void UBmrMoverComponent::TeleportToLocation(const FVector& InLocation)
+{
+	const FVector HeightOffset = FVector::UpVector * UBmrGeneratedMapDataAsset::Get().GetActorsHeightOffset();
+	const FVector TargetLocation = InLocation + HeightOffset;
+
+	if (!BackendLiaisonComp)
+	{
+		// Might be null in editor preview or during initialization
+		GetOwner()->SetActorLocation(TargetLocation);
+		return;
+	}
+
+	const TSharedPtr<FTeleportEffect> TeleportEffect = MakeShared<FTeleportEffect>();
+	TeleportEffect->TargetLocation = TargetLocation;
+	TeleportEffect->bUseActorRotation = false;
+	TeleportEffect->TargetRotation = FRotator::ZeroRotator;
+	QueueInstantMovementEffect(TeleportEffect);
 }
 
 // When blocked, all movement inputs are ignored and the owner pawn will not move
@@ -78,7 +99,6 @@ void UBmrMoverComponent::BeginPlay()
 
 	UBmrMapComponent* MapComponent = UBmrMapComponent::GetMapComponent(OwnerPlayer);
 	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
-	MapComponent->OnAddedToLevel.AddUniqueDynamic(this, &ThisClass::OnOwnerAddedToLevel);
 	MapComponent->OnPreRemovedFromLevel.AddUniqueDynamic(this, &ThisClass::OnPreRemovedFromLevel);
 
 	OnPostMovement.AddUniqueDynamic(this, &ThisClass::OnPostMove);
@@ -162,22 +182,6 @@ void UBmrMoverComponent::OnGameStateChanged(EBmrCurrentGameState CurrentGameStat
 {
 	const bool bShouldDisableMovement = CurrentGameState != EBmrCurrentGameState::InGame;
 	SetBlockMovement(bShouldDisableMovement);
-}
-
-// Called when owner is added on the Generated Map, on both server and client
-void UBmrMoverComponent::OnOwnerAddedToLevel_Implementation(UBmrMapComponent* MapComponent)
-{
-	checkf(MapComponent, TEXT("ERROR: [%i] %hs:\n'MapComponent' is null!"), __LINE__, __FUNCTION__);
-
-	// Owner is respawned, teleport it to initial restart location
-	const TSharedPtr<FTeleportEffect> TeleportEffect = MakeShared<FTeleportEffect>();
-	const UCapsuleComponent* CapsuleComponent = GetUpdatedComponent<UCapsuleComponent>();
-	const float CapsuleHalfHeight = CapsuleComponent ? CapsuleComponent->GetScaledCapsuleHalfHeight() : 0.f;
-	const FVector CapsuleOffset = FVector::UpVector * CapsuleHalfHeight;
-	TeleportEffect->TargetLocation = FVector(MapComponent->GetCell()) + CapsuleOffset;
-	TeleportEffect->bUseActorRotation = false;
-	TeleportEffect->TargetRotation = FRotator::ZeroRotator;
-	QueueInstantMovementEffect(TeleportEffect);
 }
 
 // Called when owner is unregistered from the Generated Map, on both server and client
