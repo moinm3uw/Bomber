@@ -22,7 +22,7 @@ struct BOMBER_API FBmrAttachedMesh
 	TObjectPtr<UStreamableRenderAsset> AttachedMesh = nullptr;
 
 	/** In the which socket should attach this prop. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ShowOnlyInnerProperties, GetOptions = "GetRowMeshSockets"))
 	FName Socket = NAME_None;
 
 	/** Prop animation is loop played all the time, starts playing on attaching to the owner. */
@@ -98,6 +98,10 @@ protected:
 #if WITH_EDITOR
 	/** Handle adding and changing material instance to prepare dynamic materials. */
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
+	/** Retrieves bones and socket names from skeletal mesh of this row to be displayed as combobox dropdown in editor. */
+	UFUNCTION()
+	TArray<FString> GetRowMeshSockets() const;
 #endif // WITH_EDITOR
 };
 

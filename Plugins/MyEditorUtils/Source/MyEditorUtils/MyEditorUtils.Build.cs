@@ -23,7 +23,6 @@ public class MyEditorUtils : ModuleRules
 			new[]
 			{
 				"CoreUObject", "Engine", "Slate", "SlateCore" // Core
-				, "EditorFramework" // FEditorDelegates::FToolkitManager
 				, "EditorStyle" // Property types customizations
 				, "ToolWidgets" // SSearchableComboBox
 				, "DataTableEditor", "DesktopPlatform", "EditorFramework", "ToolMenus" // Editor data table

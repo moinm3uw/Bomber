@@ -10,6 +10,8 @@
 #endif
 
 // UE
+#include "Engine/SkeletalMesh.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "Engine/Texture2DArray.h"
 #include "GameFramework/Actor.h"
 #include "Materials/MaterialInstance.h"
@@ -74,6 +76,32 @@ void UBmrPlayerRow::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 		MaterialInstancesDynamic.Empty();
 		UpdateSkinTextures();
 	}
+}
+
+// Retrieves bones and socket names from skeletal mesh of this row to be displayed as dropdown in editor
+TArray<FString> UBmrPlayerRow::GetRowMeshSockets() const
+{
+	TArray<FString> SocketNames;
+
+	const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(Mesh);
+	if (!SkeletalMesh)
+	{
+		return SocketNames;
+	}
+
+	const TArray<USkeletalMeshSocket*>& Sockets = SkeletalMesh->GetActiveSocketList();
+	for (const USkeletalMeshSocket* SocketIt : Sockets)
+	{
+		SocketNames.AddUnique(SocketIt->SocketName.ToString());
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	for (int32 BoneIndex = 0; BoneIndex < RefSkeleton.GetNum(); ++BoneIndex)
+	{
+		SocketNames.AddUnique(RefSkeleton.GetBoneName(BoneIndex).ToString());
+	}
+
+	return SocketNames;
 }
 #endif // WITH_EDITOR
 

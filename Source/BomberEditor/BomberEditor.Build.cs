@@ -14,16 +14,11 @@ public class BomberEditor : ModuleRules
 			"Core"
 			, "UnrealEd" // Created UBmrUnrealEdEngine
 			, "GameplayTagsEditor" // FGameplayTagCustomizationPublic
-			// My modules
-			, "MyEditorUtils" // Created FBmrAttachedMeshCustomization
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]
 			{
 				"CoreUObject", "Engine", "InputCore", "Slate", "SlateCore" // Core
-				, "EditorFramework" // FEditorDelegates::FToolkitManager
-				, "EditorStyle" // SSocketChooserPopup
-				, "ToolWidgets" // SSearchableComboBox
 				, "PropertyEditor" // IPropertyTypeCustomization
 			}
 		);
