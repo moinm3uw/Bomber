@@ -22,7 +22,9 @@
 UBmrGameInstance::UBmrGameInstance(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+	// Disable auto join (to destroy existing session first), but keep auto travel enabled (to open the level after session is joined)
 	bAutoJoinSessionOnAcceptedUserInviteReceived = false;
+	bAutoTravelOnAcceptedUserInviteReceived = true;
 }
 
 // Is overridden to listen when first local player is added
