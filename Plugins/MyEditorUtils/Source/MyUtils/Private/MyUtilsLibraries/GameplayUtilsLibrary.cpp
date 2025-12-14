@@ -12,6 +12,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "GameFeaturesSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameplayUtilsLibrary)
@@ -180,6 +181,34 @@ bool UGameplayUtilsLibrary::ApplyTransformFromCurveTable(AActor* InActor, const 
 	InActor->SetActorTransform(WorldTransform);
 
 	return true;
+}
+
+/*********************************************************************************************
+ * Level Helpers
+ ********************************************************************************************* */
+
+// Returns true if the specified level is opened in the current world
+bool UGameplayUtilsLibrary::IsLevelOpened(const TSoftObjectPtr<UWorld>& Level)
+{
+	const UWorld* World = UUtilsLibrary::GetPlayWorld();
+	const FString CurrentLevelName = GetNameSafe(World);
+	const FString LevelName = Level.GetAssetName();
+	return CurrentLevelName.Contains(LevelName);
+}
+
+// Opens the specified level as listen server: Level?listen
+void UGameplayUtilsLibrary::OpenListenServerLevel(const TSoftObjectPtr<UWorld>& Level, bool bForceLoad /* = false*/)
+{
+	if (!ensureMsgf(!Level.IsNull(), TEXT("ASSERT: [%i] %hs:\n'Level' is null!"), __LINE__, __FUNCTION__)
+	    || (!bForceLoad && IsLevelOpened(Level)))
+	{
+		// Already in main level
+		return;
+	}
+
+	constexpr bool bAbsolute = true;
+	static const FString Options = TEXT("listen");
+	UGameplayStatics::OpenLevelBySoftObjectPtr(UUtilsLibrary::GetPlayWorld(), Level, bAbsolute, Options);
 }
 
 /*********************************************************************************************

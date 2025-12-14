@@ -55,6 +55,20 @@ public:
 	static bool ApplyTransformFromCurveTable(AActor* InActor, const FTransform& CenterWorldTransform, class UCurveTable* CurveTable, float TotalSecondsSinceStart);
 
 	/*********************************************************************************************
+	 * Level Helpers
+	 ********************************************************************************************* */
+public:
+	/** Returns true if the specified level is opened in the current world. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "C++")
+	static bool IsLevelOpened(const TSoftObjectPtr<UWorld>& Level);
+
+	/** Opens the specified level as listen server: Level?listen.
+	 * @param Level The level to open as listen server.
+	 * @param bForceLoad If true, will open the level even if already in it. */
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	static void OpenListenServerLevel(const TSoftObjectPtr<UWorld>& Level, bool bForceLoad = false);
+
+	/*********************************************************************************************
 	 * Modular Game Features (MGF)
 	 ********************************************************************************************* */
 public:
